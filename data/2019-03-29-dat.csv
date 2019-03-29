@@ -1,0 +1,198 @@
+authors,year,host_tax_broad,host_tax_fine,symbiont_tax_broad,symbiont_tax_fine,symbiont_euk,symbiosis,endo_or_ecto,mode_of_transmission_broad,mode_of_transmission_fine,symbiont,Visiting_symbiont?,host_tips_linked,host_tips_linked_corrected,host_genera,total_host_symbioint_links,host_range_link_ratio,host_range_taxonomic_breadth,symbiont_tips_linked,symbiont_genera,no_randomizations,p_value,method,all_species,all_species2
+Badets_et_al_2011,2011,Vert,Tetrapod,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Monogenea,resident,17,17,13,17,1,1,17,4,1e3,0.01,TreeMap,34,34
+Banks_et_al_2006,2006,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Chewing lice,resident,18,18,6,30,2,1.6,15,2,1e3,0.01,TreeMap,33,33
+Bochkov_et_al_2011,2011,Vert,Tetrapod,Invert,Invert,y,Parasite,Ecto,both,contact,Mites,resident,6,6,NA,9,1,1,9,6,100,0.01,TreeMap,15,15
+Charleston_&_Perkins_2003,2003,Vert,Tetrapod,Microbe,Protist,y,Parasite,Endo,horizontal,vector,Malaria,resident,9,9,1,9,1,1,9,1,100,0.03,TreeMap,18,18
+Charleston_&_Robertson_2002,2002,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,bodily fluid,Retrovirus,resident,12,12,12,12,1,1,12,1,1e3,0.015,TreeMap,24,24
+Chauvatcharin_et_al_2006,2006,Microbe,Bacterium,Microbe,Virus,n,Parasite,Endo,both,NA,Bacteriophage,resident,14,14,7,15,1.07,1,14,1,1e3,0.331,TreeMap,28,28
+Clark_et_al_2000,2000,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Buchnera,resident,17,17,4,17,1,1,17,1,1e3,0.001,TreeMap,34,34
+Clayton_&_Johnson_2003,2003,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Dove body lice,resident,13,13,6,14,1.08,1.15,13,1,1e4,6e-4,TreeMap,26,26
+Clayton_&_Johnson_2003,2003,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Dove wing lice,resident,13,13,6,16,1.6,1.5,10,1,1e4,0.153,TreeMap,23,23
+Cui_et_al_2012,2012,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,bodily fluid,Retrovirus,resident,7,7,3,7,1,1,7,7,1e4,0.366,TreeMap,14,14
+Dabert_2001__,2001,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Feather mite,resident,21,21,12,22,1,1,22,9,1e4,0.001,TreeMap,43,43
+Deng_et_al_2013,2013,Invert,Invert,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Parasitic wasps,resident,7,7,4,10,1,1.43,10,2,999,0.53,TreeMap,17,17
+Desai_et_al_2010,2010,Microbe,Protist,Microbe,Bacterium,n,Mutualist,Ecto,both,contact,Devescovinid flagellates,resident,9,9,2,8,0.89,1,9,1,1e3,0.001,TreeMap,18,18
+Desdevises_et_al_2002,2002,Vert,Fish,Invert,Invert,y,Parasite,Ecto,horizontal,autonomous,Monogenea,resident,14,14,11,39,1.95,1.45,20,2,999,0.317,TreeMap,34,34
+Downie_&_Gullan_2005,2005,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Primary endosymbiont Tremblaya,resident,21,21,16,21,1,1,21,1,1e3,0.001,TreeMap,42,42
+Erpenbeck_et_al_2002,2002,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Sponge symbiont,resident,6,6,5,6,1,1,6,1,1e4,0.02,TreeMap,12,12
+Etherington_et_al_2006,2006,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,contact,Calicivirus,resident,7,7,7,8,1,1,8,1,1e3,0.01,TreeMap,15,15
+Farrell_1998,1998,Plant,Plant,Invert,Invert,y,Parasite,Ecto,horizontal,autonomous,Cerambicid beetle,resident,21,21,2,21,1,1,21,6,1e3,0.07,TreeMap,42,42
+Gottschling_et_al_2011,2011,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,contact,Papillomavirus,resident,43,43,40,78,1,1,78,30,1e3,0.001,TreeMap,121,121
+Hendricks_et_al_2013,2013,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Quill mites,resident,19,19,17,20,1.25,1.25,16,1,1e3,0.021,TreeMap,35,35
+Hosokawa_et_al_2006,2006,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Gamma proteobacteria,resident,7,7,3,7,1,1,7,1,1e3,0.001,TreeMap,14,14
+Hugot_1999,1999,Vert,Tetrapod,Invert,Invert,y,Parasite,Endo,horizontal,trophic,Pinworms,resident,10,10,9,11,1,1,11,6,1e3,0.001,TreeMap,21,21
+Hugot_et_al_2003,2003,Vert,Tetrapod,Microbe,Fungus,y,Parasite,Endo,horizontal,contact,Pneumocystis,resident,19,19,12,19,1,1,19,1,1e3,0.001,TreeMap,38,38
+Huyse_&_Volckaert_2005,2005,Vert,Fish,Invert,Invert,y,Parasite,Ecto,horizontal,autonomous,Gyrodactylus flatworms,resident,8,8,3,22,1.29,1.24,17,1,100,0.02,TreeMap,25,25
+IkedaOhtsubo_&_Brune_2009,2009,Microbe,Protist,Microbe,Bacterium,n,Mutualist,Ecto,vertical,vertical,Endomicrobium,resident,11,11,1,11,1,1,11,1,1e3,0.001,TreeMap,22,22
+Jackson_&_Charleston_1994,1994,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,contact,Lyssavirus,resident,10,10,8,10,1,1,10,1,100,0.19,TreeMap,20,20
+Jackson_&_Charleston_1994,1994,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,bodily fluid,Retrovirus,resident,10,10,7,10,1,1,10,1,100,0.01,TreeMap,20,20
+Jackson_&_Charleston_1994,1994,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,contact,Arenavirus,resident,11,11,7,12,1,1,12,1,100,0.05,TreeMap,23,23
+Jackson_&_Charleston_1994,1994,Vert,Bird,Microbe,Virus,n,Parasite,Endo,horizontal,bodily fluid,Retrovirus,resident,13,13,9,15,1,1,15,1,100,0.18,TreeMap,28,28
+Jackson_&_Charleston_1994,1994,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,contact,Hantavirus,resident,14,14,7,17,1,1,17,1,100,0.01,TreeMap,31,31
+Jeong_et_al_1999,1999,Plant,Plant,Microbe,Bacterium,n,Mutualist,Endo,horizontal,vector,Frankia,resident,12,12,12,19,1.06,1,18,1,1e3,0.23,TreeMap,30,30
+Johnson_et_al_2002,2002,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Bird louse,resident,25,25,23,25,1.32,1.42,19,19,1e3,0.23,TreeMap,44,44
+Johnson_et_al_2003,2003,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Dove wing lice,resident,28,28,15,31,1.48,1.33,21,1,100,0.03,TreeMap,49,49
+Johnson_et_al_2006,2006,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Flamingo lice,resident,10,10,NA,11,1,1,11,11,1e3,0.402,TreeMap,21,21
+Jousselin_et_al_2008,2009,Plant,Plant,Invert,Invert,y,Mutualist,Endo,horizontal,autonomous,Fig wasp,resident,15,15,1,15,1.07,1.07,14,6,1e4,0.01,TreeMap,29,29
+Jousselin_et_al_2008,2009,Plant,Plant,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Fig wasp,resident,13,13,1,14,1,1,14,1,1e4,0.01,TreeMap,27,27
+Jousselin_et_al_2008,2009,Plant,Plant,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Fig wasp,resident,13,13,1,13,1,1,13,1,1e4,0.01,TreeMap,26,26
+Jousselin_et_al_2008,2009,Plant,Plant,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Fig wasp,resident,16,16,1,18,1.06,1.06,17,2,1e4,0.01,TreeMap,33,33
+Jousselin_et_al_2009,2009,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Buchnera,resident,55,22,1,22,1,1,22,1,1e4,0.001,TreeMap,44,77
+Kawaida_et_al_2013,2013,Invert,Invert,Plant,Plant,y,Mutualist,Endo,vertical,vertical,Green algae,resident,6,6,1,6,1,1,6,1,1e4,0.0035,TreeMap,12,12
+Kawakita_et_al_2004,2004,Plant,Plant,Invert,Invert,y,Mutualist,Ecto,horizontal,autonomous,Pollinating moth,visitor,18,18,1,18,1,1,18,1,999,0.019,TreeMap,36,36
+Kelley_&_Farrell_1998,1998,Plant,Plant,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Bark beetle,resident,41,41,1,89,6.85,1.92,13,1,100,0.28,TreeMap,54,54
+Kikuchi_et_al_2009,2009,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Gut symbiont,resident,14,14,5,14,1,1,14,1,1e3,0.001,TreeMap,28,28
+Lanterbecq_et_al_2010,2010,Invert,Invert,Invert,Invert,y,Parasite,Endo/Ecto,horizontal,contact,Myzostomid worm,resident,16,16,12,16,1,1,16,5,5e3,0.04,TreeMap,32,32
+Light_&_Hafner_2008,2008,Vert,Tetrapod,Invert,Invert,y,Parasite,Ecto,both,contact,Rodent sucking lice,resident,44,21,4,21,1,1,21,1,1e3,0.001,TreeMap,42,65
+LimFong_et_al_2008,2008,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Endobugula bacteria,resident,5,5,1,5,1,1,5,2,1e3,0.11,TreeMap,10,10
+Liu_et_al_2013,2013,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Buchnera,resident,37,37,1,37,1,1,37,1,1e3,0.001,TreeMap,74,74
+Liu_et_al_2014,2014,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Buchnera,resident,27,27,3,29,1,1,29,1,1e3,0.01,TreeMap,56,56
+LopezVaamonde_et_al_2001,2001,Invert,Invert,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Figwasp,resident,15,15,1,15,1,1,15,1,1e3,0.001,TreeMap,30,30
+LopezVaamonde_et_al_2003,2003,Plant,Plant,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Leaf mining moth,resident,33,33,33,77,1,1,77,1,1e3,0.213,TreeMap,110,110
+LopezVaamonde_et_al_2005,2005,Invert,Invert,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Parasitic wasp,resident,28,28,1,35,2.33,1.33,15,1,1e3,0.248,TreeMap,43,43
+Martin_et_al_1999,1999,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,bodily fluid,Retrovirus,resident,38,38,38,48,1,1,48,1,1e3,0.001,TreeMap,86,86
+Martin_et_al_2003,2003,Vert,Bird,Microbe,Virus,n,Parasite,Endo,horizontal,bodily fluid,Retrovirus,resident,14,14,14,16,1,1,16,1,100,0.01,TreeMap,30,30
+Martin_et_al_2003,2003,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,bodily fluid,Retrovirus,resident,9,9,9,9,1,1,9,1,100,0.05,TreeMap,18,18
+Martin_et_al_2003,2003,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,bodily fluid,Retrovirus,resident,17,17,17,23,1,1,23,1,100,0.21,TreeMap,40,40
+Mazzon_et_al_2010,2010,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Stammerula,resident,17,17,10,17,1.06,1.13,16,3,1e3,0.001,TreeMap,33,33
+Morelli_&_Spicer_2007,2007,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Bird nasal mite,resident,6,6,6,6,1,1,6,1,1e4,0.0095,TreeMap,12,12
+Muniz_et_al_2013,2013,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,bodily fluid,Retrovirus,resident,17,17,11,17,1,1,17,1,1e4,1e-5,TreeMap,34,34
+Musser_et_al_2010,2010,Vert,Mammal,Invert,Invert,y,Parasite,Ecto,both,contact,Squirrel sucking lice,resident,6,6,1,6,1,1,6,6,100,0.3,TreeMap,12,12
+Pagan_et_al_2010,2010,Plant,Plant,Microbe,Virus,n,Parasite,Endo,horizontal,contact,Tobamovirus,resident,10,10,10,13,1,1,13,1,1e3,0.24,TreeMap,23,23
+Page_1996,1996,Vert,Tetrapod,Invert,Invert,y,Parasite,Ecto,both,contact,Gopher chewing lice,resident,15,15,6,17,1,1,17,2,1e3,0.001,TreeMap,32,32
+Page_et_al_1998,1998,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Bird lice,resident,7,7,1,8,1,1,8,1,100,0.01,TreeMap,15,15
+Page_et_al_2004,2004,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Seabird lice,resident,12,12,4,12,1,1,12,1,1e3,0.001,TreeMap,24,24
+Page_et_al_2004,2004,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Seabird lice,resident,11,11,5,13,1,1,13,4,100,0.25,TreeMap,24,24
+Page_et_al_2004,2004,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Seabird lice,resident,13,13,5,14,1,1,14,1,100,0.46,TreeMap,27,27
+Page_et_al_2004,2004,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Seabird lice,resident,9,9,3,9,1,1,9,1,100,0.36,TreeMap,18,18
+Paterson_&_Poulin_1999,1999,Vert,Fish,Invert,Invert,y,Parasite,Ecto,horizontal,autonomous,Parasitic copepod,resident,8,8,8,12,1.2,2.2,10,1,100,0.01,TreeMap,18,18
+Paterson_et_al_2000,2000,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Seabird lice,resident,11,11,5,14,1,1,14,5,100,0.01,TreeMap,25,25
+Percy_et_al_2004,2004,Plant,Plant,Invert,Invert,y,Parasite,Ecto,both,autonomous,Psyllid,resident,35,35,8,56,1.22,1.09,46,4,1e3,0.005,TreeMap,81,81
+PerezLosada_et_al_2006,2006,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,NA,Polyomavirus,resident,9,9,9,11,1,1,11,1,100,0.01,TreeMap,20,20
+Perlman_et_al_2003,2003,Invert,Invert,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Nematode,resident,16,16,1,17,1.89,1.33,9,1,1e3,0.14,TreeMap,25,25
+Quek_et_al_2004,2004,Plant,Plant,Invert,Invert,y,Mutualist,Ecto,horizontal,autonomous,Ants,resident,11,11,1,23,2.3,1.6,10,1,1e3,0.999,TreeMap,21,21
+Ramsden_et_al_2008,2008,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,contact,Hantavirus,resident,33,33,20,38,1,1,38,1,1e3,0.999,TreeMap,71,71
+Reed_et_al_2007,2007,Vert,Tetrapod,Invert,Invert,y,Parasite,Ecto,horizontal,contact,Anthropoid lice,resident,4,4,4,6,1.2,1,5,4,1e3,0.05,TreeMap,9,9
+Refregier_et_al_2008,2008,Plant,Plant,Microbe,Fungus,y,Parasite,Endo,horizontal,vector,Anther smut fungi,resident,18,18,7,20,1.25,1.25,16,1,3e3,0.5,TreeMap,34,34
+Shoemaker_et_al_2002,2002,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,both,NA,Wolbachia,resident,20,20,7,23,1,1,23,1,100,0.47,TreeMap,43,43
+Simkova_et_al_2013,2013,Vert,Fish,Invert,Invert,y,Parasite,Ecto,horizontal,autonomous,Monogenea,resident,5,5,1,21,1,1,21,1,999,0.045,TreeMap,26,26
+Six_&_Paine_1999,1999,Microbe,Fungus,Invert,Invert,y,Mutualist,Ecto,horizontal,vector,Mycangial fungi,resident,6,6,1,6,1,1,6,3,1e3,0.031,TreeMap,12,12
+Skerikova_et_al_2001,2001,Vert,Fish,Invert,Invert,y,Parasite,Endo,horizontal,trophic,Cestode,resident,7,7,7,7,1,1,7,1,1e4,0.4,TreeMap,14,14
+Smith_et_al_2008b,2008,Vert,Tetrapod,Invert,Invert,y,Parasite,Ecto,both,contact,Rodent lice,resident,20,20,3,20,1,1,20,14,100,0.05,TreeMap,40,40
+Sorenson_et_al_2004,2004,Vert,Bird,Vert,Bird,y,Parasite,Ecto,horizontal,autonomous,Brood parasitic finch,resident,33,33,10,34,1.62,1.43,21,1,100,0.15,TreeMap,54,54
+Subbotin_et_al_2004,2004,Plant,Plant,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Nematode,resident,16,16,16,21,1,1,21,4,1e3,0.001,TreeMap,37,37
+Switzer_et_al_2005,2005,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,bodily fluid,Retrovirus,resident,46,46,17,51,1,1,51,1,1e4,0.007,TreeMap,97,97
+Urban_&_Cryan_2012,2012,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,autonomous,Fulgorid planthopper microbe,resident,40,40,38,40,1,1,40,1,1e3,0.001,TreeMap,80,80
+Urban_&_Cryan_2012,2012,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,autonomous,Fulgorid planthopper microbe,resident,30,30,29,30,1,1,30,1,1e3,0.001,TreeMap,60,60
+Vanhove_et_al_2015,2015,Vert,Fish,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Monogenea,resident,19,19,10,28,1,1,28,1,1e4,0.0421,TreeMap,47,47
+Weckstein_2004,2004,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Toucan chewing lice,resident,11,11,1,11,2.2,1.8,5,1,1e4,0.89,TreeMap,16,16
+Weiblen_&_Bush_2002,2002,Plant,Plant,Invert,Invert,y,Mutualist,Endo,horizontal,autonomous,Fig wasp,resident,19,19,1,19,1,1,19,1,1e4,0.0195,TreeMap,38,38
+Weiblen_&_Bush_2002,2002,Plant,Plant,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Fig wasp,resident,12,12,1,18,1,1,18,1,1e4,0.1215,TreeMap,30,30
+Wu_et_al_2008,2008,Plant,Plant,Microbe,Virus,n,Parasite,Endo,horizontal,vector,Mastrevirus,resident,8,8,8,10,1,1,10,1,100,0.01,TreeMap,18,18
+Yan_et_al_2011,2011,Vert,Fish,Microbe,Virus,n,Parasite,Endo,horizontal,contact,Lymphocystis,resident,8,8,8,15,1,1,15,1,999,0.989,TreeMap,23,23
+Althoff_et_al_2012,2012,Plant,Plant,Invert,Invert,y,Mutualist,Ecto,horizontal,autonomous,Yucca moth,visitor,24,24,1,40,2,1.35,20,1,1e3,0.001,Parafit,44,44
+Althoff_et_al_2012,2012,Plant,Plant,Invert,Invert,y,Mutualist,Ecto,horizontal,autonomous,Yucca moth,visitor,24,24,1,38,2.24,1.53,17,1,1e3,0.001,Parafit,41,41
+Banks_et_al_2006,2006,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Penguin chewing lice,resident,18,18,6,30,2,1.6,15,2,1e4,0.001,Parafit,33,33
+Bayerlová_2009,2009,Vert,Mammal,Microbe,Virus,n,Parasite,Endo,horizontal,contact,Arenavirus,resident,21,21,14,31,1.55,1.45,20,1,9999,4e-4,Parafit,41,41
+Bellec_et_al_2014,2014,Plant,Plant,Microbe,Virus,n,Parasite,Endo,horizontal,contact,Prasinovirus,resident,22,22,3,133,2.61,1.65,51,1,999,0.001,Parafit,73,73
+Bruyndonckxx_et_al_2009,2009,Vert,Mammal,Invert,Invert,y,Parasite,Ecto,both,contact,Bat mites,resident,20,20,7,21,1.91,2.27,11,2,9999,0.003,Parafit,31,31
+Caraguel_et_al__2007,2007,Microbe,Amoeba,Microbe,Protist,y,Mutualist,Endo,vertical,vertical,Prokinetoplastid endosymbiont,resident,6,6,1,6,1,1,6,1,9999,0.001,Parafit,12,12
+Choi_&_Thines_2015,2015,Plant,Plant,Microbe,Fungus,y,Parasite,Endo,horizontal,autonomous,Downy mildew,resident,63,63,28,63,1,1,63,3,999,0.001,Parafit,126,126
+Conord_et_al_2008,2008,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Dryophthoridae endosymbionts,resident,14,14,10,14,1,1,14,1,999,0.009,Parafit,28,28
+Cornuault_et_al_2012,2012,Vert,Bird,Microbe,Protist,y,Parasite,Endo,horizontal,vector,Leucocytozoon,resident,8,8,1,23,1.28,1.17,18,1,9999,0.035,Parafit,26,26
+Cruaud_et_al_2012,2012,Plant,Plant,Invert,Invert,y,Mutualist,Endo,horizontal,autonomous,Fig wasp,resident,200,200,1,200,1,1,200,20,9999,0.01,Parafit,400,400
+Cui_et_al_2014,2014,Vert,Bird,Microbe,Virus,n,Parasite,Endo,horizontal,bodily fluid,Hepadnavirus,resident,46,46,46,NA,NA,NA,61,NA,99999,0.233,Parafit,107,107
+Deng_et_al_2013,2013,Invert,Invert,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Parasitic wasp,resident,7,7,4,10,1,1,10,2,999,0.01602,Parafit,17,17
+Desdevises_et_al_2002,2002,Vert,Fish,Invert,Invert,y,Parasite,Ecto,horizontal,autonomous,Monogenea,resident,14,14,11,39,2,1.65,20,2,999,0.26,Parafit,34,34
+Dhami_et_al_2013,2013,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Hoataupuhia symbiont,resident,42,42,NA,42,1,1,42,4,999,0.001,Parafit,84,84
+Dowie_et_al_2016,2016,Microbe,Fungus,Plant,Plant,y,Parasite,Endo,horizontal,environmental,Parasitic plant,resident,4,4,1,9,2.25,1.5,4,1,9999,0.001,Parafit,8,8
+Du_Toit_et_al_2013,2013,Vert,Mammal,Invert,Invert,y,Parasite,Ecto,both,contact,Rodent lice,resident,4,4,1,14,1.17,1.17,12,1,1e4,0.88,Parafit,16,16
+FerrerParis_et_al_2013,2013,Plant,Plant,Invert,Invert,y,Parasite,Ecto,horizontal,autonomous,Butterflies,visitor,64,64,NA,112,2.73,5.2,41,NA,999,0.157,Parafit,105,105
+FraijaFernández_et_al_2016,2016,Vert,Mammal,Invert,Invert,y,Parasite,Endo,horizontal,trophic,Digenea,resident,31,31,24,50,5.56,3.67,9,6,999,0.001,Parafit,40,40
+Garamszegi_2009,2009,Vert,Mammal,Microbe,Protist,y,Parasite,Endo,horizontal,vector,Primate malaria,resident,23,23,23,43,2.39,2.56,18,1,1e3,0.001,Parafit,41,41
+Garcia_&_Hayman_2016,2016,Vert,Vert,Microbe,Protist,y,Parasite,Endo,horizontal,trophic,Cryptosporidium,resident,22,22,22,36,1.33,1.96,27,1,999,0.01,Parafit,49,49
+Gavotte_et_al_2007,2007,Microbe,Bacterium,Microbe,Virus,n,Parasite,Endo,both,NA,Bacteriophage,resident,33,33,1,51,0.93,1,55,1,1e4,0.1319,Parafit,88,88
+Göker_et_al_2011,2011,Microbe,Fungus,Microbe,Virus,n,Parasite,Endo,NA,NA,Mycovirus,resident,8,8,8,8,1,1,8,1,9999,0.0978,Parafit,16,16
+Gomard_et_al_2016,2016,Vert,Mammal,Microbe,Bacterium,n,Parasite,Endo,horizontal,NA,Leptospira,resident,12,12,11,26,1,1,26,1,999,0.09,Parafit,38,38
+Gottschling_et_al_2011,2011,Vert,Mammal,Microbe,Virus,n,Parasite,Endo,horizontal,contact,Papillomavirus,resident,43,43,40,76,0.97,1,78,30,9999,1e-4,Parafit,121,121
+Hall_et_al__2016,2016,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Carsonella primary endosymbiont,resident,37,37,18,37,1,1,37,1,1e4,0.001,Parafit,74,74
+Hall_et_al__2016,2016,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Arsenophonus secondary endosymbiont,resident,20,20,9,20,1,1,20,1,1e4,0.387,Parafit,40,40
+Hammer_et_al_2010,2010,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Petrel chewing lice,resident,23,23,6,23,1.1,1,21,1,999,0.001,Parafit,44,44
+Hammerlinck_et_al_2016,2016,Invert,Invert,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Parasitic wasp,resident,11,11,2,11,1.38,1.13,8,2,999,0.129,Parafit,19,19
+Hammerlinck_et_al_2016,2016,Invert,Invert,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Parasitic wasp,resident,6,6,2,6,1.5,1.25,4,2,999,0.195,Parafit,10,10
+Hammerlinck_et_al_2016,2016,Invert,Invert,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Parasitic wasp,resident,7,7,2,7,1,1,7,2,999,0.042,Parafit,14,14
+Hembry_et_al_2013,2013,Plant,Plant,Invert,Invert,y,Mutualist,Ecto,horizontal,autonomous,Pollinating moths,visitor,37,37,1,35,1,1,35,1,999,0.017,Parafit,72,72
+Herrera__et_al_2016,2016,Microbe,Fungus,Microbe,Fungus,y,Parasite,Endo,horizontal,environmental,Mycoparasite Cosmospora,resident,13,13,9,13,1,1,13,3,999,0.005,Parafit,26,26
+Höglund_et_al_2003,2003,Vert,Vert,Invert,Invert,y,Parasite,Endo,horizontal,trophic,Lungworm,resident,8,8,8,10,2,2.4,5,1,1e4,0.098,Parafit,13,13
+Hughes_et_al_2007,2007,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Pelican lice,resident,18,18,6,18,1.06,1,17,1,999,1e-4,Parafit,35,35
+Huyse_&_Volckaert_2005,2005,Vert,Fish,Invert,Invert,y,Parasite,Ecto,horizontal,autonomous,Monogenea,resident,8,8,5,22,1.29,1.29,17,1,999,0.095,Parafit,25,25
+Irwin_et_al_2012,2012,Vert,Mammal,Microbe,Virus,n,Parasite,Endo,horizontal,contact,Arenavirus,resident,21,21,14,31,1.55,1.85,20,NA,9999,4e-4,Parafit,41,41
+Jenkins_et_al_2012,2012,Vert,Bird,Microbe,Protist,y,Parasite,Endo,horizontal,autonomous,Leucocytozoon,resident,52,52,40,138,1.45,NA,95,1,999,0.001,Parafit,147,147
+Jousselin_et_al_2008,2008,Plant,Plant,Invert,Invert,y,Mutualist,Endo,horizontal,autonomous,Fig wasp,resident,15,15,1,15,1.07,1.07,14,6,9999,0.003,Parafit,29,29
+Jousselin_et_al_2008,2008,Plant,Plant,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Fig wasp,resident,13,13,1,13,1,1,13,1,9999,0.02,Parafit,26,26
+Jousselin_et_al_2008,2008,Plant,Plant,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Fig wasp,resident,16,16,1,18,1.06,1.06,17,2,9999,0.001,Parafit,33,33
+Jousselin_et_al_2008,2008,Plant,Plant,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Fig wasp,resident,13,13,1,14,1,1,14,1,9999,0.003,Parafit,27,27
+Jousselin_et_al_2009,2009,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Buchnera,resident,55,22,1,22,1,1,22,1,9999,0.001,Parafit,44,77
+Kaltenpoth_et_al_2014,2014,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Beewolf bacterial symbiont,resident,39,39,2,41,1,1,41,1,1e3,0.001,Parafit,80,80
+Kawakita_&_Kato_2009,2009,Plant,Plant,Invert,Invert,y,Mutualist,Ecto,horizontal,autonomous,Yucca moth,visitor,10,10,7,10,1,1,10,1,100,0.39,Parafit,20,20
+Kawakita_et_al_2004,2004,Plant,Plant,Invert,Invert,y,Mutualist,Ecto,horizontal,autonomous,Pollinating moth,visitor,18,18,1,18,1,1,18,1,999,0.005,Parafit,36,36
+Kawazoe_et_al_2008,2008,Invert,Invert,Invert,Invert,y,Mutualist,Ecto,vertical,vertical,Bee mite,resident,4,4,1,5,1.25,1.25,4,1,9999,1e-4,Parafit,8,8
+Kölsch_&__Pedersen_2010,2010,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Reed beetle bacterial endosymbiont,resident,41,41,7,41,1,1,41,1,9999,0.001,Parafit,82,82
+Krasnov_&_Shenbrot_2013,2013,Vert,Mammal,Invert,Invert,y,Parasite,Ecto,horizontal,contact,Jerboa fleas,resident,21,21,8,62,3.26,4.37,19,7,999,0.16,Parafit,40,40
+Krumbholz_et_al_2009,2009,Vert,Vert,Microbe,Virus,n,Parasite,Endo,horizontal,NA,Polyomavirus,resident,13,13,13,18,1,1,18,1,999999,0.4946,Parafit,31,31
+Ku_&_Hu_2014,2014,Plant,Plant,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Burkholderia plant symbiont,resident,11,11,1,11,1,1,11,1,9999,0.02,Parafit,22,22
+Lanterbecq_et_al_2010,2010,Invert,Invert,Invert,Invert,y,Parasite,Endo/Ecto,horizontal,contact,Myzostomid worm,resident,16,16,12,16,1,1,16,5,1e3,0.013,Parafit,32,32
+Lauron_et_al_2015,2015,Vert,Bird,Microbe,Protist,y,Parasite,Endo,horizontal,vector,Avian malaria,resident,18,18,8,83,1.8,NA,46,1,1e3,0.66,Parafit,64,64
+Lei_&_Olival_2014,2014,Vert,Mammal,Microbe,Bacterium,n,Parasite,Endo,horizontal,environmental,New World bat Bartonella,resident,14,14,11,38,1,1,38,1,999,0.001,Parafit,52,52
+Lei_&_Olival_2014,2014,Vert,Mammal,Microbe,Bacterium,n,Parasite,Endo,horizontal,environmental,New World rodent Bartonella,resident,4,4,4,20,1,1,20,1,999,0.001,Parafit,24,24
+Lei_&_Olival_2014,2014,Vert,Mammal,Microbe,Bacterium,n,Parasite,Endo,horizontal,environmental,New World bat Leptospira,resident,14,14,12,19,1,1,19,1,999,0.858,Parafit,33,33
+Lei_&_Olival_2014,2014,Vert,Mammal,Microbe,Bacterium,n,Parasite,Endo,horizontal,environmental,Old World bat Bartonella,resident,9,9,8,13,1,1,13,1,999,0.029,Parafit,22,22
+Lei_&_Olival_2014,2014,Vert,Mammal,Microbe,Bacterium,n,Parasite,Endo,horizontal,environmental,Old World rodent Bartonella,resident,35,35,22,119,1.09,1.17,109,1,999,1e-4,Parafit,144,144
+Lei_&_Olival_2014,2014,Vert,Mammal,Microbe,Bacterium,n,Parasite,Endo,horizontal,environmental,Old World bat Leptospira,resident,6,6,5,7,1,1,7,1,999,0.7587,Parafit,13,13
+LewisRogers_&_Crandall_2009,2009,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,contact,Picornaviridae,resident,6,6,NA,27,1,1,27,11,999,0.47,Parafit,33,33
+Li_et_al_2017,2017,Plant,Plant,Microbe,Fungus,y,Parasite,Endo,horizontal,autonomous,Smut fungi,resident,12,12,9,12,1.71,1.57,7,1,999,0.50505,Parafit,19,19
+Light_&_Hafner_2008,2008,Vert,Mammal,Invert,Invert,y,Parasite,Ecto,both,contact,Rodent sucking lice,resident,44,21,4,21,1,1,21,1,999,0.001,Parafit,42,65
+Liu_et_al_2016,2016,Plant,Plant,Microbe,Fungus,y,Parasite,Endo,NA,environmental,Tree foliar fungi,resident,13,13,10,44,1.57,2.71,28,28,9999,0.0251,Parafit,41,41
+Liu_et_al_2016,2016,Plant,Plant,Microbe,Fungus,y,Parasite,Endo,NA,environmental,Subtropical tree soil fungi,resident,19,19,16,76,3.3,3.22,23,23,9999,0.0203,Parafit,42,42
+Maneesakorn_et_al_2011,2011,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Photorhabdus symbiotic bacteria in nematodes,resident,12,12,1,12,1,1,12,1,999,0.001,Parafit,24,24
+Martinez_et_al_2011,2011,Invert,Invert,Microbe,Protist,y,Parasite,Endo,horizontal,vector,Avian malaria,resident,16,16,1,22,2.44,1.56,9,1,999,0.075,Parafit,25,25
+Martinez_Sañudo_&_Girolami_2009,2009,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Tephritid symbiotic bacteria,resident,19,19,10,19,1.12,1.18,17,5,999,0.003,Parafit,36,36
+Mattiucci_&_nascetti_2008,2008,Vert,Mammal,Invert,Invert,y,Parasite,Endo,horizontal,trophic,Nematode,resident,7,7,15,12,1.33,1.78,9,1,100,0.05,Parafit,16,16
+Mazzon_et_al_2010,2010,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Stammerula bacterial symbiont,resident,17,17,10,17,1.06,1,16,3,999,0.007,Parafit,33,33
+McFrederick_&_Taylor_2013,2013,Invert,Invert,Invert,Invert,y,NA,Ecto,vertical,vertical,Nematode,resident,7,7,3,7,1,1,7,1,1e4,0.006,Parafit,14,14
+McKee_et_al_2016,2016,Vert,Mammal,Microbe,Bacterium,n,Parasite,Endo,horizontal,vector,Bat bartonella bacteria,resident,66,66,42,184,1.06,1.09,173,1,1e4,1e-4,Parafit,239,239
+McLeish_&_Van_Noort_2012,2012,Plant,Plant,Invert,Invert,y,Mutualist,Endo,horizontal,autonomous,Fig wasp,resident,26,26,1,65,1,1,65,6,9999,0.18,Parafit,91,91
+Mehdiabadi_et_al_2012,2012,Invert,Invert,Microbe,Fungus,y,Mutualist,Ecto,both,environmental,Ant fungus,resident,99,11,1,11,1,1,11,1,999,0.001,Parafit,22,110
+Mendlova_et_al_2012,2012,Vert,Fish,Invert,Invert,y,Parasite,Ecto,horizontal,autonomous,Monogenea,resident,6,6,5,34,1.17,1.21,29,2,999,0.024,Parafit,35,35
+Merville_et_al._2013,2013,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Curculioniphilus buchneri primary endosymbiont of weevils,resident,9,9,1,9,1,1,9,1,999,0.0035,Parafit,18,18
+Millanes_et_al_2014,2014,Microbe,Fungus,Microbe,Fungus,y,Parasite,Endo,both,environmental,Biatoropsis fungus,resident,16,16,2,16,1,1,16,1,999,0.236,Parafit,32,32
+Miyaki_et_al_2016,2016,Vert,Fish,Microbe,Bacterium,n,Mutualist,Endo,horizontal,environmental,Giant bacteria Epulopiscium,resident,8,8,4,54,3.18,2.24,17,1,999,0.001,Parafit,25,25
+Mondo_et_al_2012,2012,Microbe,Fungus,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Glomeribacter gigasporarum fungal symbiont,resident,55,5,2,5,1,1,5,1,1e4,1e-4,Parafit,10,60
+Nouioui_et_al_2014,2014,Plant,Plant,Microbe,Bacterium,n,Mutualist,Endo,horizontal,vector,Frankia,resident,9,9,1,20,1,1,20,1,9999,0.33,Parafit,29,29
+Pellissier_et_al_2013,2013,Plant,Plant,Invert,Invert,y,Parasite,Ecto,horizontal,autonomous,Butterflies,visitor,104,104,NA,NA,NA,NA,97,NA,1e4,1e-4,Parafit,201,201
+Perkins_2010,2010,Vert,Fish,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Monogenea,resident,61,61,50,75,1,1,75,NA,9999,0.926,Parafit,136,136
+Peterson_et_al_2010,2010,Plant,Plant,Microbe,Fungus,y,Parasite,Endo,horizontal,environmental,Beech fungus,resident,11,11,1,25,2.08,1.58,12,1,9999,1e-4,Parafit,23,23
+Põlme_et_al_2014.pdf,2014,Plant,Plant,Microbe,Bacterium,n,Mutualist,Endo,horizontal,vector,Frankia,resident,22,22,1,NA,NA,NA,43,1,999,0.001,Parafit,65,65
+Quek_et_al_2004,2004,Plant,Plant,Invert,Invert,y,Mutualist,Ecto,horizontal,autonomous,Ant,resident,10,10,1,23,2.3,1.7,10,1,999,0.779,Parafit,20,20
+Ricklefs_et_al_2004,2004,Vert,Bird,Microbe,Protist,y,Parasite,Endo,horizontal,vector,Avian malaria,resident,44,44,1,121,1.86,NA,65,2,100,0.63,Parafit,109,109
+Savio_2011,2011,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,horizontal,NA,Erwinia dacicola tephritid symbiont,resident,17,17,10,17,1,1,17,3,999,0.007,Parafit,34,34
+Schardl_et_al_2008,2008,Plant,Plant,Microbe,Fungus,y,Mutualist,Endo,both,NA,Grass endophytic fungi (epichloae),resident,25,25,16,25,0.96,1,26,2,1e3,0.001,Parafit,51,51
+Sibbald_et_al_2017,2017,Microbe,Amoeba,Microbe,Protist,y,Mutualist,Endo,horizontal,environmental,Paramoeba,resident,7,7,1,7,1,1,7,1,9999,1e-4,Parafit,14,14
+Simkova_et_al_2013,2013,Vert,Fish,Invert,Invert,y,Parasite,Ecto,horizontal,autonomous,Monogenea,resident,5,5,1,21,1,1,21,1,999,0.013,Parafit,26,26
+Singh_et_al_2016,2016,Microbe,Fungus,Plant,Plant,y,Mutualist,Endo,horizontal,environmental,Trebouxia algae,resident,23,23,1,28,1.4,1.2,20,1,9999,2e-4,Parafit,43,43
+Sontowski_et_al_2015,2015,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Wolbachia,resident,14,14,4,14,1,1,14,1,1e5,0.003,Parafit,28,28
+Sorenson_et_al_2004,2004,Vert,Bird,Vert,Bird,y,Parasite,Ecto,horizontal,autonomous,Brood parasitic finches,resident,33,33,10,34,1.62,1.43,21,1,1e3,0.001,Parafit,54,54
+Stireman_et_al_2010,2010,Plant,Plant,Invert,Invert,y,Parasite,Endo,horizontal,autonomous,Gall midge,resident,15,15,10,39,1.39,1.25,28,1,9999,8e-4,Parafit,43,43
+Sudakaran_et_al_2015,2015,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,NA,NA,Gordonibacter,resident,16,16,7,22,1,1,22,1,1e3,0.978,Parafit,38,38
+Sudakaran_et_al_2015,2015,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,NA,NA,Coriobacterium glomerans,resident,14,14,6,26,1,1,26,1,1e3,0.974,Parafit,40,40
+Summers_&_Rouse_2014,2014,Invert,Invert,Invert,Invert,y,Parasite,Endo/Ecto,horizontal,autonomous,Myzostomida,resident,53,53,36,78,1.13,1.23,69,10,9999,5e-4,Parafit,122,122
+Susoy_&_Herrmann_2014,2014,Invert,Invert,Invert,Invert,y,Mutualist,Ecto,vertical,vertical,Nematode,resident,35,35,7,37,1.42,1.31,26,1,9999,1e-4,Parafit,61,61
+Swafford_&_Bond_2010,2010,Invert,Invert,Invert,Invert,y,Parasite,Ecto,horizontal,contact,Millipede mite,resident,7,7,1,7,1,1,7,1,9999,0.319,Parafit,14,14
+Sweet_et_al_2016,2016,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Dove wing lice,resident,52,52,25,57,1.33,1.21,43,1,1e5,1e-5,Parafit,95,95
+Sweet_et_al_2016,2016,Vert,Bird,Invert,Invert,y,Parasite,Ecto,both,contact,Dove body lice,resident,52,52,25,58,1.18,1.14,49,4,1e5,1e-5,Parafit,101,101
+Tao_et_al_2013,2013,Vert,Tetrapod,Microbe,Virus,n,Parasite,Endo,horizontal,NA,Polyomavirus,resident,7,7,7,10,1,1,10,1,99999,0.17592,Parafit,17,17
+Toju_et_al_2013,2013,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Curculioniphilus,resident,27,27,4,27,1,1,27,1,99999,1e-5,Parafit,54,54
+Urban_&_Cryan_2012,2012,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Fulgoroidea associated Betaproteobacteria,resident,30,30,29,30,1,1,30,1,1e3,0.001,Parafit,60,60
+Urban_&_Cryan_2012,2012,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Fulgoroidea associated Sulcia,resident,40,40,38,40,1,1,40,1,1e3,0.003,Parafit,80,80
+Viale_et_al_2015,2015,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,vertical,vertical,Fruit fly Stammerula,resident,23,23,1,23,1,1,23,1,9999,0.001,Parafit,46,46
+Won_et_al_2008,2008,Invert,Invert,Microbe,Bacterium,n,Mutualist,Endo,horizontal,contact,Mussel thiotroph symbiont,resident,15,15,5,15,1,1,15,1,100,0.37,Parafit,30,30

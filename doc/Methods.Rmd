@@ -1,0 +1,74 @@
+---
+output:
+  word_document: 
+    reference_docx: "Methods Outline.docx"
+bibliography: references.bib    
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T, warning = F)
+
+# clearing up
+rm(list=ls())
+
+pacman::p_load(tidyverse)
+
+# results data
+load("../R/results.RData")  
+load("../R/results2.RData")  
+
+# loading data on screening
+#dat <- read_excel("./Data/data_screening.xlsx")
+
+```
+
+# Methods   
+
+## Measures of host-symbiont phylogenetic congruence
+
+<!--- Ask Alex to do--->
+
+## Data collection
+
+<!--- Ask Alex to do--->
+
+<!--- Note here No --->
+
+* missing data?? - IMPORTANT to mention - I do not thik 
+
+## Meta-analysis 
+
+<!--- correspondences between r and p at 3 points == 0, 0.5 and 1 but other poiints correspodences will be affected by N (sample size) --->
+
+We used *p* values obtained from randomaization tests that are implemented in 'TreeMap' and 'Parafit' as measures of incongrace. These *p* values were converted into *r* and its transformation *Zr*. We can caculate *r~equivalent~* via *t* values with *df* = *N* - 2 values from *p* values (one-tailed) [@rosenthal2003requivalent] and then, also obtain *Zr*~equivalent~ from *r*~equivalent~, as follows:
+
+$$
+\begin{aligned}
+r_\text{equivalent} &= \sqrt{\frac{t^2}{t^2 + (N - 2)}} \\
+\\
+Zr_\text{equivalent} &= \frac{1}{2}\ln{\left(\frac{1 + r_\text{equivalent}}{1 - r_\text{equivalent}} \right)}
+\end{aligned}
+$$
+where *N* is sample size and, in our case, the sum of the numbers of host and symobiont species included in a randomaixation test. 
+
+All statstical analyses were conducted using R versino 3.5.2 [@r2018language]. We used multilevel (random-effects) meta-analytic and meta-regression models [@nakagawa2012methodological] becuase multiple effect sizes were obtained from some studies (i.e., study IDs were included as a random factor in the models to account for non-indepedence). All meta-analytic models were implemented using the function, *rma.mv* in the R pacakge, *metafor* version 2.0-0 [@viechtbauer2010conducting]. All model specifications and model selection procedures are found in our elecotronic supplmentary materials (ESM) 
+
+
+## Publication bias and sensitivity analysis
+
+We used 
+
+* egger regression with the full model - say reason why
+  + trancations due to the number of simulations......
+  + boundaries due to N (randomization tests) is creating 
+  + 
+* sensitivity analysis - two jusntificaitons
+  + 1. why we put TreeMap and Parafit data
+  + 2. Trancations are not biasing our main results!!!
+    - simulaiton numbers are not different between parasites and mutulists
+
+* it is likely we need to use MCMCglmm for residual analyses....
+
+## Reference
+
+

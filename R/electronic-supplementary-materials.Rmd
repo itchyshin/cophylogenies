@@ -1,0 +1,81 @@
+---
+title: "Testing the generality of host-symbiont cophylogeny"
+subtitle: Electronic Supplementary Material
+author: "Alexander Hayward, Robert Poulin & Shinichi Nakagawa"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document: 
+    toc: true # show a table of contents
+    toc_float: true # make table of contents float at the side of the page
+    depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: false  # set to true if you want to number sections at each table header
+    theme: lumen # nice fonts and colours
+    code_folding: hide # Add some buttons to show/hide the code
+#bibliography: bib.bib
+---
+
+<!--- Try to add references for this!!!! --->
+
+## Setups
+
+### Loading pacakges and custum functions
+
+```{r setup, results='hide'}
+# kniter seetting
+knitr::opts_chunk$set(
+	#message = FALSE, 
+	#warning = FALSE, # no warnings
+	tidy = TRUE,
+	fig.width = 9
+)
+# clearning up
+rm(list=ls())
+
+# loading packages
+pacman::p_load(tidyverse, # tidy family and related pacakges below
+               kableExtra, 
+               gridExtra, 
+               purrr, 
+               magrittr, # extending piping
+               pander,   # nice tables
+               metafor, # package for meta-analysis
+               MCMCglmm # Bayeisan mixed model software
+               )
+
+# getting functions 
+source("../R/funct.R", chdir = TRUE)
+```
+
+
+## Methodological details
+
+
+
+### Dataset description
+
+### Sample sizes
+
+### Missing data
+
+### Explorative analysis???
+
+### Justification of the use of combined datasets....
+
+## Results
+
+### Publication bias and sensitivity analysis
+
+### Recommendation
+* they need to run more simuations so they do not max out!
+* reanalysis of earlier trees are necessary; getting older or updated trees are required
+* new studies should provide all data avaiable online so that future analysis can incorprate all avaiable data
+
+## Acknowledgement
+
+Much of coding materials have been borrowed from h
+
+## Information for this R session
+
+```{r session}
+sessionInfo() %>% pander()
+```
