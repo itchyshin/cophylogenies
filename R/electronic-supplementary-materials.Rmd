@@ -16,18 +16,23 @@ output:
 
 <!--- Try to add references for this!!!! --->
 
+```{r setup, include = FALSE}
+#knitr::opts_chunk$set(cache=TRUE, warning = F) # Cacheing to save time when kniting
+#knitr::opts_chunk$set(warning=FALSE, message=FALSE) # Suppress warnings 
+```
+
 ## Setups
 
 ### Loading pacakges and custum functions
 
-```{r setup, results='hide'}
+```{r, results = 'hide'}
 # kniter seetting
-knitr::opts_chunk$set(
+#knitr::opts_chunk$set(
 	#message = FALSE, 
 	#warning = FALSE, # no warnings
-	tidy = TRUE,
-	fig.width = 9
-)
+	#tidy = TRUE
+	#fig.width = 9
+#)
 # clearning up
 rm(list=ls())
 
@@ -43,27 +48,51 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                )
 
 # getting functions 
-source("../R/funct.R", chdir = TRUE)
+source("../R/ESM_functions.R", chdir = TRUE)
 ```
 
+## Supplementary Methods
 
-## Methodological details
+### XXXX1
+
+### XXXX2
+
+## The Cophylogeny Dataset
+
+### Table of the dataset
+
+The dataset used for our meta-analysis follwed by explanations of 24 variables original collected (not all varaibles were used for our analyses; variables which were not used in our analyses are indicated by *)
 
 
+* get sample sizes of variables we use
 
-### Dataset description
 
-### Sample sizes
+### Tables of Sample sizes
 
-### Missing data
+* sample sizes of effect sizes
 
-### Explorative analysis???
+* Patterns of Missing data (NA) in the used varaibles 
+* mention commenserals
 
-### Justification of the use of combined datasets....
+## Meta-analysis
 
-## Results
 
-### Publication bias and sensitivity analysis
+* just do the main one for all three datasets but not others
+
+### Explorative analysis
+
+*Justification of the use of combined datasets....
+
+### Univaraite analyses
+
+* one-by-one analyses here...
+
+### Addtional analyses
+
+### Model selection
+
+## Publication Bias and Sensitivity Analysis
+
 
 ### Recommendation
 * they need to run more simuations so they do not max out!
@@ -76,6 +105,6 @@ Much of coding materials have been borrowed from h
 
 ## Information for this R session
 
-```{r session}
+```{r}
 sessionInfo() %>% pander()
 ```

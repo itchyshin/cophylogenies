@@ -24,6 +24,7 @@ p_to_Zr <- function(data, pval, N, n) {
   
   # define Zr function
   # Zr <- 0.5*(log(1 + rval) - log(1 - rval)); the same as below
+  # r <-tanh(Zr) # turning Zr to r
   Zr <- atanh(rval)
   
   # getting Var(Zr)
