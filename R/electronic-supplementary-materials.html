@@ -11,7 +11,7 @@
 
 <meta name="author" content="Alexander Hayward, Robert Poulin &amp; Shinichi Nakagawa" />
 
-<meta name="date" content="2019-04-02" />
+<meta name="date" content="2019-04-03" />
 
 <title>Testing the generality of host-symbiont cophylogeny</title>
 
@@ -241,7 +241,7 @@ div.tocify {
 <h1 class="title toc-ignore">Testing the generality of host-symbiont cophylogeny</h1>
 <h3 class="subtitle"><em>Electronic Supplementary Material</em></h3>
 <h4 class="author"><em>Alexander Hayward, Robert Poulin &amp; Shinichi Nakagawa</em></h4>
-<h4 class="date"><em>02 April 2019</em></h4>
+<h4 class="date"><em>03 April 2019</em></h4>
 
 </div>
 
@@ -258,7 +258,7 @@ rm(list=ls())
 pacman::p_load(tidyverse, # tidy family and related pacakges below
                kableExtra, 
                gridExtra, 
-               purrr, 
+               purrr,
                magrittr, # extending piping
                pander,   # nice tables
                metafor, # package for meta-analysis
@@ -282,11 +282,12 @@ source(&quot;../R/ESM_functions.R&quot;, chdir = TRUE)</code></pre>
 <h2>The Cophylogeny Dataset</h2>
 <div id="table-of-the-dataset" class="section level3">
 <h3>Table of the dataset</h3>
-<p>The dataset used for our meta-analysis follwed by explanations of 24 variables original collected (not all varaibles were used for our analyses; variables which were neither ‘directly’ and ‘indirectly’ used in our analyses are indicated by *)</p>
+<p>Below is the dataset used for our meta-analysis follwed by explanations of 24 variables original collected (not all varaibles were used for our analyses; variables which were neither ‘directly’ and ‘indirectly’ used in our analyses are indicated by *)</p>
 <pre class="r"><code># getting the data and formating some variables (turning chraracter vectors
-# to factors)
+# to factors) read the difference between factr() and as.factor()
+# &lt;https://stackoverflow.com/questions/39279238/why-use-as-factor-instead-of-just-factor&gt;
 full_data &lt;- read_csv(&quot;../data/2019-04-01-source-data-dat.csv&quot;, na = &quot;NA&quot;) %&gt;% 
-    mutate_if(is.character, factor)
+    mutate_if(is.character, as.factor)
 
 # making a scrollable table
 kable(full_data, &quot;html&quot;) %&gt;% kable_styling(&quot;striped&quot;, position = &quot;left&quot;) %&gt;% 
@@ -14961,7 +14962,7 @@ Parafit
 <p>H. <strong>symbiosis</strong>: The type of symbiont (e.g. parasite or mutualist). For this we followed the definition used by the authors of the study.</p>
 <p>I. <strong>endo_or_ecto</strong>: Whether the symbiont lives outside the host (i.e. is an ectosymbiont), or inside the host (i.e. is an endosymbiont).</p>
 <p>J. <strong>mode_of_transmission_broad</strong>: Whether the symbiont is transmitted vertically, horizontally, or both. For this, we followed the route of transmission specified by the authors of the study</p>
-<p>K. __mode_of_transmission_fine*__: A finer-scale description of the mode of transmission of the symbiont (e.g. contact, vector, bodily fluid, vertical, trophic).</p>
+<p>K. <strong>mode_of_transmission_fine</strong>*: A finer-scale description of the mode of transmission of the symbiont (e.g. contact, vector, bodily fluid, vertical, trophic).</p>
 <p>L. <strong>symbiont</strong>*: Shorthand description of the type of symbiont.</p>
 <p>M. <strong>Visiting_symbiont?</strong>* Whether the symbiont is resident on the host (resident), or makes visits to the host or hosts (visitor).</p>
 <p>N. <strong>host_tips_linked</strong>: The number of individual host taxa included in the cophylogenetic analysis.</p>
@@ -14977,9 +14978,330 @@ Parafit
 <p>X. <strong>method</strong>: Whether TreeMap or was used to obtain codivergence or a p value.</p>
 </div>
 <div id="tables-of-sample-sizes" class="section level3">
-<h3>Tables of Sample sizes</h3>
+<h3>Tables of sample sizes</h3>
+<p>We present the number of sample size for two sepreate methods: TreeMap and Parafit (and combined) for effect sizes, papers and different levels of categorical varaibles (factors).</p>
+<pre class="r"><code># selecting out variables, which we used for our analysis
+data &lt;- full_data %&gt;% select(-host_tax_fine, -symbiont_tax_fine, -symbiont_euk, -mode_of_transmission_fine, -symbiont, -`Visiting_symbiont?`)
+
+# making a table of sample sizes for different variables
+n_authors &lt;- n_distinct(data$authors) # the total number of papers
+data %&gt;% group_by(method) %&gt;% 
+  summarise(
+    `Effect sizes` = n(),
+    Papers = n_distinct(authors),
+    `Vertebrate hosts` = sum(host_tax_broad == &quot;Vert&quot;, na.rm = T), # na.rm is important when NA exists
+    `Invertebrate hosts` = sum(host_tax_broad == &quot;Invert&quot;, na.rm = T),
+    `Plant hosts`  = sum(host_tax_broad == &quot;Plant&quot;, na.rm = T),
+    `Microbe hosts` = sum(host_tax_broad == &quot;Microbe&quot;, na.rm = T),
+    `Vertebrate symbionts` = sum(symbiont_tax_broad  == &quot;Vert&quot;, na.rm = T),
+    `Invertebrate symbionts` = sum(symbiont_tax_broad  == &quot;Invert&quot;, na.rm = T),
+    `Plant symbionts`  = sum(symbiont_tax_broad  == &quot;Plant&quot;, na.rm = T),
+    `Microbe symbionts` = sum(symbiont_tax_broad  == &quot;Microbe&quot;, na.rm = T),
+    `Parastic relationships` = sum(symbiosis == &quot;Parasite&quot;, na.rm = T),
+    `Mutualistic relatioships` = sum(symbiosis == &quot;Mutualist&quot;, na.rm = T),
+    `Ecto-symbionts` = sum(endo_or_ecto  == &quot;Ecto&quot;, na.rm = T),
+    `Endo-symbionts` = sum(endo_or_ecto == &quot;Endo&quot;, na.rm = T),
+    `Ecto/endo-symbionts` = sum(endo_or_ecto == &quot;Endo/Ecto&quot;, na.rm = T),
+    `Horizontal transmission` = sum(mode_of_transmission_broad  == &quot;horizontal&quot;, na.rm = T),
+    `Vertical transmission` = sum(mode_of_transmission_broad == &quot;vertical&quot;, na.rm = T),
+    `Horizontal/vertical-transmission` = sum(mode_of_transmission_broad == &quot;both&quot;, na.rm = T)
+  ) -&gt; n_table1
+
+# transposing the table
+n_table2 &lt;-t(n_table1[,-1])
+colnames(n_table2) &lt;- n_table1$method
+n_table2 %&gt;% as_tibble(rownames = &quot;Number&quot;) %&gt;% 
+  mutate(Combined = Parafit + TreeMap, Combined = if_else(Combined == Combined[2], n_authors, Combined)) -&gt;
+  n_table3
+  
+# fixing the number of n for papers for combined data   
+n_table3 %&gt;%    
+  rename_(&quot;Number of&quot; = &quot;Number&quot;, &quot;Parafit (n)&quot; = &quot;Parafit&quot;, &quot;TreeMap (n)&quot; = &quot;TreeMap&quot;,  &quot;Combined (n)&quot; = &quot;Combined&quot;) %&gt;% 
+  kable() %&gt;% kable_styling(&quot;striped&quot;, position = &quot;left&quot;) %&gt;%
+  scroll_box(width = &quot;100%&quot;, height = &quot;250px&quot;)</code></pre>
+<div style="border: 1px solid #ddd; padding: 5px; overflow-y: scroll; height:250px; overflow-x: scroll; width:100%; ">
+<table class="table table-striped" style>
+<thead>
+<tr>
+<th style="text-align:left;">
+Number of
+</th>
+<th style="text-align:right;">
+Parafit (n)
+</th>
+<th style="text-align:right;">
+TreeMap (n)
+</th>
+<th style="text-align:right;">
+Combined (n)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Effect sizes
+</td>
+<td style="text-align:right;">
+106
+</td>
+<td style="text-align:right;">
+91
+</td>
+<td style="text-align:right;">
+197
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Papers
+</td>
+<td style="text-align:right;">
+90
+</td>
+<td style="text-align:right;">
+76
+</td>
+<td style="text-align:right;">
+151
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Vertebrate hosts
+</td>
+<td style="text-align:right;">
+40
+</td>
+<td style="text-align:right;">
+51
+</td>
+<td style="text-align:right;">
+91
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Invertebrate hosts
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:right;">
+19
+</td>
+<td style="text-align:right;">
+51
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Plant hosts
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+17
+</td>
+<td style="text-align:right;">
+42
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Microbe hosts
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+13
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Vertebrate symbionts
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Invertebrate symbionts
+</td>
+<td style="text-align:right;">
+42
+</td>
+<td style="text-align:right;">
+49
+</td>
+<td style="text-align:right;">
+91
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Plant symbionts
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Microbe symbionts
+</td>
+<td style="text-align:right;">
+61
+</td>
+<td style="text-align:right;">
+40
+</td>
+<td style="text-align:right;">
+101
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Parastic relationships
+</td>
+<td style="text-align:right;">
+64
+</td>
+<td style="text-align:right;">
+69
+</td>
+<td style="text-align:right;">
+133
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Mutualistic relatioships
+</td>
+<td style="text-align:right;">
+41
+</td>
+<td style="text-align:right;">
+22
+</td>
+<td style="text-align:right;">
+63
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Ecto-symbionts
+</td>
+<td style="text-align:right;">
+27
+</td>
+<td style="text-align:right;">
+34
+</td>
+<td style="text-align:right;">
+61
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Endo-symbionts
+</td>
+<td style="text-align:right;">
+77
+</td>
+<td style="text-align:right;">
+56
+</td>
+<td style="text-align:right;">
+133
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Ecto/endo-symbionts
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Horizontal transmission
+</td>
+<td style="text-align:right;">
+67
+</td>
+<td style="text-align:right;">
+52
+</td>
+<td style="text-align:right;">
+119
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Vertical transmission
+</td>
+<td style="text-align:right;">
+22
+</td>
+<td style="text-align:right;">
+14
+</td>
+<td style="text-align:right;">
+36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Horizontal/vertical-transmission
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+37
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<pre class="r"><code>  #pander(split.cell = 40, split.table = Inf)
+
+#n_table 
+
+#as_tibble(col_bind(Name = names(n_table), t(n_table))) %&gt;% </code></pre>
+<p>Here we have patterns of missing data</p>
 <ul>
 <li><p>sample sizes of effect sizes: for TreeMap and Parafit and Combined - n for papers and n for effect size</p></li>
+<li><p>the number of papers is the same of – how many papers use both TreeMap and Parafit???</p></li>
 <li><p>get sample sizes of variables we use</p></li>
 <li>Patterns of Missing data (NA) in the used varaibles</li>
 <li><p>mention commenserals</p></li>
@@ -15036,7 +15358,7 @@ Parafit
 <p><strong>locale:</strong> en_AU.UTF-8||en_AU.UTF-8||en_AU.UTF-8||C||en_AU.UTF-8||en_AU.UTF-8</p>
 <p><strong>attached base packages:</strong> <em>stats</em>, <em>graphics</em>, <em>grDevices</em>, <em>utils</em>, <em>datasets</em>, <em>methods</em> and <em>base</em></p>
 <p><strong>other attached packages:</strong> <em>bindrcpp(v.0.2.2)</em>, <em>MCMCglmm(v.2.26)</em>, <em>ape(v.5.2)</em>, <em>coda(v.0.19-2)</em>, <em>metafor(v.2.0-0)</em>, <em>Matrix(v.1.2-15)</em>, <em>pander(v.0.6.3)</em>, <em>magrittr(v.1.5)</em>, <em>gridExtra(v.2.3)</em>, <em>kableExtra(v.0.9.0)</em>, <em>forcats(v.0.3.0)</em>, <em>stringr(v.1.3.1)</em>, <em>dplyr(v.0.7.7)</em>, <em>purrr(v.0.2.5)</em>, <em>readr(v.1.1.1)</em>, <em>tidyr(v.0.8.2)</em>, <em>tibble(v.1.4.2)</em>, <em>ggplot2(v.3.1.0)</em> and <em>tidyverse(v.1.2.1)</em></p>
-<p><strong>loaded via a namespace (and not attached):</strong> <em>tidyselect(v.0.2.5)</em>, <em>haven(v.1.1.2)</em>, <em>lattice(v.0.20-38)</em>, <em>colorspace(v.1.3-2)</em>, <em>htmltools(v.0.3.6)</em>, <em>viridisLite(v.0.3.0)</em>, <em>yaml(v.2.2.0)</em>, <em>rlang(v.0.3.0.1)</em>, <em>pillar(v.1.3.0)</em>, <em>glue(v.1.3.0)</em>, <em>withr(v.2.1.2)</em>, <em>modelr(v.0.1.2)</em>, <em>readxl(v.1.1.0)</em>, <em>bindr(v.0.1.1)</em>, <em>plyr(v.1.8.4)</em>, <em>munsell(v.0.5.0)</em>, <em>gtable(v.0.2.0)</em>, <em>cellranger(v.1.1.0)</em>, <em>rvest(v.0.3.2)</em>, <em>codetools(v.0.2-15)</em>, <em>evaluate(v.0.12)</em>, <em>knitr(v.1.20)</em>, <em>parallel(v.3.5.2)</em>, <em>highr(v.0.7)</em>, <em>broom(v.0.5.0)</em>, <em>Rcpp(v.0.12.19)</em>, <em>corpcor(v.1.6.9)</em>, <em>formatR(v.1.5)</em>, <em>scales(v.1.0.0)</em>, <em>backports(v.1.1.2)</em>, <em>jsonlite(v.1.5)</em>, <em>tensorA(v.0.36.1)</em>, <em>hms(v.0.4.2)</em>, <em>digest(v.0.6.18)</em>, <em>stringi(v.1.2.4)</em>, <em>grid(v.3.5.2)</em>, <em>rprojroot(v.1.3-2)</em>, <em>cli(v.1.0.1)</em>, <em>tools(v.3.5.2)</em>, <em>lazyeval(v.0.2.1)</em>, <em>pacman(v.0.5.0)</em>, <em>crayon(v.1.3.4)</em>, <em>pkgconfig(v.2.0.2)</em>, <em>xml2(v.1.2.0)</em>, <em>lubridate(v.1.7.4)</em>, <em>assertthat(v.0.2.0)</em>, <em>rmarkdown(v.1.10)</em>, <em>httr(v.1.3.1)</em>, <em>rstudioapi(v.0.8)</em>, <em>cubature(v.1.4-1)</em>, <em>R6(v.2.3.0)</em>, <em>nlme(v.3.1-137)</em> and <em>compiler(v.3.5.2)</em></p>
+<p><strong>loaded via a namespace (and not attached):</strong> <em>tidyselect(v.0.2.5)</em>, <em>haven(v.1.1.2)</em>, <em>lattice(v.0.20-38)</em>, <em>colorspace(v.1.3-2)</em>, <em>htmltools(v.0.3.6)</em>, <em>viridisLite(v.0.3.0)</em>, <em>yaml(v.2.2.0)</em>, <em>rlang(v.0.3.0.1)</em>, <em>pillar(v.1.3.0)</em>, <em>glue(v.1.3.0)</em>, <em>withr(v.2.1.2)</em>, <em>modelr(v.0.1.2)</em>, <em>readxl(v.1.1.0)</em>, <em>bindr(v.0.1.1)</em>, <em>plyr(v.1.8.4)</em>, <em>munsell(v.0.5.0)</em>, <em>gtable(v.0.2.0)</em>, <em>cellranger(v.1.1.0)</em>, <em>rvest(v.0.3.2)</em>, <em>codetools(v.0.2-15)</em>, <em>evaluate(v.0.12)</em>, <em>knitr(v.1.20)</em>, <em>parallel(v.3.5.2)</em>, <em>highr(v.0.7)</em>, <em>broom(v.0.5.0)</em>, <em>Rcpp(v.0.12.19)</em>, <em>corpcor(v.1.6.9)</em>, <em>formatR(v.1.5)</em>, <em>scales(v.1.0.0)</em>, <em>backports(v.1.1.2)</em>, <em>jsonlite(v.1.5)</em>, <em>tensorA(v.0.36.1)</em>, <em>hms(v.0.4.2)</em>, <em>digest(v.0.6.18)</em>, <em>stringi(v.1.2.4)</em>, <em>grid(v.3.5.2)</em>, <em>rprojroot(v.1.3-2)</em>, <em>cli(v.1.0.1)</em>, <em>tools(v.3.5.2)</em>, <em>lazyeval(v.0.2.1)</em>, <em>crayon(v.1.3.4)</em>, <em>pkgconfig(v.2.0.2)</em>, <em>xml2(v.1.2.0)</em>, <em>lubridate(v.1.7.4)</em>, <em>assertthat(v.0.2.0)</em>, <em>rmarkdown(v.1.10)</em>, <em>httr(v.1.3.1)</em>, <em>rstudioapi(v.0.8)</em>, <em>cubature(v.1.4-1)</em>, <em>R6(v.2.3.0)</em>, <em>nlme(v.3.1-137)</em> and <em>compiler(v.3.5.2)</em></p>
 </div>
 
 

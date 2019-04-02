@@ -39,7 +39,7 @@ rm(list=ls())
 pacman::p_load(tidyverse, # tidy family and related pacakges below
                kableExtra, 
                gridExtra, 
-               purrr, 
+               purrr,
                magrittr, # extending piping
                pander,   # nice tables
                metafor, # package for meta-analysis
@@ -60,12 +60,13 @@ source("../R/ESM_functions.R", chdir = TRUE)
 
 ### Table of the dataset
 
-The dataset used for our meta-analysis follwed by explanations of 24 variables original collected (not all varaibles were used for our analyses; variables which were neither 'directly' and 'indirectly' used in our analyses are indicated by *)
+Below is the dataset used for our meta-analysis follwed by explanations of 24 variables original collected (not all varaibles were used for our analyses; variables which were neither 'directly' and 'indirectly' used in our analyses are indicated by *)
 
 ```{r}
 # getting the data and formating some variables (turning chraracter vectors to factors)
+# read the difference between factr() and as.factor() <https://stackoverflow.com/questions/39279238/why-use-as-factor-instead-of-just-factor>
 full_data <- read_csv("../data/2019-04-01-source-data-dat.csv", na = "NA") %>% 
-  mutate_if(is.character, factor)
+  mutate_if(is.character, as.factor)
 
 # making a scrollable table
 kable(full_data, "html") %>%
@@ -93,7 +94,7 @@ I. __endo_or_ecto__:	Whether the symbiont lives outside the host (i.e. is an ect
 
 J. __mode_of_transmission_broad__:	Whether the symbiont is transmitted vertically, horizontally, or both. For this, we followed the route of transmission specified by the authors of the study
 
-K. __mode_of_transmission_fine*__:	A finer-scale description of the mode of transmission of the symbiont (e.g. contact, vector, bodily fluid, vertical, trophic).
+K. __mode_of_transmission_fine__*:	A finer-scale description of the mode of transmission of the symbiont (e.g. contact, vector, bodily fluid, vertical, trophic).
 
 L. __symbiont__*:	Shorthand description of the type of symbiont.
 
@@ -121,7 +122,56 @@ W. __p_value__:	The p-value reported for the cophylogenetic analysis, representi
 
 X. __method__:	Whether TreeMap or was used to obtain codivergence or a p value.
 
-### Tables of Sample sizes
+### Tables of sample sizes
+
+We present the number of sample size for two sepreate methods: TreeMap and Parafit (and combined) for effect sizes, papers and different levels of categorical varaibles (factors).
+
+```{r}
+# selecting out variables, which we used for our analysis
+data <- full_data %>% select(-host_tax_fine, -symbiont_tax_fine, -symbiont_euk, -mode_of_transmission_fine, -symbiont, -`Visiting_symbiont?`)
+
+# making a table of sample sizes for different variables
+n_authors <- n_distinct(data$authors) # the total number of papers
+data %>% group_by(method) %>% 
+  summarise(
+    `Effect sizes` = n(),
+    Papers = n_distinct(authors),
+    `Vertebrate hosts` = sum(host_tax_broad == "Vert", na.rm = T), # na.rm is important when NA exists
+    `Invertebrate hosts` = sum(host_tax_broad == "Invert", na.rm = T),
+    `Plant hosts`  = sum(host_tax_broad == "Plant", na.rm = T),
+    `Microbe hosts` = sum(host_tax_broad == "Microbe", na.rm = T),
+    `Vertebrate symbionts` = sum(symbiont_tax_broad  == "Vert", na.rm = T),
+    `Invertebrate symbionts` = sum(symbiont_tax_broad  == "Invert", na.rm = T),
+    `Plant symbionts`  = sum(symbiont_tax_broad  == "Plant", na.rm = T),
+    `Microbe symbionts` = sum(symbiont_tax_broad  == "Microbe", na.rm = T),
+    `Parastic relationships` = sum(symbiosis == "Parasite", na.rm = T),
+    `Mutualistic relatioships` = sum(symbiosis == "Mutualist", na.rm = T),
+    `Ecto-symbionts` = sum(endo_or_ecto  == "Ecto", na.rm = T),
+    `Endo-symbionts` = sum(endo_or_ecto == "Endo", na.rm = T),
+    `Ecto/endo-symbionts` = sum(endo_or_ecto == "Endo/Ecto", na.rm = T),
+    `Horizontal transmission` = sum(mode_of_transmission_broad  == "horizontal", na.rm = T),
+    `Vertical transmission` = sum(mode_of_transmission_broad == "vertical", na.rm = T),
+    `Horizontal/vertical-transmission` = sum(mode_of_transmission_broad == "both", na.rm = T)
+  ) -> n_table1
+
+# transposing the table
+n_table2 <-t(n_table1[,-1])
+colnames(n_table2) <- n_table1$method
+n_table2 %>% as_tibble(rownames = "Number") %>% 
+  mutate(Combined = Parafit + TreeMap, Combined = if_else(Combined == Combined[2], n_authors, Combined)) ->
+  n_table3
+  
+# fixing the number of n for papers for combined data   
+n_table3 %>%    
+  rename_("Number of" = "Number", "Parafit (n)" = "Parafit", "TreeMap (n)" = "TreeMap",  "Combined (n)" = "Combined") %>% 
+  kable() %>% kable_styling("striped", position = "left") %>%
+  scroll_box(width = "100%", height = "250px")
+  #pander(split.cell = 40, split.table = Inf) # not as nice as kable
+```
+
+
+Here we have patterns of missing data 
+
 
 * sample sizes of effect sizes: for TreeMap and Parafit and Combined - n for papers and n for effect size
 
