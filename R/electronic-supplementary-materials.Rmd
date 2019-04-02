@@ -33,7 +33,7 @@ tidy = TRUE
 
 ```{r, results = 'hide'}
 # clearning up
-rm(list=ls())
+#rm(list=ls())
 
 # loading packages
 pacman::p_load(tidyverse, # tidy family and related pacakges below
@@ -42,12 +42,15 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                purrr,
                magrittr, # extending piping
                pander,   # nice tables
-               metafor, # package for meta-analysis
-               MCMCglmm # Bayeisan mixed model software
-               )
+               metafor,  # package for meta-analysis
+               MCMCglmm  # Bayeisan mixed model package
+               #mi,      # missing data analysis
+               #betareg   # dependance of the above
+)
 
 # getting functions 
 source("../R/ESM_functions.R", chdir = TRUE)
+
 ```
 
 ## Supplementary Methods and Materials
@@ -124,7 +127,7 @@ X. __method__:	Whether TreeMap or was used to obtain codivergence or a p value.
 
 ### Tables of sample sizes
 
-We present the number of sample size for two sepreate methods: TreeMap and Parafit (and combined) for effect sizes, papers and different levels of categorical varaibles (factors).
+We present the number of sample size for two sepreate methods: TreeMap and Parafit (and combined) for effect sizes, papers and different levels of categorical varaibles (factors). Note that for the numbers of papers do not add up (TreeMap + Parafit $\neq$ Combined) becuase 15 papers used both TreeMap and Parafit methods.  
 
 ```{r}
 # selecting out variables, which we used for our analysis
@@ -154,44 +157,46 @@ data %>% group_by(method) %>%
     `Horizontal/vertical-transmission` = sum(mode_of_transmission_broad == "both", na.rm = T)
   ) -> n_table1
 
-# transposing the table
+# transposing the table and creating that table
 n_table2 <-t(n_table1[,-1])
 colnames(n_table2) <- n_table1$method
 n_table2 %>% as_tibble(rownames = "Number") %>% 
-  mutate(Combined = Parafit + TreeMap, Combined = if_else(Combined == Combined[2], n_authors, Combined)) ->
-  n_table3
-  
-# fixing the number of n for papers for combined data   
-n_table3 %>%    
+  mutate(Combined = Parafit + TreeMap, Combined = if_else(Combined == Combined[2], n_authors, Combined)) %>%    
   rename_("Number of" = "Number", "Parafit (n)" = "Parafit", "TreeMap (n)" = "TreeMap",  "Combined (n)" = "Combined") %>% 
   kable() %>% kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "250px")
   #pander(split.cell = 40, split.table = Inf) # not as nice as kable
 ```
 
+### Missing data patterns
 
-Here we have patterns of missing data 
+Here we have the number of missing data (cells) for all the varaibles used in the analysis below.
 
+```{r}
+# summaring missingness in our dataset
+data %>% summarise_all(funs(sum(is.na(.)))) %>% # map(~sum(is.na(.)) # w
+  t() %>% as_tibble(rownames = "Variable") %>% 
+  rename_("Number of missing data (n)" = "V1") %>% 
+  #pander(split.cell = 40, split.table = Inf)
+  kable() %>% kable_styling("striped", position = "left") %>%
+  scroll_box(width = "50%", height = "250px")
 
-* sample sizes of effect sizes: for TreeMap and Parafit and Combined - n for papers and n for effect size
-
-* the number of papers is the same of -- how many papers use both TreeMap and Parafit???
-
-* get sample sizes of variables we use
-
-
-* Patterns of Missing data (NA) in the used varaibles 
-* mention commenserals
+# an alternative method using the mi package
+#missing_data_tbl <- missing_data.frame(as.data.frame(data))
+#show(missing_data_tbl) 
+```
 
 ## Meta-analysis
 
+### Preparation (creating required varaibles)
 
-* just do the main one for all three datasets but not others
-* or we could - procide forest plots of all the three datasets???? (do it later)
+
 
 ### Explorative analysis
 
 *Justification of the use of combined datasets....
+* just do the main one for all three datasets but not others
+* or we could - procide forest plots of all the three datasets???? (do it later)
 
 ### Univaraite analyses
 
