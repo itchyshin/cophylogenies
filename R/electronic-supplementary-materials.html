@@ -14986,7 +14986,6 @@ Parafit
 data &lt;- full_data %&gt;% select(-host_tax_fine, -symbiont_tax_fine, -symbiont_euk, -mode_of_transmission_fine, -symbiont, -`Visiting_symbiont?`)
 
 # making a table of sample sizes for different variables
-n_authors &lt;- n_distinct(data$authors) # the total number of papers
 data %&gt;% group_by(method) %&gt;% 
   summarise(
     `Effect sizes` = n(),
@@ -15009,11 +15008,13 @@ data %&gt;% group_by(method) %&gt;%
     `Horizontal/vertical-transmission` = sum(mode_of_transmission_broad == &quot;both&quot;, na.rm = T)
   ) -&gt; n_table1
 
-# transposing the table and creating that table
+# transposing the table and creating that table and adding a correct number of the papers for `Combined`
+n_authors &lt;- n_distinct(data$authors) # the total number of papers
 n_table2 &lt;-t(n_table1[,-1])
 colnames(n_table2) &lt;- n_table1$method
 n_table2 %&gt;% as_tibble(rownames = &quot;Number&quot;) %&gt;% 
-  mutate(Combined = Parafit + TreeMap, Combined = if_else(Combined == Combined[2], n_authors, Combined)) %&gt;%    
+  #mutate(Combined = Parafit + TreeMap, Combined = if_else(Combined == Combined[2], n_authors, Combined)) %&gt;%  
+  mutate(Combined = Parafit + TreeMap, Combined = replace(Combined, 2, n_authors)) %&gt;%  
   rename_(&quot;Number of&quot; = &quot;Number&quot;, &quot;Parafit (n)&quot; = &quot;Parafit&quot;, &quot;TreeMap (n)&quot; = &quot;TreeMap&quot;,  &quot;Combined (n)&quot; = &quot;Combined&quot;) %&gt;% 
   kable() %&gt;% kable_styling(&quot;striped&quot;, position = &quot;left&quot;) %&gt;%
   scroll_box(width = &quot;100%&quot;, height = &quot;250px&quot;)</code></pre>
@@ -15296,12 +15297,13 @@ Horizontal/vertical-transmission
 <div id="missing-data-patterns" class="section level3">
 <h3>Missing data patterns</h3>
 <p>Here we have the number of missing data (cells) for all the varaibles used in the analysis below.</p>
-<pre class="r"><code># summaring missingness in our dataset missing_data_tbl &lt;-
-# missing_data.frame(as.data.frame(data)) show(missing_data_tbl)
-data %&gt;% summarise_all(funs(sum(is.na(.)))) %&gt;% t() %&gt;% as_tibble(rownames = &quot;Variable&quot;) %&gt;% 
-    rename_(`Number of missing data (n)` = &quot;V1&quot;) %&gt;% # pander(split.cell = 40, split.table = Inf)
-kable() %&gt;% kable_styling(&quot;striped&quot;, position = &quot;left&quot;) %&gt;% scroll_box(width = &quot;50%&quot;, 
-    height = &quot;250px&quot;)</code></pre>
+<pre class="r"><code># summaring missingness in our dataset
+data %&gt;% summarise_all(funs(sum(is.na(.)))) %&gt;% # map(~sum(is.na(.)) # w
+  t() %&gt;% as_tibble(rownames = &quot;Variable&quot;) %&gt;% 
+  rename_(&quot;Number of missing data (n)&quot; = &quot;V1&quot;) %&gt;% 
+  #pander(split.cell = 40, split.table = Inf)
+  kable() %&gt;% kable_styling(&quot;striped&quot;, position = &quot;left&quot;) %&gt;%
+  scroll_box(width = &quot;50%&quot;, height = &quot;250px&quot;)</code></pre>
 <div style="border: 1px solid #ddd; padding: 5px; overflow-y: scroll; height:250px; overflow-x: scroll; width:50%; ">
 <table class="table table-striped" style>
 <thead>
@@ -15462,18 +15464,23 @@ method
 </tbody>
 </table>
 </div>
+<pre class="r"><code># an alternative method using the mi package
+#missing_data_tbl &lt;- missing_data.frame(as.data.frame(data))
+#show(missing_data_tbl) </code></pre>
 </div>
 </div>
 <div id="meta-analysis" class="section level2">
 <h2>Meta-analysis</h2>
-<ul>
-<li>just do the main one for all three datasets but not others</li>
-<li>or we could - procide forest plots of all the three datasets???? (do it later)</li>
-</ul>
-<div id="explorative-analysis" class="section level3">
-<h3>Explorative analysis</h3>
-<p>*Justification of the use of combined datasets….</p>
+<div id="preparation-creating-required-varaibles" class="section level3">
+<h3>Preparation (creating required varaibles)</h3>
 </div>
+<div id="intercept-model" class="section level3">
+<h3>Intercept model</h3>
+<p><em>Justification of the use of combined datasets…. </em> just do the main one for all three datasets but not others * or we could - procide forest plots of all the three datasets???? (do it later) * heterogeneity</p>
+</div>
+</div>
+<div id="meta-regression" class="section level2">
+<h2>Meta-regression</h2>
 <div id="univaraite-analyses" class="section level3">
 <h3>Univaraite analyses</h3>
 <ul>
