@@ -68,8 +68,11 @@ Below is the dataset used for our meta-analysis follwed by explanations of 24 va
 ```{r}
 # getting the data and formating some variables (turning chraracter vectors to factors)
 # read the difference between factr() and as.factor() <https://stackoverflow.com/questions/39279238/why-use-as-factor-instead-of-just-factor>
-full_data <- read_csv("../data/2019-04-01-source-data-dat.csv", na = "NA") %>% 
-  mutate_if(is.character, as.factor)
+# full_data <- read.csv("../data/2019-04-04-source-data-dat.csv", na = "NA", fileEncoding="UTF-8") %>%
+#  mutate_if(is.character, as.factor)
+full_data <- read_csv("../data/2019-04-04-source-data-dat.csv", na = "NA") %>% 
+   mutate_if(is.character, as.factor)
+
 
 # making a scrollable table
 kable(full_data, "html") %>%
@@ -127,14 +130,14 @@ X. __method__:	Whether TreeMap or was used to obtain codivergence or a p value.
 
 ### Tables of sample sizes
 
-We present the number of sample size for two sepreate methods: TreeMap and Parafit (and combined) for effect sizes, papers and different levels of categorical varaibles (factors). Note that for the numbers of papers do not add up (TreeMap + Parafit $\neq$ Combined) becuase 15 papers used both TreeMap and Parafit methods.  
+We present the number of sample size for two sepreate methods: TreeMap and Parafit (and combined) for effect sizes, papers and different levels of categorical varaibles (factors).   
 
 ```{r}
 # selecting out variables, which we used for our analysis
-data <- full_data %>% select(-host_tax_fine, -symbiont_tax_fine, -symbiont_euk, -mode_of_transmission_fine, -symbiont, -`Visiting_symbiont?`)
+dat <- full_data %>% select(-host_tax_fine, -symbiont_tax_fine, -symbiont_euk, -mode_of_transmission_fine, -symbiont, -`Visiting_symbiont?`)
 
 # making a table of sample sizes for different variables
-data %>% group_by(method) %>% 
+dat %>% group_by(method) %>% 
   summarise(
     `Effect sizes` = n(),
     Papers = n_distinct(authors),
@@ -157,17 +160,17 @@ data %>% group_by(method) %>%
   ) -> n_table1
 
 # transposing the table and creating that table and adding a correct number of the papers for `Combined`
-n_authors <- n_distinct(data$authors) # the total number of papers
+n_authors <- n_distinct(dat$authors) # the total number of papers
 n_table2 <-t(n_table1[,-1])
 colnames(n_table2) <- n_table1$method
 n_table2 %>% as_tibble(rownames = "Number") %>% 
-  #mutate(Combined = Parafit + TreeMap, Combined = if_else(Combined == Combined[2], n_authors, Combined)) %>%  
   mutate(Combined = Parafit + TreeMap, Combined = replace(Combined, 2, n_authors)) %>%  
   rename_("Number of" = "Number", "Parafit (n)" = "Parafit", "TreeMap (n)" = "TreeMap",  "Combined (n)" = "Combined") %>% 
   kable() %>% kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "250px")
   #pander(split.cell = 40, split.table = Inf) # not as nice as kable
 ```
+Note that for the numbers of papers do not add up (TreeMap + Parafit $\neq$ Combined) becuase `r sum(n_table2[2,]) - length(unique(dat$authors))`  papers used both TreeMap and Parafit methods (the term "papers" here is our variable `auhtors`)
 
 ### Missing data patterns
 
@@ -175,7 +178,7 @@ Here we have the number of missing data (cells) for all the varaibles used in th
 
 ```{r}
 # summaring missingness in our dataset
-data %>% summarise_all(funs(sum(is.na(.)))) %>% # map(~sum(is.na(.)) # w
+dat %>% summarise_all(funs(sum(is.na(.)))) %>% # map(~sum(is.na(.)) # w
   t() %>% as_tibble(rownames = "Variable") %>% 
   rename_("Number of missing data (n)" = "V1") %>% 
   #pander(split.cell = 40, split.table = Inf)
