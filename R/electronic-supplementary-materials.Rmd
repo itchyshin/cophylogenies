@@ -128,7 +128,7 @@ W. __p_value__:	The p-value reported for the cophylogenetic analysis, representi
 
 X. __method__:	Whether TreeMap or was used to obtain codivergence or a p value.
 
-### Tables of sample sizes
+### Table of sample sizes
 
 We present the number of sample size for two sepreate methods: TreeMap and Parafit (and combined) for effect sizes, papers and different levels of categorical varaibles (factors).   
 
@@ -178,7 +178,8 @@ Here we have the number of missing data (cells) for all the varaibles used in th
 
 ```{r}
 # summaring missingness in our dataset
-dat %>% summarise_all(funs(sum(is.na(.)))) %>% # map(~sum(is.na(.)) # w
+# funs(sum(is.na(.))) needs to be in funs as is.na has "." = each column
+dat %>% summarise_all(funs(sum(is.na(.)))) %>% # map(~sum(is.na(.)) # this is an alterantive way 
   t() %>% as_tibble(rownames = "Variable") %>% 
   rename_("Number of missing data (n)" = "V1") %>% 
   #pander(split.cell = 40, split.table = Inf)
@@ -194,9 +195,35 @@ dat %>% summarise_all(funs(sum(is.na(.)))) %>% # map(~sum(is.na(.)) # w
 
 ### Preparation (creating required varaibles)
 
+We created .... p value....
+
+* creating Zr and sample size
+* we only use corrected sample size..
+* Just two varaibles???
+
+```{r}
+dat %>% 
+  # getting sample size
+  mutate(sample_size = host_tips_linked_corrected + symbiont_tips_linked) %>% 
+    # this creates new category of host_tax_broad:symbiosis (host_tax_symbiosis) and symbiont_tax_broad:symbiosis (symbiont_symbiosis)
+  mutate(host_tax_symbiosis = str_c(host_tax_broad, symbiosis), 
+         host_tax_symbiosis = ifelse(host_tax_symbiosis == "InvertNA", NA, host_tax_symbiosis),
+         host_tax_symbiosis = factor(host_tax_symbiosis),
+         symbiont_symbiosis = factor(str_c(symbiont_tax_broad, symbiosis)),
+         host_symbiont_tax  = factor(str_c(host_tax_broad, symbiont_tax_broad)),
+         # observation-level effect
+         obs = factor(1:nrow(dat))) %>% 
+  # calcuating effect size 
+  p_to_Zr(p_value, sample_size) -> dat 
+
+# some factor reordering required!!!
+
+```
 
 
 ### Intercept model
+
+####
 
 *Justification of the use of combined datasets....
 * just do the main one for all three datasets but not others
