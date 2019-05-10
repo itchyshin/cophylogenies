@@ -11,7 +11,7 @@ output:
     number_sections: false  # set to true if you want to number sections at each table header
     theme: lumen # nice fonts and colours
     code_folding: hide # Add some buttons to show/hide the code
-#bibliography: bib.bib
+bibliography: references.bib 
 ---
 
 <!--- Try to add references for this!!!! --->
@@ -195,7 +195,7 @@ dat %>% summarise_all(funs(sum(is.na(.)))) %>% # map(~sum(is.na(.)) # this is an
 
 ### Preparation (creating required varaibles)
 
-We created .... p value....
+Here, we create 
 
 * creating Zr and sample size
 * we only use corrected sample size..
@@ -235,6 +235,20 @@ dat %>%
 ## Meta-regression
 
 ### Univaraite analyses
+
+#### Testing 
+
+####
+
+####
+
+#### Genenralism 
+
+Here are links for how to do confidence regions for rma.mv regression lines
+
+https://www.rdocumentation.org/packages/metafor/versions/1.9-9/topics/predict.rma
+
+https://stackoverflow.com/questions/50804464/out-of-sample-prediction-for-rma-object-in-metafor
 
 * one-by-one analyses here...
 
