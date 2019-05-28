@@ -53,6 +53,11 @@ source("../R/ESM_functions.R", chdir = TRUE)
 
 ```
 
+#### Custum functions
+
+NOTE!!!
+We have XX custum functions: ....... 
+
 ## Supplementary Methods and Materials
 
 ### XXXX1
@@ -193,26 +198,23 @@ dat %>% summarise_all(funs(sum(is.na(.)))) %>% # map(~sum(is.na(.)) # this is an
 
 ## Meta-analysis
 
-### Preparation (creating required varaibles)
+### Calculating effect sizes
 
-Here, we create 
+Here, we create our effect size (correlation coefficent *r* and its Fisher's z transformaiton *Zr*) from p values and associated sample sizes.
 
+NOTE!!!
 * creating Zr and sample size
 * we only use corrected sample size..
 * Just two varaibles???
+* observation level random factor....
+* probably make 
+
+* Factor re-ordering - we probably do this 
 
 ```{r}
 dat %>% 
   # getting sample size
   mutate(sample_size = host_tips_linked_corrected + symbiont_tips_linked) %>% 
-    # this creates new category of host_tax_broad:symbiosis (host_tax_symbiosis) and symbiont_tax_broad:symbiosis (symbiont_symbiosis)
-  mutate(host_tax_symbiosis = str_c(host_tax_broad, symbiosis), 
-         host_tax_symbiosis = ifelse(host_tax_symbiosis == "InvertNA", NA, host_tax_symbiosis),
-         host_tax_symbiosis = factor(host_tax_symbiosis),
-         symbiont_symbiosis = factor(str_c(symbiont_tax_broad, symbiosis)),
-         host_symbiont_tax  = factor(str_c(host_tax_broad, symbiont_tax_broad)),
-         # observation-level effect
-         obs = factor(1:nrow(dat))) %>% 
   # calcuating effect size 
   p_to_Zr(p_value, sample_size) -> dat 
 
@@ -221,12 +223,13 @@ dat %>%
 ```
 
 
-### Intercept model
+### Intercept model (meta-analytic model)
 
 ####
 
-*Justification of the use of combined datasets....
+* Justification of the use of combined datasets....
 * just do the main one for all three datasets but not others
+* You need
 * or we could - procide forest plots of all the three datasets???? (do it later)
 * heterogeneity
 
@@ -234,15 +237,33 @@ dat %>%
 
 ## Meta-regression
 
-### Univaraite analyses
+### Univaraite (Uni-predictor) analyses
 
 #### Testing 
 
-####
+#### 
 
-####
+#### Interactions between 
 
-#### Genenralism 
+
+```{r}
+dat %>% 
+    # host_tax_broad*symbiosis (host_tax_symbiosis) 
+  mutate(host_tax_symbiosis = str_c(host_tax_broad, symbiosis), 
+         host_tax_symbiosis = ifelse(host_tax_symbiosis == "InvertNA", NA, host_tax_symbiosis),
+         host_tax_symbiosis = factor(host_tax_symbiosis),
+    # symbiont_tax_broad*symbiosis (symbiont_symbiosis)     
+         symbiont_symbiosis = factor(str_c(symbiont_tax_broad, symbiosis)),
+    # host_tax_broad*symbiont_tax_broad (host_symbiont_tax)     
+         host_symbiont_tax  = factor(str_c(host_tax_broad, symbiont_tax_broad))) -> dat 
+
+```
+
+#### Testing specialization: 
+
+
+
+#### 
 
 Here are links for how to do confidence regions for rma.mv regression lines
 
@@ -254,7 +275,7 @@ https://stackoverflow.com/questions/50804464/out-of-sample-prediction-for-rma-ob
 
 ### Addtional analyses
 
-### Model selection
+### Model selection (Mulit-)
 
 ## Publication Bias and Sensitivity Analysis
 
