@@ -200,14 +200,14 @@ dat %>% summarise_all(funs(sum(is.na(.)))) %>% # map(~sum(is.na(.)) # this is an
 
 ### Calculating effect sizes
 
-Here, we create our effect size (correlation coefficent *r* and its Fisher's z transformaiton *Zr*) from p values and associated sample sizes.
+Here, we create our effect size (correlation coefficent *r* and its Fisher's z transformaiton *Zr*) from p values and associated sample sizes. We used the sum of `host_tips_linked_corrected` and `symbiont_tips_linked` as our sample size (i.e., the number of both host and symbiont species) for each effect size (an indicator of congruence). Also, we creat a column with unique ID for each observation (i.e. an observation level random effect), which is required for the `rma.mv` function in `metafor`.
 
 NOTE!!!
-* creating Zr and sample size
-* we only use corrected sample size..
-* Just two varaibles???
+* creating Zr and sample size - done
+* we only use corrected sample size..(need to write about this) - done!
+* Just two varaibles??? - done
 * observation level random factor....
-* probably make 
+* probably make (what is this??)
 
 * Factor re-ordering - we probably do this 
 
@@ -216,8 +216,11 @@ dat %>%
   # getting sample size
   mutate(sample_size = host_tips_linked_corrected + symbiont_tips_linked) %>% 
   # calcuating effect size 
-  p_to_Zr(p_value, sample_size) -> dat 
+  p_to_Zr(p_value, sample_size) %>% 
+  # observation level random effect
+  mutate(obs = factor(1:nrow(dat))) -> dat 
 
+# TODO
 # some factor reordering required!!!
 
 ```
@@ -225,12 +228,30 @@ dat %>%
 
 ### Intercept model (meta-analytic model)
 
-####
+#### Running Multilevel Meta-analytic models with 3 datasets
+```{r}
 
+main_model_all <- rma.mv(yi = Zr, V = VZr, mods = ~ symbiosis, random = list(~ 1 | authors, ~1|obs), data = dat)
+
+summary(main_model_all)
+
+
+main_model_all2 <- rma.mv(yi = Zr, V = VZr, mods = ~ symbiosis, random = ~ 1 | authors, data = dat)
+
+summary(main_model_all2)
+
+AIC(main_model_all)
+AIC(main_model_all2)
+
+```
+
+
+
+NOTE!!!
 * Justification of the use of combined datasets....
 * just do the main one for all three datasets but not others
 * You need
-* or we could - procide forest plots of all the three datasets???? (do it later)
+* or we could - provide forest plots of all the three datasets???? (do it later)
 * heterogeneity
 
 

@@ -1,0 +1,2518 @@
+---
+title: 'Meta-analytic evidence that sexual selection improves population fitness'
+author: "Justin G. Cally^1^, Devi Stuart-Fox^1^ and Luke Holman^1^ <br></br> <br></br> ^1^The University of Melbourne"
+subtitle: Supplementary Information
+bibliography: bibliography_meta_analysis.bib
+output:
+  html_document:
+    toc: true # table of content true
+    toc_float: true # make 
+    depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: false  ## if you want number sections at each table header
+    theme: yeti # lovely fonts and colours
+    code_folding: hide # awesome buttons to show/hide the code
+  pdf_document: default
+---
+
+```{r, warning=FALSE, message=FALSE, results='hide'}
+library(knitr)
+library(pander)
+library(tidyr)
+library(compute.es)
+library(metafor)
+library(plyr)
+library(dplyr)
+library(lme4)
+library(car)
+library(forestplot)
+library(ggplot2)
+library(ggthemes)
+library(kableExtra)
+library(ggrepel)
+library(reshape2)
+library(RColorBrewer)
+library(ggridges)
+library(rstan) #Note that installation requires some effort: dependency for brms
+#devtools::install_github("paul-buerkner/brms")
+library(brms) 
+library(backports) #seems to be a dependency
+library(bayesplot)
+#devtools::install_github("mvuorre/brmstools")
+library(brmstools)
+library(metaAidR) # install.packages("metaAidR")
+library(cowplot)
+#devtools::install_github("eclarke/ggbeeswarm")
+library(ggbeeswarm)
+library(gridExtra)
+source("I2_function.R") #Adapted function for obtaining I2 with CIs
+source("Vdodge_function.R") # nice function for ggplot
+source("Tidy_functions_for_brms.R") #Tidy functions for making model tables for brms
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE, warning = F) # set up cacheing to save time when re-building the html document
+knitr::opts_chunk$set(warning=FALSE, message=FALSE) # Suppress warnings in the HTML output
+
+```
+
+## Supplementary Methods
+
+Our aim was to investigate the effects of sexual selection on population fitness by conducting a meta-analysis on studies that measured fitness related outcomes after experimentally evolving a population under varying levels of opportunity for sexual selection. Here we describe the process of the literature search, data extraction, effect size calculation, formulation of multilevel models and assessing publication bias. We used the PRISMA (Preferred Reporting Items for Systematic Reviews and Meta-Analyses) as a guide during this meta-analysis. The repository used to formulate this document can be found here: https://github.com/JustinCally/SexualSelection 
+
+### Literature Search
+
+**The literature search was conducted under the following conditions:**
+
+1. We searched ISI Web of Science and Scopus on 9th June 2017. The two search engines produded a somewhat different set of papers (**see PRISMA Figure in manuscript**).
+
+2. Studies were restricted to those from peer-reviewed and in the English language.
+
+3. We devised a search strategy that sought to find studies which manipulated the presence or strength of sexual selection using experimental evolution, and then measured some proxy of population fitness. As such the search terms were as follows: 
+
+<br></br>
+
+**_ISI Web of Science_**
+
+We used the following search on ISI Web of Science:
+
+Topic (TS) = “Sexual Selection” OR Promisc* OR Monogam* OR Polygam* OR Polyandr* OR Polygyn* OR “Mate choice”
+
+AND
+
+Topic (TS) = Fitness OR “Population Fitness” OR Deleterious OR “Male Strength” OR Fecund* OR Viability OR Productiv* OR “Reproductive Success” OR “Reproductive Rate” OR Surviv* OR | “Development Rate” OR Extinct* OR “Competitive Success” OR Mortality OR Mass OR “Body Size” OR “Wing Size” OR Emergence OR Mating Rate OR “Mating Propensity” OR Adapt* OR “Novel | Environment” OR “Sexual Conflict” OR “Sexual Antagonis*”
+
+AND
+
+Topic (TS) = Generations OR “Experimental evolution” OR “mutation load”
+
+AND
+
+Research Area (SU) = “Evolutionary Biology”
+
+<br></br>
+
+**_Scopus_**
+
+We used the following search on Scopus:
+
+TITLE-ABS-KEY = “Sexual Selection” OR Promisc* OR Monogam* OR Polygam* OR Polyandr* OR Polygyn* OR “Mate choice”
+
+AND
+
+TITLE-ABS-KEY = Fitness OR “Population Fitness” OR Deleterious OR “Male Strength” OR Fecund* OR Viability OR Productiv* OR “Reproductive Success” OR “Reproductive Rate” OR Surviv* | OR “Development Rate” OR Extinct* OR “Competitive Success” OR Mortality OR Mass OR “Body Size” OR “Wing Size” OR Emergence OR Mating Rate OR “Mating Propensity” OR Adapt* OR | “Novel Environment” OR “Sexual Conflict” OR “Sexual Antagonis*”
+
+AND
+
+TITLE-ABS-KEY = Generations OR “Experimental evolution” OR “mutation load”
+
+### Additions to the Literature Search
+
+In addition to studies found from the literature search we also included three relevant studies that we found, which were not picked up in the subsequent formal searches [@Partridge_1980; @Price_2010; @Savic_2013] **see PRISMA Figure in manuscript**. 
+
+###Inclusion/Exclusion criteria
+
+After removing duplicates papers recovered from both _Web of Science_ and _Scopus_, we read the titles and abstracts of the remaining 1015 papers, and removed papers that were not relevant (typically because they were not an empirical study using experimental evolution). This left 130 papers, for which we read the full text and applied the following selection criteria: 
+
+  + **(1: Study Design)** The study was an experimental evolution study lasting >1 generation
+  + **(2: Population)** a) The study was conducted using an animal species that was b) dioecious
+  + **(3: Intervention and Control)** The study experimentally manipulated the strength of sexual selection for at least one generation (e.g. via enforced monogamy or an altered sex ratio)
+  + **(4: Outcomes)** The study measured a trait that we judged to be a potential correlate of population fitness. 
+  
+Criterion 4 is somewhat subjective, because there is rarely enough data justify the assumption that a particular trait is (or is not) correlated with population fitness. We therefore relied on our best judgement when deciding which studies to exclude (see **Supplementary Table 1**). The inclusion/exlusion critera as applied to each study are detailed in **Supplementary Table 2**.
+
+
+**Supplementary Table 1:** We classified each of the twenty fitness outcomes into three broad groups -- direct, indirect and ambiguous -- based on the established link with population fitness, the directionality of the measure. Here we detailed how these outcomes were measured in the primary studies.
+
+```{r, warning=FALSE}
+read.csv('data/outcome.descriptions.csv', fileEncoding="UTF-8") %>% select(-Examples) %>%
+  kable("html") %>% kable_styling() %>%
+  scroll_box(width = "100%", height = "500px")
+```
+<br></br>
+
+**Supplementary Table 2:** A study was deemed eligible for inclusion in the meta-analysis if it met all four criteria discussed above (referred to by their numbers, 1-4, in this table). We went through these four criteria in a step-wise fashion, for each of the 130 studies for which we read the full text, and noted the first criterion that was failed (if any). The table provides notes on our inclusion/exclusion decisions.
+
+```{r}
+read.csv('data/Eligibility Workbook.csv', fileEncoding="UTF-8") %>% 
+  mutate(Citation = paste0('[@',Citation,']')) %>%
+  kable("html") %>% kable_styling() %>%
+  scroll_box(width = "100%", height = "500px")
+```
+<br></br>
+
+
+### Data Extraction and Effect Size Calculation
+
+The rules utilised during the data extraction and effect size calculation were as follows:
+
+1. Arithmatic means, standard deviations/errors and sample sizes were extracted from a paper, supplementary material or a linked data repository (e.g. Data Dryad). This was possible when means and SD were reported in text or in a table. We would preferentially extract data for each experimental evolution line/replicat/family if possible and only extract data for the final reported generation (which was noted down).
+
+2. If we could not find the means and SD in text format we used web-plot digitizer (v.3.12) to extract data from graphs. 
+
+3. If means were not reported then we extracted a summary statistic or proportion value, which we could later convert to Hedges g' using the _compute.es_ package [@compute_es]. Summary statistics included _F_, _z_, _t_ and _chi^2^_. These conversions still required providing sample sizes for each treatment so these needed to be extractable from the study. Some summary statistics were obtained from generalized linear model summary tabels, others from straight forward ANOVAs and then some from more complex analysis such as proportional hazards statistical tests. 
+
+4. We also collected various covariates for some of the studies (**see source data**), which are discussed later.
+
+______________
+
+## The Effect Size Dataset
+
+### Table of Effect Sizes  
+
+**Source Data** Table of effect sizes included in our meta-analysis. See the text following the table for an explanation of each column.  
+
+```{r}
+# Load the data and format the variables
+full_dataset <- read.csv('data/meta_analysis_dataset.csv') %>%
+  mutate(Study.ID = factor(Study.ID),
+         Group.ID = factor(Group.ID),
+         Environment = relevel(factor(Environment), ref = "Unstressed"),
+         Outcome.Class = relevel(factor(Outcome.Class), ref = "Indirect"),
+         Pre.cop = relevel(factor(Pre.cop), ref = "0"),
+         Post.cop = relevel(factor(Post.cop), ref = "0"),
+         Blinding = factor(Blinding))
+
+
+
+kable(full_dataset, "html") %>%
+  kable_styling() %>%
+  scroll_box(width = "100%", height = "500px")
+```
+<br></br>
+
+**Study ID**: An ID given to the published paper the effect size is sourced from (n = 69).
+
+**Group ID**: An ID given to the research group that may have published several papers on the same species usuing the same or very similar experimental setup. [Was not used in analysis]
+
+**Species**: The species used in the experimental evolution procedure (n = 15).
+
+**Taxon**: The taxon to which the species belongs. One of the following: Beetle, fly, mouse, nematode, guppy, mite and cricket (taxa were selected arbitrarily based on the available data). 
+
+**SS Strength, Ratios and SS Density's (Column 7-9)**: Various ratios of the number of males to females and the total number of individuals kept together in an experiment [Was not used in any analysis]
+
+**Post cop and Pre cop**: Whether a study allowed Pre/Post-copulatory sexual selection (1) or not (0).
+
+**Blinding**: A binary classification, describing whether blind protocols were used during the experiment. Papers were assumed to be not blind unless declared otherwise.
+
+**Generations**: The number of generations that the species was subject to differing levels of sexual selection, ranging from 1 to 162. 
+
+**Enforced Monogamy**: Whether the study had the low sexual selection treatment as enforced monogamy (YES) or not (NO). Not all studies compared enforced monogamy and SS+ treatments. Some used FB vs MB, where FB is the SS (low intensity). 
+
+**n**: Pooled sample size of the paired treatments.
+
+**Outcome**: The fitness related outcome that was measured, e.g. fecundity, survival, or mating success (see Supplementary Table 1 for all 20 categories). We applied our own classifications rather than relying on those provided by the authors, because different papers sometimes used different names for the same trait. 
+
+**Outcome Class**: To help guide analysis the outcomes were classed into three categories; ambiguous, indirect and direct (see Supplementary Table 1).
+
+**Sex**: A moderator variable with three levels, describing whether the effect size in question comes from a measurement of males (M), females (F), or individuals of both sexes (B).
+
+**Ambiguous**: Is the fitness outcome ambiguous (YES) or not ambigous (NO). Ambiguous outcomes may be those that may not necessarily be directional, that is to say they may be a life history trait. 
+
+**Environment**: In the methods of the papers included in this study it was usually stated whether additional modifications to the experimental lines were made. Briefly, this was usually a modification that made conditions more stressful such as using a novel food source or elevated mutation load, the effect sizes from these experimental lines are labelled as 'Stressed'. If it was clearly stated that there was no such modification it is labelled 'Unstressed'. However, sometimes the paper was ambiguous in what lines had added stress or the results from stressed and unstressed lines were pooled together, in this case we label it as 'Not Stated'.
+
+**g**: Hedge's g calculated using the compute.es package.
+
+**var.g**: The within study variance associated with the effect size, g.
+
+**Positive Fitness**: Whether the measurment used in the study is beneficial for fitness (1) or not (0). Note that g has already been multiplied by this column. We inverted all of the effect sizes pertaining to fitness outcomes that are expected to be negatively related to fitness by multiplying the effect size by -1.
+
+**mean/sd/n.low/high**: The means, standard deviation and sample size for the low or high sexual selection treatments, used to calculate lnCVR (meta-analysis of variance). Rows without these values (NA) had hedges g' derived from summary statistics (F, z, chi-square etc.).
+
+**JIF**: Journal Impact factor at year of publication. Several impact factors were unable to be determined/found and are NA.We obtained the journal impact factor for each effect size at the time of publication using InCites Journal Citation Reports.
+
+_________
+
+### Tables of Sample Sizes
+
+Here we present the number of effect sizes, publications, blind experiments, effect sizes in stresful conditions, male, female and both measures and different species used. 
+
+**Supplementary Table 3:** Table of effect sizes included in our meta-analysis. See the text following the data table for an explanation of each column.
+```{r message=FALSE, warning=FALSE}
+n.blind.ones <- (sum(full_dataset$Blind == "Blind"))
+full_dataset %>% 
+  summarise(
+    Effect_sizes_.Totalq = n(), 
+    Publications = Study.ID %>% unique() %>% length(),
+    Blind_experiments = n.blind.ones,
+    Effect_sizes_.Enforced_monogamyq = (sum(Enforced.Monogamy == "YES")),
+    Effect_sizes_.Ambiguousq = (sum(Outcome.Class == "Ambiguous")),
+    Effect_sizes_.Indirectq = (sum(Outcome.Class == "Indirect")),
+    Effect_sizes_.Directq = (sum(Outcome.Class == "Direct")),
+    Effect_sizes_.Stressfulq = (sum(Environment == "Stressed")),
+    Effect_sizes_.Benignq = (sum(Environment == "Unstressed")),         
+    Effect_sizes_.Maleq = (sum(Sex == "M")),
+    Effect_sizes_.Femaleq = (sum(Sex == "F")),
+    Effect_sizes_.Both_sexesq = (sum(Sex == "B")),
+    Different_species =  Species %>% unique() %>% length(),
+    Effect_sizes_.Beetleq = sum(Taxon == "Beetle"),
+    Effect_sizes_.Flyq = sum(Taxon == "Fly"),
+    Effect_sizes_.Mouseq = sum(Taxon == "Mouse"),
+    Effect_sizes_.Nematodeq = sum(Taxon == "Nematode"),
+    Effect_sizes_.Miteq = sum(Taxon == "Mite"),
+    Effect_sizes_.Cricketq = sum(Taxon == "Cricket"),
+    Effect_sizes_.Guppyq = sum(Taxon == "Guppy")) %>% melt() %>%
+  mutate(variable = gsub("_", " ", variable),
+         variable = gsub("[.]", "(", variable),
+         variable = gsub("q", ")", variable)) %>% 
+  rename_("n" = "value", " " = "variable") %>% 
+  pander(split.cell = 40, split.table = Inf)
+```
+ <br/><br/> 
+ 
+ 
+**Supplementary Table 4:** Table of fitness outcomes included in our meta-analysis by sex.
+```{r}
+Outcome_and_sex <- as.data.frame.matrix(table(full_dataset$Outcome, full_dataset$Sex))
+colnames(Outcome_and_sex) <- cbind("Both", "Female", "Male")
+Outcome_and_sex %>% tibble::rownames_to_column("Parameters") %>% mutate(Total = Both+Female+Male) %>% pander(split.cell = 40, split.table = Inf)
+```
+
+
+
+______________
+
+## Meta-Analysis
+
+### Overall effect of sexual selection on fitness 
+
+We can obtain an overall weghted grand mean and confidence intervals with a simple intercept only for both Bayesian and REML models. Notably, in both models the estimates are approximately the same, with Bayesian estimates being marginally wider. The priors for ``brms`` are set from a weakly non-informative student t-distribution: ``student_t(3, 0, 10)``. We also tested that using a stronger prior (e.g. standard normal distribution: ``normal(0, 1)``) has negligible effects on the model results. 
+
+#### Run the Bayesian meta-analysis to get the overall effect
+```{r, warning = FALSE, results='hide', message=FALSE, error = FALSE}
+if(!file.exists("data/grand.mean.bayes.rds")){
+  grand.mean.bayes <- brm(g | se(SE)  ~ 1 # Note that running se(SE, sigma = TRUE) gives different result due to a difference in priors
+                          + (1|Study.ID)
+                          + (1|Outcome)
+                          + (1|Taxon), 
+                          family = "gaussian", 
+                          seed = 1,
+                          cores = 4, chains = 4, iter = 4000, #Run 4 chains in parallel for 4000 iterations (2000 are burn in)
+                          control = list(adapt_delta = 0.999, max_treedepth = 15),
+                          data = full_dataset %>% mutate(SE = sqrt(var.g)))
+  
+  saveRDS(grand.mean.bayes, "data/grand.mean.bayes.rds") # Save to avoid re-running during knit
+}
+grand.mean.bayes <- readRDS("data/grand.mean.bayes.rds")
+
+```
+
+#### Run the REML meta-analysis to get the overall effect
+```{r}
+forest.model <- rma.mv(g, var.g,
+                       mods = ~ 1,
+                       random = list(~ 1 | Study.ID,
+                                      ~ 1 | Outcome,
+                                      ~ 1 | Taxon),
+                       method = "REML",
+                       data = full_dataset)
+```
+
+#### Inspect the effect sizes esimates from these two models
+
+
+**Supplementary Table 5:**
+These estimates are presented in the text of the Results section. The test statistic is either the p-value (REML) or Bayes factor (BF) comparing the effect size to zero (Bayesian).
+```{r, warning = F}
+pander(data.frame(
+  Method = c("REML", "Bayesian"),
+  Grand_mean_effect_size_g = c(forest.model$b, summary(grand.mean.bayes)$fixed[,"Estimate"]),
+  Lower_95_CI = c(forest.model$ci.lb, summary(grand.mean.bayes)$fixed[,"l-95% CI"]),
+  Upper_95_CI = c(forest.model$ci.ub, summary(grand.mean.bayes)$fixed[,"u-95% CI"]),
+  Test_statistic = c(forest.model$pval, hypothesis(grand.mean.bayes, "Intercept > 0")$hypothesis$Evid.Ratio)), digits = 2) 
+```
+  
+### Effect of sexual selection on direct, indirect and ambiguous measures of fitness 
+
+**Supplementary Table 6:** The predicted effect size for each of the three fitness trait classes (Ambiguous, Indirect and Direct) that are presented in Figure 1 in the manuscript. This table presents both Bayesian and REML predictions with some discrepencies in the estimated error margins. Figure 1 within the manuscript uses REML predictions.
+
+```{r, warning = FALSE, message=FALSE, error = FALSE}
+if(!file.exists("data/grand.mean.class.bayes.rds")){
+  grand.mean.class.bayes <- brm(g | se(SE)  ~ Outcome.Class # Note that running se(SE, sigma = TRUE) gives different result due to a difference in priors
+                          + (1|Study.ID)
+                          + (1|Taxon), 
+                          family = "gaussian", 
+                          seed = 1,
+                          cores = 4, chains = 4, iter = 4000, #Run 4 chains in parallel for 4000 iterations (2000 are burn in)
+                          control = list(adapt_delta = 0.9999, max_treedepth = 15),
+                          data = full_dataset %>% mutate(SE = sqrt(var.g)))
+  
+  saveRDS(grand.mean.class.bayes, "data/grand.mean.class.bayes.rds") # Save to avoid re-running during knit
+}
+grand.mean.class.bayes <- readRDS("data/grand.mean.class.bayes.rds")
+
+# Define new data for prediction
+brms.newdata.class <- as.data.frame(expand.grid(Outcome.Class = unique(full_dataset$Outcome.Class)))
+
+# Get average SE: useful if using predict, but not fitted
+av.se.g.class <- full_dataset %>% group_by(Outcome.Class) %>% summarise(mean = mean(sqrt(var.g)))
+brms.newdata.class <- left_join(av.se.g.class %>% rename(SE = mean), brms.newdata.class)
+
+# Find the fitted values (i.e. predictions from the linear mixed model fit by brms)
+brms.predict.class <- fitted(grand.mean.class.bayes, newdata = brms.newdata.class, re_formula = NA) %>% as.data.frame()
+brms.predictions.class <- data.frame(brms.newdata.class$Outcome.Class, brms.predict.class$Estimate, brms.predict.class$Est.Error, brms.predict.class$Q2.5, brms.predict.class$Q97.5)
+
+#Name columns
+colnames(brms.predictions.class) <- c("Relationship to Fitness", "Bayes Prediction", "Bayes SE", "Bayes LCI", "Bayes UCI")
+
+outcome.list.factor.class <-  c('Indirect', 'Ambiguous', 'Direct')
+
+brms.predictions.class <- brms.predictions.class[match(outcome.list.factor.class, brms.predictions.class$`Relationship to Fitness`),]
+rownames(brms.predictions.class) <- NULL
+sample.sizes.outcome.class <- as.data.frame(table(full_dataset$Outcome.Class))
+colnames(sample.sizes.outcome.class) <- c("Relationship to Fitness", "n")
+fitness.class.predictions <- left_join(brms.predictions.class, sample.sizes.outcome.class, by = "Relationship to Fitness")
+
+# Obtain Bayes Factor of likelihood that the outcome is greater than 0
+BF.outcome.class.list <-  c('Ambiguous', 'Direct')
+# Obtain BF for all components
+Hypotheses <- list()
+BFs <- list()
+Hypotheses[["Indirect"]] <- hypothesis(grand.mean.class.bayes, "Intercept > 0") #Intercept in model, need to do it by itself
+BFs[["Indirect"]] <- Hypotheses[["Indirect"]][["hypothesis"]][["Evid.Ratio"]]
+for (i in BF.outcome.class.list){
+  Hypotheses[[i]] <- hypothesis(grand.mean.class.bayes, paste("Intercept + Outcome.Class", i," > 0", sep = ""))
+  BFs[[i]] <- Hypotheses[[i]][["hypothesis"]][["Evid.Ratio"]]
+} #Loop over all fitness compoinents
+
+# Now for REML. Not easy because the predict function for rma.mv has an odd interface
+model.fitness.class.REML <- rma.mv(g, var.g, mods = ~ 1 + Outcome.Class,
+                         random = list(~ 1 | Study.ID,
+                                       ~ 1 | Taxon),
+                         method = "REML",
+                         data = full_dataset)
+
+get.predictions.class <- function(newdata){
+  Indirect <- 0; Ambiguous <- 0; Direct <- 0
+  if(newdata[1] == 'Ambiguous') Ambiguous<-1
+  if(newdata[1] == 'Direct') Direct<-1
+    
+  predict(model.fitness.class.REML, newmods=c(Ambiguous, Direct))
+}
+# Get the predictions for each combination of moderators
+predictions.class <- as.data.frame(expand.grid(Outcome.Class = outcome.list.factor.class))
+predictions.class <- cbind(predictions.class, do.call("rbind", apply(predictions.class, 1, get.predictions.class))) %>%
+  select(Outcome.Class, pred, se, ci.lb, ci.ub) 
+for(i in 2:5) predictions.class[,i] <- unlist(predictions.class[,i])
+
+colnames(predictions.class) <- c("Relationship to Fitness", "REML Prediction", "REML SE", "REML LCI", "REML UCI")
+predictions.class <- format(predictions.class, digits = 2)
+
+fitness.class.predictions <- fitness.class.predictions %>% cbind.data.frame(as.data.frame(BFs) %>% t() %>% as.data.frame() %>% `colnames<-`("BF")) %>% `row.names<-`(NULL) %>% format(digits = 2)
+
+left_join(fitness.class.predictions, predictions.class, by = "Relationship to Fitness") %>% pander(split.table = Inf, digits = 2)
+
+```
+
+
+```{r, fig.width = 8, fig.height = 4}
+pd <- position_dodge(0.3)
+predictions.class[,2:5] <- sapply(predictions.class[,2:5], as.numeric)
+forest.plot.class <- predictions.class %>%
+  rename(Outcome.Class = "Relationship to Fitness",
+         Pred = 'REML Prediction',
+         LCI = 'REML LCI',
+         UCI = 'REML UCI') %>%
+  mutate(Outcome.Class = factor(Outcome.Class, levels = c("Direct", "Indirect", "Ambiguous"))) %>%
+  ggplot(aes(x = Outcome.Class, y = Pred, colour = Outcome.Class, fill = Outcome.Class)) + 
+  geom_hline(yintercept = 0, linetype = 2) + 
+  geom_hline(yintercept = 0.23, linetype = 2, colour = "steelblue", size = 1) +
+  geom_quasirandom(data = full_dataset %>% 
+  mutate(Sex = replace(as.character(Sex), Sex == "B", "Both"),
+         Sex = replace(Sex, Sex == "M", "Male"),
+         Sex = replace(Sex, Sex == "F", "Female"),
+         Outcome.Class = factor(Outcome.Class, levels = c("Direct", "Indirect", "Ambiguous"))),
+                   aes(x = Outcome.Class, y = g), alpha=0.4) +
+  geom_errorbar(mapping = aes(ymin = LCI, ymax = UCI), width = 0, position = pd, size=1, colour = "grey10") + 
+  geom_point(position = pd, size=3.25, shape = 23, stroke = .75, color = "grey10") + 
+  ylab("Standardized Mean Difference (g) \n[positive values indicate sexual selection improves fitness components]") +
+  theme_minimal(14) +
+  theme(panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(), 
+        legend.position = "none",
+        axis.text.y = element_text(size = 13, hjust = 1)) +
+  scale_color_manual(values = c("Ambiguous" = "#a50f15", "Indirect" = "#fe9929", "Direct" = "#4daf4a"), 
+                     name = "Relationship\nto fitness")+
+  scale_fill_manual(values = c("Ambiguous" = "#a50f15", "Indirect" = "#fe9929", "Direct" = "#4daf4a"), 
+                     name = "Relationship\nto fitness")+
+  xlab("Relationship to Fitness\n")+
+  coord_flip()
+
+forest.plot.class
+```
+
+**Figure 1:** The effect sizes used in this meta-analysis ($n$ = 459) were grouped into either direct, indirect or ambiguous measures of fitness. Overall, effect sizes were more often positive than negative. Predicted average values are presented as a diamond for each fitness-relationship category. The estimates presented here are from REML models with the grand mean across all effect sizes ($\beta$ = 0.25) shown as the blue dotted line. Predictions from both Bayesian and REML models can be found in Supplementary Table 6.
+
+____________________
+
+### Effect of Sexual Selection for different fitness components
+
+#### Forest Plot
+
+
+```{r, fig.height=18, fig.width=12}
+# Create new factor to order factors in a way where Ambig, Indirect and Direct are Grouped
+full_dataset$Outcome_f = factor(full_dataset$Outcome, levels = c('Behavioural Plasticity', 'Body Size', 'Development Rate', 'Early Fecundity', 'Immunity', 'Male Attractiveness', 'Male Reproductive Success', 'Mating Duration', 'Pesticide Resistance', 'Mutant Frequency', 'Body Condition', 'Fitness Senescence', 'Lifespan', 'Mating Frequency', 'Mating Latency', 'Mating Success', 'Strength', 'Ejaculate Quality and Production', 'Both Reproductive Success', 'Extinction Rate', 'Female Reproductive Success', 'Offspring Viability'))
+
+# define upper and lower bounds
+full_dataset$lowerci <- full_dataset$g - 1.96*(sqrt(full_dataset$var.g))
+full_dataset$upperci <- full_dataset$g + 1.96*(sqrt(full_dataset$var.g))
+
+
+
+p.meta <- full_dataset %>% 
+  mutate(Sex = replace(as.character(Sex), Sex == "B", "Both"),
+         Sex = replace(Sex, Sex == "M", "Male"),
+         Sex = replace(Sex, Sex == "F", "Female"),
+         Outcome.Class = factor(Outcome.Class, levels = c("Ambiguous", "Indirect", "Direct"))) %>%
+  
+  ggplot(aes(y=reorder(AuthorYear, -g), x = g)) +
+  scale_color_manual(values = c("Ambiguous" = "#a50f15", "Indirect" = "#fe9929", "Direct" = "#4daf4a"), 
+                     name = "Relationship\nto fitness")+
+  scale_shape_manual(values=c(21,22,24))+
+  scale_fill_manual(values = c("Ambiguous" = "#a50f15", "Indirect" = "#fe9929", "Direct" = "#4daf4a"), 
+                    name = "Relationship\nto fitness")+
+  geom_errorbarh(aes(xmin = lowerci, 
+                     xmax = upperci,
+                     color = Outcome.Class), height = 0.1, show.legend = FALSE) +
+  
+  geom_point(aes(shape = Sex,
+                 fill = Outcome.Class), 
+             size = 1.75, 
+             color = "grey20") +
+  
+  scale_x_continuous(limits=c(-3.35, 10), 
+                     breaks = c(-3, -2, -1, 0, 1, 2, 3), 
+                     name='Standardized Mean Difference (g) \n[positive values indicate sexual selection improves fitness components]') +
+  
+  ylab('Reference') + 
+  
+  geom_vline(xintercept=0, 
+             color='black', 
+             linetype='dashed')+
+  
+  facet_grid(Outcome_f~.,
+             labeller = label_wrap_gen(width=23),
+             scales= 'free', 
+             space='free')+
+  
+  guides(fill = guide_legend(override.aes = list(shape = 21, colour = "grey20", size = 6)),
+         shape = guide_legend(override.aes = list(size = 4.5)))+
+  
+  #Add theme specifying text size, margins, lines etc.
+  theme_bw()+
+  
+  theme(strip.text.y = element_text(angle = 0, size = 8, margin = margin(t=15, r=15, b=15, l=15)), 
+        strip.background = element_rect(colour = NULL,
+                                        linetype = "blank",
+                                        fill = "gray90"),
+        text = element_text(size=11),
+        panel.spacing = unit(0.5, "lines"),
+        panel.border= element_blank(),
+        axis.line=element_line(), 
+        panel.grid.major.x = element_line(linetype = "solid", colour = "gray95"),
+        panel.grid.major.y = element_line(linetype = "solid", color = "gray95"),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(), 
+        legend.text = element_text(size=12), 
+        legend.title=element_text(size=12, 
+                                  face = "bold"),
+        axis.title.x = element_text(hjust = 0.5, size = 14))
+
+knitr::include_graphics(path = "figures/ForestPlot_large.png") 
+```
+
+<br></br>
+
+**Supplementary Figure 1:** Forest plot of raw effect sizes and their 95% confidence intervals, grouped according to measured fitness components and the sex of the individuals whose fitness trait was measured (male, female, or both sexes mixed together). Rows with multiple data points denote studies that provided multiple effect sizes. Positive values indicate fitness benefits of sexual selection.  
+
+Instead of running individual models for each fitness component we can run a model with the fitness components as predictors. In this case we maintain all of our fitness components and include `study.id` as a group level effect (to account for within study correlations in effect size). Using the `brms` package we can run a Bayesian model and generate fitted values for each fitness component.
+
+```{r, warning = FALSE, results='hide', message=FALSE, error = FALSE}
+if(!file.exists("data/components.brms.rds")){
+  components.brms <- 
+    brm(g | se(SE)  ~ Outcome #Note that running se(SE, sigma = TRUE) gives different result due to a difference in priors
+        + (1|Study.ID)
+        + (1|Taxon), 
+        family = "gaussian", 
+        seed = 1,
+        cores = 4, chains = 4, iter = 4000, #Run 4 chains in parallel for 4000 iterations (2000 are burn in)
+        control = list(adapt_delta = 0.999, max_treedepth = 15),
+        data = full_dataset %>% mutate(SE = sqrt(var.g)))
+  
+  saveRDS(components.brms, "data/components.brms.rds") 
+}
+
+components.brms <- readRDS(file = "data/components.brms.rds") 
+```
+  
+**Supplementary Table 7:** Summary of model predictions for 22 fitness components. In Supplementary Figure 1 these values are presented as a text overlay using the Bayesian values. Additionally, Bayes Factors (BF) are presented as the likelihood ratio that the effect size is greater than 0. Where values greater than 1 correspond to higher likelihood of the effect size being positive and values less than 1 suggest that the effect size is more likely to be negative. The right side of the table provides the REML estimates with SE and 95 % CIs.
+
+```{r, warning = FALSE}
+# Define new data for prediction
+brms.newdata <- as.data.frame(expand.grid(Outcome = unique(full_dataset$Outcome)))
+
+# Get average SE: useful if using predict, but not fitted
+av.se.g <- full_dataset %>% group_by(Outcome) %>% summarise(mean = mean(sqrt(var.g)))
+brms.newdata$SE <- av.se.g$mean
+
+# Find the fitted values (i.e. predictions from the linear mixed model fit by brms)
+brms.predict <- fitted(components.brms, newdata = brms.newdata, re_formula = NA) %>% as.data.frame()
+brms.predictions <- data.frame(brms.newdata$Outcome, brms.predict$Estimate, brms.predict$Est.Error, brms.predict$Q2.5, brms.predict$Q97.5)
+
+#Name columns
+colnames(brms.predictions) <- c("Fitness Component", "Bayes Prediction", "Bayes SE", "Bayes LCI", "Bayes UCI")
+
+outcome.list.factor <-  c('Behavioural Plasticity', 'Body Size', 'Development Rate', 'Early Fecundity', 'Immunity', 'Male Attractiveness', 'Male Reproductive Success', 'Mating Duration', 'Pesticide Resistance', 'Mutant Frequency', 'Body Condition', 'Fitness Senescence', 'Lifespan', 'Mating Frequency', 'Mating Latency', 'Mating Success', 'Strength', 'Ejaculate Quality and Production', 'Both Reproductive Success', 'Extinction Rate', 'Female Reproductive Success', 'Offspring Viability')
+
+brms.predictions <- brms.predictions[match(outcome.list.factor, brms.predictions$`Fitness Component`),]
+rownames(brms.predictions) <- NULL
+sample.sizes.outcomes <- as.data.frame(table(full_dataset$Outcome))
+colnames(sample.sizes.outcomes) <- c("Fitness Component", "n")
+fitness.component.predictions <- left_join(brms.predictions, sample.sizes.outcomes, by = "Fitness Component")
+
+# Obtain Bayes Factor of likelihood that the outcome is greater than 0
+BF.outcome.list <-  c('Body Size', 'Development Rate', 'Early Fecundity', 'Immunity', 'Male Attractiveness', 'Male Reproductive Success', 'Mating Duration', 'Pesticide Resistance', 'Mutant Frequency', 'Body Condition', 'Fitness Senescence', 'Lifespan', 'Mating Frequency', 'Mating Latency', 'Mating Success', 'Strength', 'Ejaculate Quality and Production', 'Both Reproductive Success', 'Extinction Rate', 'Female Reproductive Success', 'Offspring Viability')
+# Obtain BF for all components
+Hypotheses <- list()
+BFs <- list()
+Hypotheses[["Behavioural Plasticity"]] <- hypothesis(components.brms, "Intercept > 0") #Intercept in model, need to do it by itself
+BFs[["Behavioural Plasticity"]] <- Hypotheses[["Behavioural Plasticity"]][["hypothesis"]][["Evid.Ratio"]]
+for (i in BF.outcome.list){
+  Hypotheses[[i]] <- hypothesis(components.brms, paste("Intercept + Outcome", i," > 0", sep = ""))
+  BFs[[i]] <- Hypotheses[[i]][["hypothesis"]][["Evid.Ratio"]]
+} #Loop over all fitness compoinents
+
+# Now for REML. Not easy because the predict function for rma.mv has an odd interface
+model.fitness.components.REML <- rma.mv(g, var.g, mods = ~ 1 + Outcome,
+                         random = list(~ 1 | Study.ID,
+                                       ~ 1 | Taxon),
+                         method = "REML",
+                         data = full_dataset)
+
+get.predictions.outcomes <- function(newdata){
+  `Body Condition`<-0; `Body Size`<-0; `Development Rate`<-0; `Early Fecundity`<-0; `Ejaculate Quality and Production`<-0; `Extinction Rate`<-0; `Fitness Senescence`<-0; Immunity<-0; Lifespan<-0; `Male Attractiveness`<-0; `Male Reproductive Success`<-0; `Mating Duration`<-0; `Mating Frequency`<-0; `Mating Latency`<-0; `Mating Success`<-0; `Mutant Frequency`<-0; `Offspring Viability`<-0; `Pesticide Resistance`<-0; `Female Reproductive Success`<-0; `Both Reproductive Success`<-0; Strength<-0
+  
+  if(newdata[1] == 'Body Condition')`Body Condition`<-1
+  if(newdata[1] == 'Body Size') `Body Size`<-1
+  if(newdata[1] == 'Both Reproductive Success') `Both Reproductive Success`<-1
+  if(newdata[1] == 'Development Rate') `Development Rate`<-1
+  if(newdata[1] == 'Early Fecundity') `Early Fecundity`<-1
+  if(newdata[1] == 'Ejaculate Quality and Production')`Ejaculate Quality and Production`<-1
+  if(newdata[1] == 'Extinction Rate')`Extinction Rate`<-1
+  if(newdata[1] == 'Female Reproductive Success')`Female Reproductive Success`<-1
+  if(newdata[1] == 'Fitness Senescence')`Fitness Senescence`<-1
+  if(newdata[1] == 'Immunity')Immunity<-1
+  if(newdata[1] == 'Lifespan')Lifespan<-1
+  if(newdata[1] == 'Male Attractiveness')`Male Attractiveness`<-1
+  if(newdata[1] == 'Male Reproductive Success')`Male Reproductive Success`<-1
+  if(newdata[1] == 'Mating Duration')`Mating Duration`<-1
+  if(newdata[1] == 'Mating Frequency')`Mating Frequency`<-1
+  if(newdata[1] == 'Mating Latency')`Mating Latency`<-1
+  if(newdata[1] == 'Mating Success')`Mating Success`<-1
+  if(newdata[1] == 'Mutant Frequency')`Mutant Frequency`<-1
+  if(newdata[1] == 'Offspring Viability')`Offspring Viability`<-1
+  if(newdata[1] == 'Pesticide Resistance')`Pesticide Resistance`<-1
+  if(newdata[1] == 'Strength')Strength<-1
+
+  predict(model.fitness.components.REML, newmods=c(`Body Condition`,`Body Size`,`Both Reproductive Success`,`Development Rate`,`Early Fecundity`,`Ejaculate Quality and Production`,`Extinction Rate`,`Female Reproductive Success`,`Fitness Senescence`,`Immunity`,`Lifespan`,`Male Attractiveness`,`Male Reproductive Success`,`Mating Duration`,`Mating Frequency`,`Mating Latency`,`Mating Success`,`Mutant Frequency`,`Offspring Viability`,`Pesticide Resistance`,`Strength`))
+}
+
+outcome.list.model.levels <- c('Behavioural Plasticity' ,'Body Condition','Body Size','Both Reproductive Success','Development Rate','Early Fecundity','Ejaculate Quality and Production','Extinction Rate','Female Reproductive Success','Fitness Senescence','Immunity','Lifespan','Male Attractiveness','Male Reproductive Success','Mating Duration','Mating Frequency','Mating Latency','Mating Success','Mutant Frequency','Offspring Viability','Pesticide Resistance','Strength')
+
+# Get the predictions for each combination of moderators
+predictions.outcomes <- as.data.frame(expand.grid(Outcome = outcome.list.model.levels))
+predictions.outcomes <- cbind(predictions.outcomes, do.call("rbind", apply(predictions.outcomes, 1, get.predictions.outcomes))) %>%
+  select(Outcome, pred, se, ci.lb, ci.ub) 
+for(i in 2:5) predictions.outcomes[,i] <- unlist(predictions.outcomes[,i])
+
+colnames(predictions.outcomes) <- c("Fitness Component", "REML Prediction", "REML SE", "REML LCI", "REML UCI")
+predictions.outcomes <- format(predictions.outcomes, digits = 2)
+
+fitness.component.predictions <- fitness.component.predictions %>% cbind.data.frame(as.data.frame(BFs) %>% t() %>% as.data.frame() %>% `colnames<-`("BF")) %>% `row.names<-`(NULL) %>% format(digits = 2)
+
+left_join(fitness.component.predictions, predictions.outcomes, by = "Fitness Component") %>% pander(split.table = Inf, digits = 2)
+
+# saveRDS(left_join(fitness.component.predictions, predictions.outcomes, by = "Fitness Component"), "PDF_RDS_files/ST7.rds")
+```
+
+**Supplementary Table 8:** In some instances it may be beneficial to the reader to obtain average effect sizes of each fitness trait **entirely independently** of other traits. For this reason we present a summary of independent model estimates for 16 fitness components with a sample size greater than 3 effect sizes (n>3). Unlike above where estimates were generated based on predictions from a single model, here we run individual meta-analyses for each fitness related trait. Independent models generally reduce the power and significance of some of the estimates with 'Extinction rate' and 'Ejaculate quality and production' the only two traits with p-values < 0.05.  
+
+```{r, warning = FALSE}
+#Excluding those with 3 or less effect sizes.
+
+outcome.list <- as.list(c('Body Size', 'Development Rate', 'Early Fecundity', 'Immunity', 'Male Attractiveness', 'Male Reproductive Success', 'Mating Duration', 'Mutant Frequency', 'Fitness Senescence', 'Lifespan', 'Mating Frequency', 'Mating Latency', 'Mating Success', 'Ejaculate Quality and Production', 'Both Reproductive Success', 'Extinction Rate', 'Female Reproductive Success', 'Offspring Viability'))
+names(outcome.list) <- c('Body Size', 'Development Rate', 'Early Fecundity', 'Immunity', 'Male Attractiveness', 'Male Reproductive Success', 'Mating Duration', 'Mutant Frequency', 'Fitness Senescence', 'Lifespan', 'Mating Frequency', 'Mating Latency', 'Mating Success', 'Ejaculate Quality and Production', 'Both Reproductive Success', 'Extinction Rate', 'Female Reproductive Success', 'Offspring Viability')
+outcome.models <-  llply(outcome.list, function(x) rma.mv(g, var.g, 
+                          mods = ~ 1, 
+                          method = "REML",
+                          random = list(~ 1 | Study.ID,
+                                       ~ 1 | Taxon),
+                          subset = (Outcome_f == x),
+                          data = full_dataset))
+
+df.list <- as.data.frame(do.call("rbind", outcome.models)) # data frame of model results
+
+simple.frame <- subset(df.list, select=c("b", "zval", "ci.lb", "ci.ub", "k", "pval"))
+# simple.frame$vi <- as.matrix(simple.frame$vi)
+# simple.frame$W <- diag(1/(simple.frame$vi))
+# 
+# XO <- model.matrix(model.complete2)
+# PO <- W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+# 100 * sum(model.complete2$sigma2) / (sum(model.complete2$sigma2) + (model.complete2$k-model.complete2$p)/sum(diag(P)))
+
+#I couldn't get mapply to work when calculating I2 so I calculated them manually.
+
+#Body Size 
+restricted.dataBS <- full_dataset %>% filter(full_dataset$Outcome == "Body Size")
+
+#Run estimate of heterogeneity
+WBS = diag(1/restricted.dataBS$var.g)
+XBS = model.matrix(outcome.models[["Body Size"]])
+PBS = WBS - WBS %*% XBS %*% solve(t(XBS) %*% WBS %*% XBS) %*% t(XBS) %*% WBS
+BodySizeI2 <- 100 * sum(outcome.models[["Body Size"]]$sigma2) / (sum(outcome.models[["Body Size"]]$sigma2) + (outcome.models[["Body Size"]]$k-outcome.models[["Body Size"]]$p)/sum(diag(PBS)))
+
+
+#Development Rate 
+restricted.dataDR <- full_dataset %>% filter(full_dataset$Outcome == "Development Rate")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataDR$var.g)
+X = model.matrix(outcome.models[["Development Rate"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+DevelopmentRateI2 <- 100 * sum(outcome.models[["Development Rate"]]$sigma2) / (sum(outcome.models[["Development Rate"]]$sigma2) + (outcome.models[["Development Rate"]]$k-outcome.models[["Development Rate"]]$p)/sum(diag(P)))
+
+
+
+#Early Fecundity 
+restricted.dataEF <- full_dataset %>% filter(full_dataset$Outcome == "Early Fecundity")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataEF$var.g)
+X = model.matrix(outcome.models[["Early Fecundity"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+EarlyFecundityI2 <- 100 * sum(outcome.models[["Early Fecundity"]]$sigma2) / (sum(outcome.models[["Early Fecundity"]]$sigma2) + (outcome.models[["Early Fecundity"]]$k-outcome.models[["Early Fecundity"]]$p)/sum(diag(P)))
+
+
+#Immunity
+restricted.dataI <- full_dataset %>% filter(full_dataset$Outcome == "Immunity")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataI$var.g)
+X = model.matrix(outcome.models[["Immunity"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+ImmunityI2 <- 100 * sum(outcome.models[["Immunity"]]$sigma2) / (sum(outcome.models[["Immunity"]]$sigma2) + (outcome.models[["Immunity"]]$k-outcome.models[["Immunity"]]$p)/sum(diag(P)))
+
+
+#Mating Duration
+restricted.dataMD <- full_dataset %>% filter(full_dataset$Outcome == "Mating Duration")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataMD$var.g)
+X = model.matrix(outcome.models[["Mating Duration"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+MatingDurationI2 <- 100 * sum(outcome.models[["Mating Duration"]]$sigma2) / (sum(outcome.models[["Mating Duration"]]$sigma2) + (outcome.models[["Mating Duration"]]$k-outcome.models[["Mating Duration"]]$p)/sum(diag(P)))
+
+
+#Mutant Frequency
+restricted.dataMF <- full_dataset %>% filter(full_dataset$Outcome == "Mutant Frequency")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataMF$var.g)
+X = model.matrix(outcome.models[["Mutant Frequency"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+MutantFrequencyI2 <- 100 * sum(outcome.models[["Mutant Frequency"]]$sigma2) / (sum(outcome.models[["Mutant Frequency"]]$sigma2) + (outcome.models[["Mutant Frequency"]]$k-outcome.models[["Mutant Frequency"]]$p)/sum(diag(P)))
+
+
+#Fitness Senescence
+restricted.dataFS <- full_dataset %>% filter(full_dataset$Outcome == "Fitness Senescence")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataFS$var.g)
+X = model.matrix(outcome.models[["Fitness Senescence"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+FitnessSenescenceI2 <- 100 * sum(outcome.models[["Fitness Senescence"]]$sigma2) / (sum(outcome.models[["Fitness Senescence"]]$sigma2) + (outcome.models[["Fitness Senescence"]]$k-outcome.models[["Fitness Senescence"]]$p)/sum(diag(P)))
+
+
+#Lifespan
+restricted.dataL <- full_dataset %>% filter(full_dataset$Outcome == "Lifespan")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataL$var.g)
+X = model.matrix(outcome.models[["Lifespan"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+LifespanI2 <- 100 * sum(outcome.models[["Lifespan"]]$sigma2) / (sum(outcome.models[["Lifespan"]]$sigma2) + (outcome.models[["Lifespan"]]$k-outcome.models[["Lifespan"]]$p)/sum(diag(P)))
+
+
+#Male Attractiveness
+restricted.dataMA <- full_dataset %>% filter(full_dataset$Outcome == "Male Attractiveness")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataMA$var.g)
+X = model.matrix(outcome.models[["Male Attractiveness"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+MaleAttractivenessI2 <- 100 * sum(outcome.models[["Male Attractiveness"]]$sigma2) / (sum(outcome.models[["Male Attractiveness"]]$sigma2) + (outcome.models[["Male Attractiveness"]]$k-outcome.models[["Male Attractiveness"]]$p)/sum(diag(P)))
+
+#Male Reproductive Success
+restricted.dataMRS <- full_dataset %>% filter(full_dataset$Outcome == "Male Reproductive Success")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataMRS$var.g)
+X = model.matrix(outcome.models[["Male Reproductive Success"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+MaleReproductiveSuccessI2 <- 100 * sum(outcome.models[["Male Reproductive Success"]]$sigma2) / (sum(outcome.models[["Male Reproductive Success"]]$sigma2) + (outcome.models[["Male Reproductive Success"]]$k-outcome.models[["Male Reproductive Success"]]$p)/sum(diag(P)))
+
+
+#Mating Frequency
+restricted.dataMF <- full_dataset %>% filter(full_dataset$Outcome == "Mating Frequency")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataMF$var.g)
+X = model.matrix(outcome.models[["Mating Frequency"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+MatingFrequencyI2 <- 100 * sum(outcome.models[["Mating Frequency"]]$sigma2) / (sum(outcome.models[["Mating Frequency"]]$sigma2) + (outcome.models[["Mating Frequency"]]$k-outcome.models[["Mating Frequency"]]$p)/sum(diag(P)))
+
+#Mating Latency
+restricted.dataML <- full_dataset %>% filter(full_dataset$Outcome == "Mating Latency")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataML$var.g)
+X = model.matrix(outcome.models[["Mating Latency"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+MatingLatencyI2 <- 100 * sum(outcome.models[["Mating Latency"]]$sigma2) / (sum(outcome.models[["Mating Latency"]]$sigma2) + (outcome.models[["Mating Latency"]]$k-outcome.models[["Mating Latency"]]$p)/sum(diag(P)))
+
+#Mating Success
+restricted.dataMS <- full_dataset %>% filter(full_dataset$Outcome == "Mating Success")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataMS$var.g)
+X = model.matrix(outcome.models[["Mating Success"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+MatingSuccessI2 <- 100 * sum(outcome.models[["Mating Success"]]$sigma2) / (sum(outcome.models[["Mating Success"]]$sigma2) + (outcome.models[["Mating Success"]]$k-outcome.models[["Mating Success"]]$p)/sum(diag(P)))
+
+#Ejaculate Quality and Production
+restricted.dataEQ <- full_dataset %>% filter(full_dataset$Outcome == "Ejaculate Quality and Production")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataEQ$var.g)
+X = model.matrix(outcome.models[["Ejaculate Quality and Production"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+EjaculateQualityI2 <- 100 * sum(outcome.models[["Ejaculate Quality and Production"]]$sigma2) / (sum(outcome.models[["Ejaculate Quality and Production"]]$sigma2) + (outcome.models[["Ejaculate Quality and Production"]]$k-outcome.models[["Ejaculate Quality and Production"]]$p)/sum(diag(P)))
+
+#Extinction Rate
+restricted.dataER <- full_dataset %>% filter(full_dataset$Outcome == "Extinction Rate")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataER$var.g)
+X = model.matrix(outcome.models[["Extinction Rate"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+ExtinctionRateI2 <- 100 * sum(outcome.models[["Extinction Rate"]]$sigma2) / (sum(outcome.models[["Extinction Rate"]]$sigma2) + (outcome.models[["Extinction Rate"]]$k-outcome.models[["Extinction Rate"]]$p)/sum(diag(P)))
+
+
+#Offspring Viability
+restricted.dataOV <- full_dataset %>% filter(full_dataset$Outcome == "Offspring Viability")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataOV$var.g)
+X = model.matrix(outcome.models[["Offspring Viability"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+OffspringViabilityI2 <- 100 * sum(outcome.models[["Offspring Viability"]]$sigma2) / (sum(outcome.models[["Offspring Viability"]]$sigma2) + (outcome.models[["Offspring Viability"]]$k-outcome.models[["Offspring Viability"]]$p)/sum(diag(P)))
+
+#Both Reproductive Success
+restricted.dataBRS <- full_dataset %>% filter(full_dataset$Outcome == "Both Reproductive Success")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataBRS$var.g)
+X = model.matrix(outcome.models[["Both Reproductive Success"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+BothReproductiveSuccessI2 <- 100 * sum(outcome.models[["Both Reproductive Success"]]$sigma2) / (sum(outcome.models[["Both Reproductive Success"]]$sigma2) + (outcome.models[["Both Reproductive Success"]]$k-outcome.models[["Both Reproductive Success"]]$p)/sum(diag(P)))
+
+
+#Female Reproductive Success
+restricted.dataFRS <- full_dataset %>% filter(full_dataset$Outcome == "Female Reproductive Success")
+
+#Run estimate of heterogeneity
+W = diag(1/restricted.dataFRS$var.g)
+X = model.matrix(outcome.models[["Female Reproductive Success"]])
+P = W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+FemaleReproductiveSuccessI2 <- 100 * sum(outcome.models[["Female Reproductive Success"]]$sigma2) / (sum(outcome.models[["Female Reproductive Success"]]$sigma2) + (outcome.models[["Female Reproductive Success"]]$k-outcome.models[["Female Reproductive Success"]]$p)/sum(diag(P)))
+
+
+simple.frame$I2 <- c(BodySizeI2, DevelopmentRateI2, EarlyFecundityI2, ImmunityI2, MaleAttractivenessI2, MaleReproductiveSuccessI2, MatingDurationI2, MutantFrequencyI2, FitnessSenescenceI2, LifespanI2, MatingFrequencyI2, MatingLatencyI2, MatingSuccessI2, EjaculateQualityI2, BothReproductiveSuccessI2, ExtinctionRateI2, FemaleReproductiveSuccessI2, OffspringViabilityI2)
+
+
+outcome.frame <- format(simple.frame, digits = 2)
+outcome.frame <- add_rownames(outcome.frame, "Outcome")
+outcome.frame$b <- as.numeric(outcome.frame$b)
+outcome.frame$k <- as.numeric(outcome.frame$k)
+outcome.frame$ci.lb <- as.numeric(outcome.frame$ci.lb)
+outcome.frame$ci.ub <- as.numeric(outcome.frame$ci.ub)
+outcome.frame$I2 <- as.numeric(outcome.frame$I2)
+outcome.frame$Class <- c("Ambiguous", "Ambiguous", "Ambiguous", "Ambiguous", "Ambiguous", "Ambiguous", "Ambiguous", "Indirect", "Indirect", "Indirect", "Indirect", "Indirect", "Indirect", "Indirect", "Direct", "Direct", "Direct", "Direct")
+
+outcome.frame %>% rename(beta = b, n = k) %>% filter(Outcome != "Behavioural Plasticity" & Outcome != "Pesticide Resistance" & Outcome != "Strength") %>% pander(split.cell = 40, split.table = Inf)
+
+# saveRDS(outcome.frame %>% rename(beta = b, n = k) %>% filter(Outcome != "Behavioural Plasticity" & Outcome != "Pesticide Resistance" & Outcome != "Strength"), "PDF_RDS_files/ST8.rds")
+```
+
+
+____________________
+
+### Meta-analyses including many moderator variables
+
+We collected data from fitness components that were deemed ambiguous as well as unambiguous. The ambiguous outcomes are likely to add heterogeneity to the models and may not help us in answering questions of the fitness effects of sexual selection. A REML model utilising our complete dataset with many moderator variables would thus be: 
+
+```{r}
+model.preliminary <- rma.mv(g, var.g, 
+                         mods = ~ 1 + Sex * Environment + Taxon + Outcome.Class + log(Generations) + Blinding + Enforced.Monogamy, 
+                         random = list(~ 1 | Study.ID, 
+                                       ~ 1 | Outcome), 
+                         method = "REML", 
+                         data = full_dataset)
+
+summary(model.preliminary, digits = 2)
+```
+<br></br>
+
+Here we can also run a Bayesian model alongside the REML model (metafor). The _R^2^_ for this model is 0.36 (95% CIs = 0.33-0.4). 
+```{r, warning = FALSE, results='hide', message=FALSE, error = FALSE}
+if(!file.exists("data/brms.preliminary.rds")){
+  brms.preliminary <- brm(g | se(SE)  ~ 1 + Sex * Environment + log(Generations) + Blinding + Enforced.Monogamy #Note that running se(SE, sigma = TRUE) gives different result due to a difference in priors
+                + (1|Study.ID) #group level effects
+                + (1|Outcome)
+                + (1|Taxon), 
+                family = "gaussian", 
+                seed = 1,
+                cores = 4, chains = 4, iter = 4000, #Run 4 chains in parallel for 4000 iterations (2000 are burn in)
+                control = list(adapt_delta = 0.999, max_treedepth = 15),
+                data = full_dataset %>% mutate(SE = sqrt(var.g)))
+  saveRDS(brms.preliminary, file = "data/brms.preliminary.rds") 
+}
+brms.preliminary <- readRDS(file = "data/brms.preliminary.rds") # Avoid re-running model above
+```
+<br></br>
+
+**Supplementary Table 9:** Bayesian model results for a preliminary model that explores many covariates collected in the dataset.  
+
+```{r}
+#Plot model results
+prelim.results.bayesplot <- bayesplot::mcmc_areas(posterior_samples(brms.preliminary)[,1:11]) + 
+  geom_vline(xintercept = 0, linetype = 2) +
+  
+  theme_bw()+
+  
+  theme(panel.spacing = unit(0.1, "lines"),
+        text = element_text(size=16),
+        panel.border= element_blank(),
+        axis.line=element_line(), 
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(), 
+        legend.text = element_text(size=16), 
+        legend.title=element_text(size=16, 
+                                  face = "bold"),
+        axis.title.x = element_text(hjust = 0.5, size = 14),
+        axis.title.y = element_text(size = 16, hjust = 0.35, margin = margin(r=-10)),
+        axis.text.y = element_text(angle = 0),
+        plot.title = element_text(size = 16))
+
+make_text_summary(brms.preliminary) %>% 
+  add_significance_stars() %>% tibble::rownames_to_column("Model Parameter") %>% pander()
+```
+
+
+From these models we can see that the moderators `Blinding` and `Generations` have little effect on effect size, and they are also tangential to our research question (unlike e.g. `sex` and `environment`). 
+
+____________________
+
+### Restricted analysis of just the higher-quality data
+
+The models and plots above all use the full dataset (called `full_dataset` in the R code). However, some of the variables included in that dataset are not clearly related to population fitness (these were scored as "Ambiguous" in the "Outcome.Class" column), or it was unclear whether the environmental conditions could be termed "Stressful" or "Benign". To check whether our findings are robust to the inclusion of the ambiguous results, and to properly evaluate the effects of environmental stress, we next restricted the dataset to exclude these unclear cases (called `strict_dataset` in the R code). We also focus on the model containing the fixed effects Sex, Environment, Taxon and the interaction between sex and environment, as these are key to our research question. 
+
+
+```{r, message=FALSE, error = FALSE, warning=FALSE}
+strict_dataset <- full_dataset %>%
+  filter(Outcome.Class != "Ambiguous" & Environment != "Not Stated")  %>%
+  mutate(Sex = relevel(Sex, ref = "M"),
+         Environment = relevel(factor(Environment), ref = "Unstressed"),
+         Taxon = relevel(factor(Taxon), ref = "Beetle"))
+
+# strict_dataset <- full_dataset %>% 
+#   filter(Outcome.Class == "Direct" & Environment != "Not Stated")  %>% 
+#   mutate(Sex = relevel(Sex, ref = "M"),
+#          Environment = relevel(factor(Environment), ref = "Unstressed"),
+#          Taxon = relevel(factor(Taxon), ref = "Beetle"))
+
+model.complete <- rma.mv(g, V = var.g, 
+                         mods = ~ 1 + Sex * Environment + Taxon, 
+                         random = list(~ 1 | Study.ID, 
+                                       ~ 1 | Outcome), 
+                         method = "REML", 
+                         data = strict_dataset)
+
+summary(model.complete, digits = 2)
+```
+
+<!-- Bayesian equivalent is something like: -->
+
+<!-- ```{r} -->
+<!-- model.complete.bayesian <- brm(g | se(SE)  ~ 1 + Sex * Environment * Taxon + Enforced.Monogamy -->
+<!--                   + (1|Study.ID)  -->
+<!--                   + (1|Outcome),  -->
+<!--                   family = "gaussian",  -->
+<!--                   seed = 1, -->
+<!--                   cores = 1, chains = 4, iter = 4000,  -->
+<!--                   control = list(adapt_delta = 0.9999, max_treedepth = 15), -->
+<!--                   data = strict_dataset %>% mutate(SE = sqrt(var.g))) -->
+<!-- ``` -->
+
+
+
+The result is a model with estimates for various taxa, species, sexes and environments. We again write a function to predict the average effect size for each sub-group in the data.
+
+```{r, warning=FALSE, fig.height= 8, fig.width=8}
+# function that makes predict.rma work like a normal predict() function, instead of the idiosyncratic way that it works by default.
+get.predictions.complete <- function(newdata){
+  B<-0; F<-0; Stressed<-0; Cricket<-0; Fly<-0; Guppy<-0; Mite<-0; Mouse<-0; interaction1<-0; interaction2<-0;
+  if(newdata[1] == "B") B<-1 
+  if(newdata[1] == "F") F<-1 
+  if(newdata[2] == "Stressed") Stressed<-1
+  if(newdata[2] == "Cricket") Cricket<-1
+  if(newdata[3] == "Fly") Fly<-1
+  if(newdata[3] == "Guppy") Guppy<-1
+  if(newdata[3] == "Mite") Mite<-1
+  if(newdata[3] == "Mouse") Mouse<-1
+  if(newdata[1] == "B" & newdata[2] == "Stressed") interaction1<-1
+  if(newdata[1] == "F" & newdata[2] == "Stressed") interaction2<-1
+
+  predict(model.complete, newmods=c(B, F, Stressed, Cricket, Fly, Guppy, Mite, Mouse, interaction1, interaction2))
+}
+# Get the predictions for each combination of moderators
+predictions.complete <- as.data.frame(expand.grid(Sex = c("M", "B", "F"),
+                           Environment = c("Unstressed", "Stressed"),
+                           Taxon = c("Beetle", "Cricket", "Fly", "Guppy", "Mite", "Mouse")))
+predictions.complete <- cbind(predictions.complete, do.call("rbind", apply(predictions.complete, 1, get.predictions.complete))) %>%
+  select(Sex, Environment, Taxon, pred, se, ci.lb, ci.ub) 
+for(i in 4:7) predictions.complete[,i] <- unlist(predictions.complete[,i])
+
+countpred <- count_(strict_dataset, c("Sex", "Environment", "Taxon"))
+predictions.complete <- left_join(predictions.complete, countpred, by = c("Sex", "Environment", "Taxon"))
+countpred <- count_(strict_dataset, c("Sex", "Environment", "Taxon"))
+predictions.complete <- left_join(predictions.complete, countpred, by = c("Sex", "Environment", "Taxon"))
+
+# plot the model predictions for effect size (Hedges' g) for male, female and both sexes under both stressed and unstressed condition and faceted for each taxon. 
+
+pd <- position_dodgev(0.6)
+
+Taxon.metaanlysis <- predictions.complete %>% 
+    mutate(Sex = replace(as.character(Sex), Sex == "B", "Both"),
+         Sex = replace(Sex, Sex == "M", "Male"),
+         Sex = replace(Sex, Sex == "F", "Female"),
+         Environment = replace(as.character(Environment), Environment == "Stressed", "Stressful"),
+         Environment = replace(Environment, Environment == "Unstressed", "Benign"),
+         Sex = factor(Sex, levels = c("Male", "Both", "Female"))) %>%
+  ggplot(aes(x = pred, y= Environment, fill = Sex)) + 
+  geom_vline(xintercept = 0, linetype = 2, colour = "black") + 
+  geom_errorbarh(aes(xmin = predictions.complete$ci.lb, 
+                     xmax = predictions.complete$ci.ub,
+                     color= Sex), 
+                 height = 0, position = pd, show.legend = F) +
+  geom_point(position = pd, size=2, shape=21, color = "grey20") + 
+  facet_grid(Taxon ~.)+
+  ylab("Environment \n")+
+  xlab("\nModel Prediction (Hedges g)")+
+  xlim(-1, 2)+
+  ggtitle('Effects of Sex and Stress on \nPopulation Fitness for Each Taxon')+
+  scale_fill_manual(values = c("Male" = "#ff7f00", "Female" = "#984ea3", "Both" = "#4daf4a"))+
+  scale_color_manual(values = c("Male" = "#ff7f00", "Female" = "#984ea3", "Both" = "#4daf4a"))+
+  guides(fill = guide_legend(reverse=T, override.aes = list(size = 4.5)))+
+  
+    theme_bw()+
+  
+  theme(strip.text.y = element_text(angle = 0, size = 14, margin = margin(r=20, l=20)), 
+        strip.background = element_rect(colour = NULL,
+                                        linetype = "blank",
+                                        fill = "gray90"),
+        text = element_text(size=14),
+        panel.spacing = unit(0.5, "lines"),
+        panel.border= element_blank(),
+        axis.line=element_line(), 
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(), 
+        legend.text = element_text(size=14), 
+        legend.title=element_text(size=14, 
+                                  face = "bold"),
+        axis.title.x = element_text(hjust = 0.3, size = 14),
+        axis.title.y = element_text(size = 14),
+        plot.title = element_text(size = 14))
+
+#ggsave(plot = Taxon.metaanlysis, filename = "PDF_RDS_files/SF2.pdf", height = 8, width = 8)
+Taxon.metaanlysis
+
+#saveRDS(Taxon.metaanlysis, "PDF_RDS_files/SF2.rds")
+```
+<br></br>
+**Supplementary Figure 2:** The predictions from this model indicate some heterogeneity between taxon. However, the most apparent difference between taxa is that confidence bands increase for taxa with low sample size. As previously shown, the beetle and fly taxa are the most heavily sampled and in the above figure have the narrowest confidence bands. Importantly, the overall direction of effect does not change between taxon, although guppies and mice show near zero effect sizes. Here we see that under stressed environments, females from all taxa appear to have greater fitness increase than males or 'both'. 
+
+
+**Supplementary Table 10:** The predictions for the above figure looking at the effect of sexual selection amongst taxa uses the following dataframe. 
+
+```{r}
+colnames(predictions.complete) <- c("Sex", "Environment", "Taxon", "Prediction", "SE", "CI.lb", "CI.ub", "n")
+predictions.complete <- format(predictions.complete, digits = 2)
+predictions.complete[[9]] <- NULL
+predictions.complete %>% pander()
+
+#saveRDS(predictions.complete, "PDF_RDS_files/ST10.rds")
+```
+
+Given that none of the levels of `Taxon` have a particularly strong impact on effect size, and many categories are incompletely sampled with regards to Sex and Environment (Supplementary Table 10), we elected to treat `Taxon` as a random/group level effect in all subsequent models.
+
+____________
+
+### REML: Effects of Environment and Sex
+
+Here we ask two key questions: Does sexual selection benefit populations in stressful environments more than benign environments? **AND** Do the benefits of sexual selection differ between the sexes? The only difference to the previous model is that `Taxon` is now treated as a random effect. Note that this analysis again uses the strict dataset, containing only "direct" fitness measures and those where we were able to score the presence/absence of environmental stress.
+
+```{r}
+model.complete2 <- rma.mv(g, V = var.g, 
+                          mods = ~ 1 + Sex * Environment, 
+                          random = list(~ 1 | Study.ID, 
+                                        ~ 1 | Outcome,
+                                        ~ 1 | Taxon), 
+                          method = "REML", 
+                          data = strict_dataset)
+saveRDS(model.complete2, 'data/model.complete2.rds')
+summary(model.complete2, digits = 2)
+```
+
+Next, we conducted planned contrasts on `model.complete2` to investigate the difference in effect size between groups, using the anova method from `metafor`.
+
+**Supplementary Table 11:** Using the ``anova.rma`` function we can conduct hypothesis tests between two categorical groups in the model. Here we conduct 5 tests comparing the relative effect of sexual selection between the sexes, and in different environments. 
+
+```{r}
+#anova where you specify the values based on the list of moderators
+anova.1 = anova(model.complete2, L=c(0, 0, -1, 0, 0, 0)) 
+anova.2 = anova(model.complete2, L=c(0, 0, -1, 0, 0, -1))
+anova.3 = anova(model.complete2, L=c(0, 0, 0, -1, 0, -1))
+anova.4 = anova(model.complete2, L=c(0, 0, 0, -1, 0, 0))
+anova.5 = anova(model.complete2, L=c(0, 0, 0, -1, -1, 0))
+
+anova.list <- list(anova.1, anova.2, anova.3, anova.4, anova.5)
+
+anova.frame <- t(data.frame(lapply(anova.list, function(x) {
+  data.frame(x[["hyp"]],
+  x[["Lb"]],
+  x[["se"]],
+  x[["Lb"]] - 1.96*x[["se"]],
+  x[["Lb"]] + 1.96*x[["se"]],
+  x[["pval"]])
+})))
+anova.frame <- as.data.frame(split(anova.frame, rep(1:6)))
+colnames(anova.frame) <- c("Hypothesis", "Estimate", "Est.Error", "CI.Lower", "CI.Upper", "pval")
+anova.frame$Estimate <- as.numeric(levels(anova.frame$Estimate))[anova.frame$Estimate]
+anova.frame$Est.Error <- as.numeric(levels(anova.frame$Est.Error))[anova.frame$Est.Error]
+anova.frame$CI.Lower <- as.numeric(levels(anova.frame$CI.Lower))[anova.frame$CI.Lower]
+anova.frame$CI.Upper <- as.numeric(levels(anova.frame$CI.Upper))[anova.frame$CI.Upper]
+anova.frame$pval <- as.numeric(levels(anova.frame$pval))[anova.frame$pval]
+anova.frame <- format(anova.frame, digits = 2)
+anova.frame$star <- c("", "*", "*", "*", "")
+colnames(anova.frame)[colnames(anova.frame)=="star"] <- " "
+anova.frame$pval <- NULL
+rownames(anova.frame) <- c("M vs F, Benign", "M vs F, Stressful", "Benign vs Stressful, Female", "Benign vs Stressful, Male", "Benign vs Stressful, Both")
+anova.frame %>% pander(split.table = Inf)
+
+#saveRDS(anova.frame, "PDF_RDS_files/ST11.rds")
+```
+<br></br>
+
+______________
+
+### Bayesian model: Effects of Environment and Sex
+
+```{r, warning = FALSE, results='hide', message=FALSE, error = FALSE}
+if(!file.exists("data/brms.complete2.rds")){
+  brms.complete2 <- brm(g | se(SE)  ~ 1 + Sex * Environment 
+                        + (1|Taxon) 
+                        + (1|Study.ID) 
+                        + (1|Outcome), 
+                        family = "gaussian", 
+                        seed = 1,
+                        cores = 4, chains = 4, iter = 4000, 
+                        control = list(adapt_delta = 0.999, max_treedepth = 15),
+                        data = strict_dataset %>% mutate(SE = sqrt(var.g)))
+  saveRDS(brms.complete2, file = "data/brms.complete2.rds")
+}
+brms.complete2 <- readRDS(file = "data/brms.complete2.rds") 
+```
+<br></br>
+
+**Supplementary Table 12:** Model estimate summary table for the Bayesian model investigating the effect of environment and sex (alongside sexual selection) on fitness. 
+```{r}
+# lternatively you can obtain posterior samples manually.
+post <- (posterior_samples(brms.complete2, 
+                           pars = c("b_Intercept", "b_SexB", "b_SexF", 
+                                    "b_EnvironmentStressed", "b_SexB:EnvironmentStressed", 
+                                    "b_SexF:EnvironmentStressed")) %>%
+           mutate(both_benign = b_Intercept + b_SexB,
+                  both_stressful = b_Intercept + b_SexB + b_EnvironmentStressed + `b_SexB:EnvironmentStressed`,
+                  male_benign = b_Intercept,
+                  male_stressful = b_Intercept + b_EnvironmentStressed,
+                  female_benign = b_Intercept + b_SexF,
+                  female_stressful = b_Intercept + b_SexF + b_EnvironmentStressed + `b_SexF:EnvironmentStressed`))[,-(1:6)]
+
+# Add columns for Environment and Sex
+post <- as.data.frame(t(post))
+post$Sex <- c("Both", "Both", "Male", "Male", "Female", "Female")
+post$Environment <- c("Benign", "Stressful", "Benign", "Stressful", "Benign", "Stressful")
+
+#Clean up dataframe
+post <- melt(post, id = c("Sex", "Environment"))
+post$variable <- NULL
+
+make_text_summary(brms.complete2) %>% add_significance_stars() %>% tibble::rownames_to_column("Model Parameter") %>% pander()
+```
+<br></br>
+
+
+**Supplementary Table 13:** Hypothesis tests for the Bayesian model are similar to the REML model, with slight differences to CIs.
+
+```{r}
+#Obtain hypothesis estimates
+brms.hypothesis <- hypothesis(brms.complete2, c("0 = SexF",
+                             "0 = SexF + SexF:EnvironmentStressed",
+                             "0 = SexF:EnvironmentStressed + EnvironmentStressed",
+                             "0 = EnvironmentStressed",
+                             "0 = SexB:EnvironmentStressed + EnvironmentStressed"))
+#Format into dataframe
+brms.hypothesis.table <- 
+  data.frame(brms.hypothesis[["hypothesis"]][["Hypothesis"]],
+             brms.hypothesis[["hypothesis"]][["Estimate"]],
+             brms.hypothesis[["hypothesis"]][["Est.Error"]],
+             brms.hypothesis[["hypothesis"]][["CI.Lower"]],
+             brms.hypothesis[["hypothesis"]][["CI.Upper"]],
+             brms.hypothesis[["hypothesis"]][["Star"]])
+colnames(brms.hypothesis.table) <- c("Hypothesis", "Estimate", "Est.Error", "CI.Lower", "CI.Upper", " ")
+brms.hypothesis.table <- format(brms.hypothesis.table, digits = 2)
+rownames(brms.hypothesis.table) <- c("M vs F, Benign", "M vs F, Stressful", "Benign vs Stressful, Female", "Benign vs Stressful, Male", "Benign vs Stressful, Both")
+brms.hypothesis.table %>% pander(split.table = Inf)
+```
+<br></br>
+Using predictions from both REML and Bayesian models we can obtain a figure that plots the mean/median predictions as well as distribution density (Bayesian) and 95 % CI (REML).
+
+```{r, fig.height=6, fig.width=6, warning=FALSE, message=FALSE, error = FALSE}
+#Generate predictions without taxon utilising the previously described function
+get.predictions.complete2 <- function(newdata){
+  B<-0; F<-0; Stressed<-0; interaction1<-0; interaction2<-0; interaction3<-0
+  if(newdata[1] == "B") B<-1 
+  if(newdata[1] == "F") F<-1 
+  if(newdata[2] == "Stressed") Stressed<-1
+  if(newdata[1] == "B" & newdata[2] == "Stressed") interaction1<-1
+  if(newdata[1] == "F" & newdata[2] == "Stressed") interaction2<-1
+
+  predict(model.complete2, newmods=c(B, F, Stressed, interaction1=interaction1, interaction2=interaction2))
+}
+
+# Get the predictions for each combination of moderators
+predictions.complete2 <- as.data.frame(expand.grid(Sex = c("M", "B", "F"),
+                           Environment = c("Unstressed", "Stressed")))
+predictions.complete2 <- cbind(predictions.complete2, do.call("rbind", apply(predictions.complete2, 1, get.predictions.complete2))) %>%
+  select(Sex, Environment, pred, se, ci.lb, ci.ub) 
+for(i in 3:6) predictions.complete2[,i] <- unlist(predictions.complete2[,i])
+
+countpred <- count_(strict_dataset, c("Sex", "Environment"))
+
+predictions.complete2 <- left_join(predictions.complete2, countpred, by = c("Sex", "Environment"))
+colnames(predictions.complete2) <- c("Sex", "Environment", "Prediction", "SE", "CI.lb", "CI.ub", "n")
+predictions.complete2 <- predictions.complete2 %>%
+      mutate(Sex = replace(as.character(Sex), Sex == "B", "Both"),
+         Sex = replace(Sex, Sex == "M", "Male"),
+         Sex = replace(Sex, Sex == "F", "Female"),
+         Environment = replace(as.character(Environment), Environment == "Stressed", "Stressful"),
+         Environment = replace(Environment, Environment == "Unstressed", "Benign"),
+         Sex = factor(Sex, levels = c("Male", "Both", "Female")))
+
+#Plot the posterior values from the Bayesian model as density ridges
+pd <- position_dodgev(height = 0.3)
+posterior.plot <- post %>% mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))) %>% ggplot()+
+  stat_density_ridges(aes(x=value, y = Environment, fill = Sex), alpha = 0.65, scale = 0.6, position = position_nudge(y = 0.15), height = 10, show.legend = F, quantile_lines = T, quantiles = 2)+
+  geom_vline(xintercept = 0, linetype = 2, colour = "black") + 
+  ylab("Environment")+
+  xlab("\nEffect Size (Hedges' g)")+
+  # scale_fill_manual(values = c("Male" = "#e41a1c", "Female" = "#377eb8", "Both" = "#4daf4a"))+
+  # scale_color_manual(values = c("Male" = "#e41a1c", "Female" = "#377eb8", "Both" = "#4daf4a"))+
+  scale_fill_manual(values = c("Male" = "#ff7f00", "Female" = "#984ea3", "Both" = "#4daf4a"))+
+  scale_color_manual(values = c("Male" = "#ff7f00", "Female" = "#984ea3", "Both" = "#4daf4a"))+
+  scale_x_continuous(limits = c(-0.75, 1.5), breaks = c(-1, -.5, 0, 0.5, 1, 1.5))+
+  
+  theme_bw()+
+  
+  theme(panel.spacing = unit(0.1, "lines"),
+        text = element_text(size=16),
+        panel.border= element_blank(),
+        axis.line=element_line(), 
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(), 
+        legend.text = element_text(size=16), 
+        legend.title=element_text(size=16, face = "bold"),
+        axis.title.x = element_text(hjust = 0.5, size = 14),
+        axis.title.y = element_text(size = 16, hjust = 0.35, margin = margin(r=-10)),
+        axis.text.y = element_text(angle = 0),
+        plot.title = element_text(size = 16))
+
+#Add the REML predictions as circles with error bars
+both.plots <- posterior.plot + 
+  geom_errorbarh(data = predictions.complete2 %>% mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))), 
+                 aes(xmin = predictions.complete2$CI.lb,
+                     xmax = predictions.complete2$CI.ub, y = Environment,
+                     color = Sex), 
+                 height = 0, show.legend = F, position = pd)+
+  
+  geom_point(data = predictions.complete2 %>% mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))), 
+             aes(x = Prediction, y = Environment, size=n, fill = Sex), 
+             shape=21, color = "grey20", position = pd) +
+  
+    guides(fill = guide_legend(reverse=T, override.aes = list(size = 7.5)))+
+    scale_size(guide = 'none')+
+  
+  scale_y_discrete(expand=c(0.075, 0))
+
+both.plots
+```
+
+<br></br>
+**Figure 2a:** Sexual selection generally increases population fitness, especially for females under stressful conditions. The benefits of sexual selection on fitness for females under stressful conditions are small-medium according to Cohen's interperetation of effect sizes. Circle size is proportional to sample size (shown below). The REML predictions are shown as circles with error bars and the Bayesian predictions as density ridges. This figure can also be found in the main manuscript. 
+
+
+**Supplementary Table 14:** The REML predictions in the plot above use the following dataframe
+
+```{r}
+predictions.complete2 <- format(predictions.complete2, digits = 2)
+predictions.complete2$Prediction = as.numeric(predictions.complete2$Prediction)
+predictions.complete2$CI.lb = as.numeric(predictions.complete2$CI.lb)
+predictions.complete2$CI.ub = as.numeric(predictions.complete2$CI.ub)
+predictions.complete2$n = as.numeric(predictions.complete2$n)
+
+predictions.complete2 %>% pander()
+
+#saveRDS(predictions.complete2, "PDF_RDS_files/ST14.rds")
+```
+
+###Effects of environment and sex on direct fitness components  
+
+```{r, warning=FALSE, message=FALSE, error = FALSE, fig.align='center', fig.width = 10, fig.height=6}
+model.direct.only <- rma.mv(g, V = var.g, 
+                          mods = ~ 1 + Sex * Environment, 
+                          random = list(~ 1 | Study.ID, 
+                                       ~ 1 | Outcome,
+                                       ~ 1 | Taxon), 
+                          method = "REML", 
+                          data = strict_dataset %>% filter(Outcome.Class == "Direct"))
+
+#Generate predictions without taxon utilising the previously described function
+get.predictions.direct <- function(newdata){
+  B<-0; F<-0; Stressed<-0; interaction1<-0; interaction2<-0; interaction3<-0
+  if(newdata[1] == "B") B<-1 
+  if(newdata[1] == "F") F<-1 
+  if(newdata[2] == "Stressed") Stressed<-1
+  if(newdata[1] == "B" & newdata[2] == "Stressed") interaction1<-1
+  if(newdata[1] == "F" & newdata[2] == "Stressed") interaction2<-1
+
+  predict(model.direct.only, newmods=c(B, F, Stressed, interaction1=interaction1, interaction2=interaction2))
+}
+
+# Get the predictions for each combination of moderators
+predictions.direct <- as.data.frame(expand.grid(Sex = c("M", "B", "F"),
+                           Environment = c("Unstressed", "Stressed")))
+predictions.direct <- cbind(predictions.direct, do.call("rbind", apply(predictions.direct, 1, get.predictions.direct))) %>%
+  select(Sex, Environment, pred, se, ci.lb, ci.ub) 
+for(i in 3:6) predictions.direct[,i] <- unlist(predictions.direct[,i])
+
+countpred <- count_(strict_dataset %>% filter(Outcome.Class == "Direct"), c("Sex", "Environment"))
+
+predictions.direct <- left_join(predictions.direct, countpred, by = c("Sex", "Environment"))
+colnames(predictions.direct) <- c("Sex", "Environment", "Prediction", "SE", "CI.lb", "CI.ub", "n")
+predictions.direct <- predictions.direct %>%
+      mutate(Sex = replace(as.character(Sex), Sex == "B", "Both"),
+         Sex = replace(Sex, Sex == "M", "Male"),
+         Sex = replace(Sex, Sex == "F", "Female"),
+         Environment = replace(as.character(Environment), Environment == "Stressed", "Stressful"),
+         Environment = replace(Environment, Environment == "Unstressed", "Benign"),
+         Sex = factor(Sex, levels = c("Male", "Both", "Female")))
+
+predictions.direct <- format(predictions.direct, digits = 2)
+predictions.direct$Prediction = as.numeric(predictions.direct$Prediction)
+predictions.direct$CI.lb = as.numeric(predictions.direct$CI.lb)
+predictions.direct$CI.ub = as.numeric(predictions.direct$CI.ub)
+predictions.direct$n = as.numeric(predictions.direct$n)
+
+
+
+if(!file.exists("data/brms.direct.rds")){
+  brms.direct <- brm(g | se(SE)  ~ 1 + Sex * Environment 
+                        + (1|Taxon) 
+                        + (1|Study.ID) 
+                        + (1|Outcome), 
+                        family = "gaussian", 
+                        seed = 1,
+                        cores = 4, chains = 4, iter = 4000, 
+                        control = list(adapt_delta = 0.9999, max_treedepth = 15),
+                        data = strict_dataset %>% 
+                          filter(Outcome.Class == "Direct") %>% 
+                          mutate(SE = sqrt(var.g)))
+  saveRDS(brms.direct, file = "data/brms.direct.rds")
+}
+brms.direct <- readRDS(file = "data/brms.direct.rds")
+
+# lternatively you can obtain posterior samples manually.
+post.direct <- (posterior_samples(brms.direct, 
+                           pars = c("b_Intercept", "b_SexB", "b_SexF", 
+                                    "b_EnvironmentStressed", "b_SexB:EnvironmentStressed", 
+                                    "b_SexF:EnvironmentStressed")) %>%
+           mutate(both_benign = b_Intercept + b_SexB,
+                  both_stressful = b_Intercept + b_SexB + b_EnvironmentStressed + `b_SexB:EnvironmentStressed`,
+                  male_benign = b_Intercept,
+                  male_stressful = b_Intercept + b_EnvironmentStressed,
+                  female_benign = b_Intercept + b_SexF,
+                  female_stressful = b_Intercept + b_SexF + b_EnvironmentStressed + `b_SexF:EnvironmentStressed`))[,-(1:6)]
+
+# Add columns for Environment and Sex
+post.direct <- as.data.frame(t(post.direct))
+post.direct$Sex <- c("Both", "Both", "Male", "Male", "Female", "Female")
+post.direct$Environment <- c("Benign", "Stressful", "Benign", "Stressful", "Benign", "Stressful")
+
+#Clean up dataframe
+post.direct <- melt(post.direct, id = c("Sex", "Environment"))
+post.direct$variable <- NULL
+
+#Plot the posterior values from the Bayesian model as density ridges
+pd <- position_dodgev(height = 0.3)
+posterior.direct.plot <- post.direct %>% mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))) %>% ggplot()+
+  stat_density_ridges(aes(x=value, y = Environment, fill = Sex), alpha = 0.65, scale = 0.6, position = position_nudge(y = 0.15), height = 10, show.legend = F, quantile_lines = T, quantiles = 2)+
+  geom_vline(xintercept = 0, linetype = 2, colour = "black") + 
+  ylab("Environment\n")+
+  xlab("\nEffect Size (Hedges' g)")+
+  # scale_fill_manual(values = c("Male" = "#e41a1c", "Female" = "#377eb8", "Both" = "#4daf4a"))+
+  # scale_color_manual(values = c("Male" = "#e41a1c", "Female" = "#377eb8", "Both" = "#4daf4a"))+
+  scale_fill_manual(values = c("Male" = "#ff7f00", "Female" = "#984ea3", "Both" = "#4daf4a"))+
+  scale_color_manual(values = c("Male" = "#ff7f00", "Female" = "#984ea3", "Both" = "#4daf4a"))+
+  scale_x_continuous(limits = c(-1.25, 1.25), breaks = c(-1, -.5, 0, 0.5, 1))+
+  
+  theme_bw()+
+  
+  theme(panel.spacing = unit(0.1, "lines"),
+        text = element_text(size=16),
+        panel.border= element_blank(),
+        axis.line=element_line(), 
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(), 
+        legend.text = element_text(size=16), 
+        legend.title=element_text(size=16, face = "bold"),
+        axis.title.x = element_text(hjust = 0.5, size = 14),
+        axis.title.y = element_text(size = 16, hjust = 0.35, margin = margin(r=-10)),
+        axis.text.y = element_text(angle = 0),
+        plot.title = element_text(size = 16))
+
+#Add the REML predictions as circles with error bars
+both.direct.plots <- posterior.direct.plot + 
+  geom_errorbarh(data = predictions.direct %>% mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))), 
+                 aes(xmin = predictions.direct$CI.lb,
+                     xmax = predictions.direct$CI.ub, y = Environment,
+                     color = Sex), 
+                 height = 0, show.legend = F, position = pd)+
+  
+  geom_point(data = predictions.direct %>% mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))), 
+             aes(x = Prediction, y = Environment, size=n, fill = Sex), 
+             shape=21, color = "grey20", position = pd) +
+  
+    guides(fill = guide_legend(reverse=T, override.aes = list(size = 7.5)))+
+    scale_size(guide = 'none')+
+  
+  scale_y_discrete(expand=c(0.075, 0))
+
+#pdf("PDF_RDS_files/SF3.pdf", width = 10, height = 6)
+grid.arrange(both.plots + 
+               guides(fill = FALSE)+
+               ggtitle("Indirect And Direct\n")+ theme(plot.title = element_text(size = 18, face = "bold", colour = "Red")),
+             both.direct.plots + ggtitle("Direct Only\n")+
+               theme(axis.title.y = element_blank(), 
+                     plot.title = element_text(size = 18, face = "bold", colour = "Red")), 
+             nrow = 1, 
+             widths = c(3,3.5))
+#dev.off
+```
+  
+**Supplementary Figure 3:** The comparison of model predictions between models that use a dataset compiled from direct **and** indirect fitness components against a model that only uses direct fitness components. Notably, in both cases there is a significant positive effect of sexual selection on fitness for females evolving in stressful conditions. Bayesian predictions are depicted by a density curve while REML predictions are depicted with a circle (size corresponds to _n_) and 95 % CIs.   
+
+**Supplementary Table 15:** The REML predictions for the 'direct model' in the plot above use the following dataframe.
+
+```{r, warning=FALSE}
+predictions.direct %>% pander()
+
+#saveRDS(predictions.direct, "PDF_RDS_files/ST15.rds")
+```
+
+____________________
+
+###Estimating Hedges' g heterogeneity using _I^2^_
+
+Using a function from https://github.com/daniel1noble/metaAidR we can obtain confidence intervals for total _I^2^_ and the individual components of the random effects. There are different methods to obtain estimates of _I^2^_. Here we obtain an overall value of _I^2^_ that is weighted based on variance and where estimates of heterogeneity are sourced from sigma^2^ of the respective models. The values are based on the REML models. 
+
+```{r warning=FALSE}
+I2.model.g <- rma.mv(g, V = var.g, 
+                          mods = ~ 1 + Sex * Environment, 
+                          random = list(~ 1 | Observation.level, 
+                                        ~ 1 | Study.ID, 
+                                        ~ 1 | Outcome,
+                                        ~ 1 | Taxon), 
+                          method = "REML", 
+                          data = strict_dataset %>% mutate(Observation.level = 1:n()))
+
+I2(I2.model.g, strict_dataset$var.g) %>% pander(digits = 3)
+```
+These values indicate that 36 % of total heterogeneity is due to the **between study**. The total _I^2^_  is 95.2 %, a reasonably high _I^2^_ value. However this is relatively common in Ecology and Evolution total [@Senior_I2_2016]. 
+
+____________________
+
+##Meta-analysis using lnRR
+
+As per reviewers comments, we can use the log-response ratio (lnRR) instead of Hedges' g as the effect size (response variable in meta-analysis models). To calculate lnRR we use the ``metafor`` function ``escalc``.  
+
+```{r, fig.height=6, fig.width=6, warning=FALSE, message=FALSE, error = FALSE}
+lnRR.data <- 
+escalc(measure = "ROM",
+       m1i = mean.high, 
+       m2i = mean.low,
+       sd1i = sd.high,
+       sd2i = sd.low,
+       n1i = n.high,
+       n2i = n.low,
+       vtype = "LS",
+       data = full_dataset, var.names=c("lnRR","lnRR_var"), digits=4) %>% 
+  filter(lnRR != "NA") %>% 
+  mutate(lnRR = round(lnRR, 3)*Positive.Fitness,
+         Sex = relevel(Sex, ref = "M"),
+         Environment = relevel(Environment, ref = "Unstressed"),
+         Taxon = relevel(Taxon, ref = "Beetle"),
+         Outcome.Class = relevel(factor(Outcome.Class), ref = "Indirect"))
+
+SMD.data <- 
+  escalc(measure = "SMD",
+         m1i = mean.high, 
+         m2i = mean.low,
+         sd1i = sd.high,
+         sd2i = sd.low,
+         n1i = n.high,
+         n2i = n.low, 
+         vtype = "UB",
+         data = full_dataset, var.names=c("SMD","SMD_var"), digits=4) %>% 
+  filter(SMD != "NA") %>% 
+  mutate(SMD = round(SMD, 3)*Positive.Fitness,
+         Sex = relevel(Sex, ref = "M"),
+         Environment = relevel(Environment, ref = "Unstressed"),
+         Taxon = relevel(Taxon, ref = "Beetle"),
+         Outcome.Class = relevel(factor(Outcome.Class), ref = "Indirect"))
+
+SMDH.data <- 
+  escalc(measure = "SMDH",
+         m1i = mean.high, 
+         m2i = mean.low,
+         sd1i = sd.high,
+         sd2i = sd.low,
+         n1i = n.high,
+         n2i = n.low, 
+         data = full_dataset, var.names=c("SMDH","SMDH_var"), digits=4) %>% 
+  filter(SMDH != "NA") %>% 
+  mutate(SMDH = round(SMDH, 3)*Positive.Fitness,
+         Sex = relevel(Sex, ref = "M"),
+         Environment = relevel(Environment, ref = "Unstressed"),
+         Taxon = relevel(Taxon, ref = "Beetle"),
+         Outcome.Class = relevel(factor(Outcome.Class), ref = "Indirect"))
+
+
+lnRR.grandmean <- rma.mv(lnRR, lnRR_var,
+                       mods = ~ 1,
+                       random = list(~ 1 | Study.ID,
+                                      ~ 1 | Outcome,
+                                      ~ 1 | Taxon),
+                       method = "REML",
+                       data = lnRR.data)
+
+
+
+SMD.grandmean <- rma.mv(SMD, SMD_var,
+                       mods = ~ 1,
+                       random = list(~ 1 | Study.ID,
+                                      ~ 1 | Outcome,
+                                      ~ 1 | Taxon),
+                       method = "REML",
+                       data = SMD.data)
+
+
+
+SMDH.grandmean <- rma.mv(SMDH, SMDH_var,
+                       mods = ~ 1,
+                       random = list(~ 1 | Study.ID,
+                                      ~ 1 | Outcome,
+                                      ~ 1 | Taxon),
+                       method = "REML",
+                       data = SMDH.data)
+
+
+
+
+if(!file.exists("data/lnRR.brms.env.sex.rds")){
+  lnRR.brms.env.sex <- brm(lnRR | se(SE)  ~ 1 + Sex * Environment 
+                        + (1|Taxon) 
+                        + (1|Study.ID) 
+                        + (1|Outcome), 
+                        family = "gaussian", 
+                        seed = 1,
+                        cores = 4, chains = 4, iter = 4000, 
+                        control = list(adapt_delta = 0.999, max_treedepth = 15),
+                        data = lnRR.data %>% mutate(SE = sqrt(lnRR_var)) %>% 
+                          filter(Outcome.Class != "Ambiguous" & Environment != "Not Stated"))
+  saveRDS(lnRR.brms.env.sex, file = "data/lnRR.brms.env.sex.rds")
+}
+lnRR.brms.env.sex <- readRDS(file = "data/lnRR.brms.env.sex.rds") 
+
+# lternatively you can obtain posterior samples manually.
+lnRR.post <- (posterior_samples(lnRR.brms.env.sex, 
+                           pars = c("b_Intercept", "b_SexB", "b_SexF", 
+                                    "b_EnvironmentStressed", "b_SexB:EnvironmentStressed", 
+                                    "b_SexF:EnvironmentStressed")) %>%
+           mutate(both_benign = b_Intercept + b_SexB,
+                  both_stressful = b_Intercept + b_SexB + b_EnvironmentStressed + `b_SexB:EnvironmentStressed`,
+                  male_benign = b_Intercept,
+                  male_stressful = b_Intercept + b_EnvironmentStressed,
+                  female_benign = b_Intercept + b_SexF,
+                  female_stressful = b_Intercept + b_SexF + b_EnvironmentStressed + `b_SexF:EnvironmentStressed`))[,-(1:6)]
+
+# Add columns for Environment and Sex
+lnRR.post <- as.data.frame(t(lnRR.post))
+lnRR.post$Sex <- c("Both", "Both", "Male", "Male", "Female", "Female")
+lnRR.post$Environment <- c("Benign", "Stressful", "Benign", "Stressful", "Benign", "Stressful")
+
+#Clean up dataframe
+lnRR.post <- melt(lnRR.post, id = c("Sex", "Environment"))
+lnRR.post$variable <- NULL
+
+lnRR.env.sex.model <- rma.mv(lnRR, V = lnRR_var, 
+                          mods = ~ 1 + Sex * Environment, 
+                          random = list(~ 1 | Study.ID, 
+                                       ~ 1 | Outcome,
+                                       ~ 1 | Taxon), 
+                          method = "REML", 
+                          data = lnRR.data %>% filter(Outcome.Class != "Ambiguous" & Environment != "Not Stated"))
+
+#Generate predictions without taxon utilising the previously described function
+get.predictions.lnRR <- function(newdata){
+  B<-0; F<-0; Stressed<-0; interaction1<-0; interaction2<-0; interaction3<-0
+  if(newdata[1] == "B") B<-1 
+  if(newdata[1] == "F") F<-1 
+  if(newdata[2] == "Stressed") Stressed<-1
+  if(newdata[1] == "B" & newdata[2] == "Stressed") interaction1<-1
+  if(newdata[1] == "F" & newdata[2] == "Stressed") interaction2<-1
+
+  predict(lnRR.env.sex.model, newmods=c(B, F, Stressed, interaction1=interaction1, interaction2=interaction2))
+}
+
+# Get the predictions for each combination of moderators
+predictions.lnRR <- as.data.frame(expand.grid(Sex = c("M", "B", "F"),
+                           Environment = c("Unstressed", "Stressed")))
+predictions.lnRR <- cbind(predictions.lnRR, do.call("rbind", apply(predictions.lnRR, 1, get.predictions.lnRR))) %>%
+  select(Sex, Environment, pred, se, ci.lb, ci.ub) 
+for(i in 3:6) predictions.lnRR[,i] <- unlist(predictions.lnRR[,i])
+
+countpred <- count_(lnRR.data %>% filter(Outcome.Class != "Ambiguous" & Environment != "Not Stated"), c("Sex", "Environment"))
+
+predictions.lnRR <- left_join(predictions.lnRR, countpred, by = c("Sex", "Environment"))
+colnames(predictions.lnRR) <- c("Sex", "Environment", "Prediction", "SE", "CI.lb", "CI.ub", "n")
+predictions.lnRR <- predictions.lnRR %>%
+      mutate(Sex = replace(as.character(Sex), Sex == "B", "Both"),
+         Sex = replace(Sex, Sex == "M", "Male"),
+         Sex = replace(Sex, Sex == "F", "Female"),
+         Environment = replace(as.character(Environment), Environment == "Stressed", "Stressful"),
+         Environment = replace(Environment, Environment == "Unstressed", "Benign"),
+         Sex = factor(Sex, levels = c("Male", "Both", "Female")))
+
+predictions.lnRR <- format(predictions.lnRR, digits = 2)
+predictions.lnRR$Prediction = as.numeric(predictions.lnRR$Prediction)
+predictions.lnRR$CI.lb = as.numeric(predictions.lnRR$CI.lb)
+predictions.lnRR$CI.ub = as.numeric(predictions.lnRR$CI.ub)
+predictions.lnRR$n = as.numeric(predictions.lnRR$n)
+
+#Plot the posterior values from the Bayesian model as density ridges
+pd <- position_dodgev(height = 0.3)
+posterior.lnRR.plot <- lnRR.post %>% mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))) %>% ggplot()+
+  stat_density_ridges(aes(x=value, y = Environment, fill = Sex), alpha = 0.65, scale = 0.6, position = position_nudge(y = 0.15), height = 10, show.legend = F, quantile_lines = T, quantiles = 2)+
+  geom_vline(xintercept = 0, linetype = 2, colour = "black") + 
+  ylab("Environment")+
+  xlab("\nEffect Size (lnRR)")+
+  # scale_fill_manual(values = c("Male" = "#e41a1c", "Female" = "#377eb8", "Both" = "#4daf4a"))+
+  # scale_color_manual(values = c("Male" = "#e41a1c", "Female" = "#377eb8", "Both" = "#4daf4a"))+
+  scale_fill_manual(values = c("Male" = "#ff7f00", "Female" = "#984ea3", "Both" = "#4daf4a"))+
+  scale_color_manual(values = c("Male" = "#ff7f00", "Female" = "#984ea3", "Both" = "#4daf4a"))+
+  scale_x_continuous(limits = c(-0.5, 1), breaks = c(-1, -.5, 0, 0.5, 1, 1.5))+
+  
+  theme_bw()+
+  
+  theme(panel.spacing = unit(0.1, "lines"),
+        text = element_text(size=16),
+        panel.border= element_blank(),
+        axis.line=element_line(), 
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(), 
+        legend.text = element_text(size=16), 
+        legend.title=element_text(size=16, face = "bold"),
+        axis.title.x = element_text(hjust = 0.5, size = 14),
+        axis.title.y = element_text(size = 16, hjust = 0.35, margin = margin(r=-10)),
+        axis.text.y = element_text(angle = 0),
+        plot.title = element_text(size = 16))
+
+#Add the REML predictions as circles with error bars
+lnRR.plots <- posterior.lnRR.plot + 
+  geom_errorbarh(data = predictions.lnRR %>% mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))), 
+                 aes(xmin = predictions.lnRR$CI.lb,
+                     xmax = predictions.lnRR$CI.ub, y = Environment,
+                     color = Sex), 
+                 height = 0, show.legend = F, position = pd)+
+  
+  geom_point(data = predictions.lnRR %>% mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))), 
+             aes(x = Prediction, y = Environment, size=n, fill = Sex), 
+             shape=21, color = "grey20", position = pd) +
+  
+    guides(fill = guide_legend(reverse=T, override.aes = list(size = 7.5)))+
+    scale_size(guide = 'none')+
+  
+  scale_y_discrete(expand=c(0.075, 0))
+
+#pdf("PDF_RDS_files/SF4.pdf", width = 6, height = 6)
+lnRR.plots
+#dev.off()
+```
+  
+**Supplementary Figure 4:** Using an alternative effect size (lnRR) sexual selection also increases population fitness. Circle size is proportional to sample size (shown below). The REML predictions are shown as circles with error bars and the Bayesian predictions as density ridges. Note that the magnitude of the effect sizes presented here should not be directly compared with those using Hedges' g as lnRR is a log-transformed value.
+
+**Supplementary Table 16:** The REML predictions for the meta-analysis using lnRR (plotted above) are formulated from the following model and predictions.  
+
+```{r}
+summary(lnRR.env.sex.model)
+predictions.lnRR %>% pander()
+
+#saveRDS(predictions.lnRR, "PDF_RDS_files/ST16.rds")
+```
+
+
+
+## Meta-Analysis on Variance
+
+### Obtaining lnCVR and Meta-Analysis Models
+
+This meta-analysis on variation utilises previously described and utilised methods devoleped [@Nakagawa_2015; @Senior_2016]. Our goal is to determine whether the phenotypic variance in fitness related traits is impacted by sexual selection. We would assume that if selection is occuring not only would the trait mean shift in a certain direction but the variance associated with those changes to the mean would also decrease. In this case we use an effect size statistic known as the natural log of the coefficient of variation ratio (lnCVR).
+
+```{r}
+# Firstly, we setup our calculation by creating a a restricted dataset with only unabmiguous fitness outcomes and running the functions developed by Nakagawa et al. 2015: 
+Calc.lnCVR <- function(CMean, CSD, CN, EMean, ESD, EN){
+	ES <- log(ESD) - log(EMean) + 1 / (2*(EN - 1)) - (log(CSD) - log(CMean) + 1 / (2*(CN - 1)))
+	return(ES)
+	
+}
+
+# Function to find the variance of lnCVR
+# Equal.E.C.Corr = T assumes that the correlaiton between mean and sd (Taylor's Law) is equal for the mean and control groups
+Calc.var.lnCVR <- function(CMean, CSD, CN, EMean, ESD, EN, Equal.E.C.Corr = TRUE){
+	
+	if(Equal.E.C.Corr==T){
+	
+		mvcorr <- cor.test(log(c(CMean, EMean)), log(c(CSD, ESD)))$estimate
+	
+		S2 <- CSD^2 / (CN * (CMean^2)) + 1 / (2 * (CN - 1)) - 2 * mvcorr * sqrt((CSD^2 / (CN * (CMean^2))) * (1 / (2 * (CN - 1)))) + ESD^2 / (EN * (EMean^2)) + 1 / (2 * (EN - 1)) - 2 * mvcorr * sqrt((ESD^2 / (EN * (EMean^2))) * (1 / (2 * (EN - 1))))
+	
+	}
+	else{
+		
+		Cmvcorr<-cor.test(log(CMean), log(CSD))$estimate
+		Emvcorr<-cor.test(log(EMean), (ESD))$estimate
+	
+		S2 <- CSD^2 / (CN * (CMean^2)) + 1 / (2 * (CN - 1)) - 2 * Cmvcorr * sqrt((CSD^2 / (CN * (CMean^2))) * (1 / (2 * (CN - 1)))) + ESD^2 / (EN * (EMean^2)) + 1 / (2 * (EN - 1)) - 2 * Emvcorr * sqrt((ESD^2 / (EN * (EMean^2))) * (1 / (2 * (EN - 1))))		
+		
+	}
+	return(S2)
+}
+
+
+# Secondly, we utilise those formulas to obtain lnCVR and var.CVR for all applicable effect sizes. Noting that not all of the dataset has means, SD and n; some were calculated from summary statistics and are not able to have lnCVR calculated:
+
+#Calculate lnCVr and var.lnCVr
+strict_dataset$lnCVr     <- with(strict_dataset, Calc.lnCVR (mean.low, sd.low, n.low, mean.high, sd.high, n.high))
+strict_dataset$var.lnCVr <- with(strict_dataset, Calc.var.lnCVR (mean.low, sd.low, n.low, mean.high, sd.high, n.high))
+```
+
+
+#### Meta-analysis of lnCVR using REML
+
+```{r, warning=FALSE}
+variance.model <- rma.mv(lnCVr, V = var.lnCVr, mods = ~ 1 + Sex*Environment, 
+                          random = list(~ 1 | Study.ID,
+                                        ~ 1 | Taxon,
+                                        ~ 1 | Outcome), 
+                         method = "REML", data = strict_dataset)
+summary(variance.model, digits = 2)
+```
+<br></br>
+
+#### Bayesian meta-analysis of lnCVR
+Again, we use ``brms`` to obtain Bayesian model estimates. For this model the _R^2^_ is 0.34 (95% CIs = 0.32-0.36).
+```{r, warning = FALSE, results='hide', message=FALSE, error = FALSE}
+if(!file.exists("data/variance.brms.rds")){
+  variance.brms <- brm(lnCVr| se(SE.v)  ~ 1 + Sex * Environment 
+                + (1|Taxon) 
+                + (1|Study.ID)
+                + (1|Outcome),
+                family = "gaussian", 
+                seed = 1,
+                cores = 4, chains = 4, iter = 4000, 
+                control = list(adapt_delta = 0.999, max_treedepth = 15),
+                data = strict_dataset %>% mutate(SE.v = sqrt(var.lnCVr)))
+  saveRDS(variance.brms, "data/variance.brms.rds")
+}
+var.brms <- readRDS(file = "data/variance.brms.rds") #Avoid re-running model above
+```
+
+
+**Supplementary Table 17:** Model estimates, including random effect sigma value for the model of phenotypic variance (lnCVR)
+```{r}
+post.variance <- (posterior_samples(var.brms, 
+                           pars = c("b_Intercept", "b_SexB", "b_SexF", 
+                                    "b_EnvironmentStressed", "b_SexB:EnvironmentStressed", 
+                                    "b_SexF:EnvironmentStressed")) %>%
+         mutate(both_benign = b_Intercept + b_SexB,
+         both_stressful = b_Intercept + b_SexB + b_EnvironmentStressed + `b_SexB:EnvironmentStressed`,
+         male_benign = b_Intercept,
+         male_stressful = b_Intercept + b_EnvironmentStressed,
+         female_benign = b_Intercept + b_SexF,
+         female_stressful = b_Intercept + b_SexF + b_EnvironmentStressed + `b_SexF:EnvironmentStressed`))[,-(1:6)]
+
+#Add columns for Environment and Sex
+post.variance <- as.data.frame(t(post.variance))
+post.variance$Sex <- c("Both", "Both", "Male", "Male", "Female", "Female")
+post.variance$Environment <- c("Benign", "Stressful", "Benign", "Stressful", "Benign", "Stressful")
+
+#Clean up dataframe
+post.variance <- melt(post.variance, id = c("Sex", "Environment"))
+post.variance$variable <- NULL
+
+
+make_text_summary(var.brms) %>% 
+  add_significance_stars() %>% tibble::rownames_to_column("Model Parameter") %>% pander()
+```
+<br></br>
+Predictions based on the REML and Bayesian model can then be generated in the same way as for Hedges'g. Here, negative values of lnCVR indicate a narrowing (decrease) in phenotypic variance as a result of sexual selection.
+
+```{r, fig.height=6, fig.width=6, warning =FALSE, message=FALSE, error = FALSE}
+
+#Generate predictions
+get.predictions.variance <- function(newdata){
+  B<-0; F<-0; Stressed<-0; interaction1<-0; interaction2<-0; interaction3<-0
+  if(newdata[1] == "B") B<-1 
+  if(newdata[1] == "F") F<-1 
+  if(newdata[2] == "Stressed") Stressed<-1
+  if(newdata[1] == "B" & newdata[2] == "Stressed") interaction1<-1
+  if(newdata[1] == "F" & newdata[2] == "Stressed") interaction2<-1
+
+  predict(variance.model, newmods=c(B, F, Stressed, interaction1=interaction1, interaction2=interaction2))
+}
+# Get the predictions for each combination of moderators
+predictions.variance <- as.data.frame(expand.grid(Sex = c("M", "B", "F"),
+                           Environment = c("Unstressed", "Stressed")))
+predictions.variance <- cbind(predictions.variance, do.call("rbind", apply(predictions.variance, 1, get.predictions.variance))) %>%
+  select(Sex, Environment, pred, se, ci.lb, ci.ub) 
+for(i in 3:6) predictions.variance[,i] <- unlist(predictions.variance[,i])
+
+countpred <- count_(strict_dataset %>% filter(lnCVr != "NA" ), c("Sex", "Environment"))
+
+predictions.variance <- left_join(predictions.variance, countpred, by = c("Sex", "Environment"))
+
+#Change names to make them more clear
+predictions.variance <- predictions.variance %>% 
+      mutate(Sex = replace(as.character(Sex), Sex == "B", "Both"),
+         Sex = replace(Sex, Sex == "M", "Male"),
+         Sex = replace(Sex, Sex == "F", "Female")) %>%
+  mutate(Environment = replace(as.character(Environment), Environment == "Stressed", "Stressful"),
+         Environment = replace(Environment, Environment == "Unstressed", "Benign"))
+
+colnames(predictions.variance) <- c("Sex", "Environment", "Prediction", "SE", "CI.lb", "CI.ub", "n")
+
+#And plot the results, first for the posterior results of the brms model then for the metafor predictions
+pd <- position_dodgev(height = 0.3)
+var.plot.posterior <- post.variance %>% 
+  mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))) %>% 
+  ggplot() +
+  stat_density_ridges(aes(x=value, y = Environment, fill = Sex), alpha = 0.65, scale = 0.6, position = position_nudge(y = 0.15), height = 10, show.legend = F, quantile_lines = T, quantiles = 2)+
+  geom_vline(xintercept = 0, linetype = 2, colour = "black") + 
+  ylab("Environment\n")+
+  xlab("\nPhenotypic Variance (lnCVR)")+
+  scale_x_continuous(limits = c(-2.1, 1.2), breaks = c(-2, -1.5, -1, -0.5, 0, 0.5, 1))+
+  scale_fill_manual(values = c("Male" = "#ff7f00", "Female" = "#984ea3", "Both" = "#4daf4a"))+
+  scale_color_manual(values = c("Male" = "#ff7f00", "Female" = "#984ea3", "Both" = "#4daf4a"))+
+  
+  theme_bw()+
+  
+  theme(panel.spacing = unit(0.1, "lines"),
+        text = element_text(size=16),
+        panel.border= element_blank(),
+        axis.line=element_line(), 
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(), 
+        legend.text = element_text(size=16), 
+        legend.title=element_text(size=16, face = "bold"),
+        axis.title.x = element_text(hjust = 0.5, size = 14),
+        axis.title.y = element_text(size = 16, hjust = 0.35, margin = margin(r=-10)),
+        axis.text.y = element_text(angle = 0),
+        plot.title = element_text(size = 16))
+
+both.var.plots <- var.plot.posterior +
+  geom_errorbarh(data = predictions.variance %>% 
+                   mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))), 
+                 aes(xmin = predictions.variance$CI.lb, 
+                     xmax = predictions.variance$CI.ub, y = Environment,
+                     color = Sex), 
+                 height = 0, position = pd, show.legend = F) +
+  geom_point(data = predictions.variance %>% 
+               mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))), 
+             aes(x = Prediction, y = Environment, size=n, fill = Sex), 
+             shape=21, color = "grey20", position = pd) +
+  guides(fill = guide_legend(reverse=T, override.aes = list(size = 7.5)))+
+  scale_size(guide = 'none')+  
+  scale_y_discrete(expand=c(0.075,0))
+
+both.var.plots
+```
+<br></br>
+**Figure 2b:** Phenotypic variation changes under sexual selection in stressful environments. For females under stressful conditions phenotypic variation decreases (narrows). While for males in stressful environments it increases. For outcomes that measured a mix of both males and females (pooled samples) in stressful environments phenotypic variation decreased slightly. The REML predictions are shown as circles with error bars and the Bayesian predictions as density ridges. Circle size is proportional to sample size.
+
+
+**Supplementary Table 18:** The REML predictions in the plot above use the following dataframe.
+```{r}
+predictions.variance <- format(predictions.variance, digits = 2)
+predictions.variance %>% pander(digits = 2)
+
+#saveRDS(predictions.variance, "PDF_RDS_files/ST18.rds")
+```
+
+____________________
+
+### Hypothesis tests For models of lnCVR
+
+As we did for Hedges' $g$, we here conduct hypothesis tests between categorical groups, to identify groups that differ significantly in how much sexual selection affects the phenotypic variance. Positive values indivate the first term in the hypothesis is larger (which would be male for rows 1-2 or benign for rows 3-5).
+
+**Supplementary Table 19:** Bayesian hypothesis tests between categorical groups for phenotypic variation (lnCVR)
+```{r}
+#Obtain hypothesis estimates
+brms.hypothesis.var <- hypothesis(var.brms, c("0 = SexF",
+                             "0 = SexF + SexF:EnvironmentStressed",
+                             "0 = SexF:EnvironmentStressed + EnvironmentStressed",
+                             "0 = EnvironmentStressed",
+                             "0 = SexB:EnvironmentStressed + EnvironmentStressed"))
+#Format into dataframe
+brms.hypothesis.table.var <- 
+  data.frame(brms.hypothesis.var[["hypothesis"]][["Hypothesis"]],
+             brms.hypothesis.var[["hypothesis"]][["Estimate"]],
+             brms.hypothesis.var[["hypothesis"]][["Est.Error"]],
+             brms.hypothesis.var[["hypothesis"]][["CI.Lower"]],
+             brms.hypothesis.var[["hypothesis"]][["CI.Upper"]],
+             brms.hypothesis.var[["hypothesis"]][["Star"]])
+colnames(brms.hypothesis.table.var) <- c("Hypothesis", "Estimate", "Est.Error", "CI.Lower", "CI.Upper", " ")
+row.names(brms.hypothesis.table.var) <- c("M vs F, Benign", "M vs F, Stressful", "Benign vs Stressful, Female", "Benign vs Stressful, Male", "Benign vs Stressful, Both")
+brms.hypothesis.table.var <- format(brms.hypothesis.table.var, digits = 2)
+brms.hypothesis.table.var %>% pander(split.table = Inf)
+```
+
+**Supplementary Table 20:** REML hypothesis tests between categorical groups for phenotypic variation (lnCVR)
+```{r}
+#anova where you specify the values based on the list of moderators
+anova.1 = anova(variance.model, L=c(0, 0, -1, 0, 0, 0)) 
+anova.2 = anova(variance.model, L=c(0, 0, -1, 0, 0, -1))
+anova.3 = anova(variance.model, L=c(0, 0, 0, -1, 0, -1))
+anova.4 = anova(variance.model, L=c(0, 0, 0, -1, 0, 0))
+anova.5 = anova(variance.model, L=c(0, 0, 0, -1, -1, 0))
+
+anova.list.var <- list(anova.1, anova.2, anova.3, anova.4, anova.5)
+
+anova.frame.var <- t(data.frame(lapply(anova.list.var, function(x) {
+  data.frame(x[["hyp"]],
+  x[["Lb"]],
+  x[["se"]],
+  x[["Lb"]] - 1.96*x[["se"]],
+  x[["Lb"]] + 1.96*x[["se"]],
+  x[["pval"]])
+})))
+anova.frame.var <- as.data.frame(split(anova.frame.var, rep(1:6)))
+colnames(anova.frame.var) <- c("Hypothesis", "Estimate", "Est.Error", "CI.Lower", "CI.Upper", "pval")
+anova.frame.var$Estimate <- as.numeric(levels(anova.frame.var$Estimate))[anova.frame.var$Estimate]
+anova.frame.var$Est.Error <- as.numeric(levels(anova.frame.var$Est.Error))[anova.frame.var$Est.Error]
+anova.frame.var$CI.Lower <- as.numeric(levels(anova.frame.var$CI.Lower))[anova.frame.var$CI.Lower]
+anova.frame.var$CI.Upper <- as.numeric(levels(anova.frame.var$CI.Upper))[anova.frame.var$CI.Upper]
+anova.frame.var$pval <- as.numeric(levels(anova.frame.var$pval))[anova.frame.var$pval]
+anova.frame.var <- format(anova.frame.var, digits = 2)
+anova.frame.var$star <- c("*", "*", "*", "*", "*")
+colnames(anova.frame.var)[colnames(anova.frame.var)=="star"] <- " "
+anova.frame.var$pval <- NULL
+row.names(anova.frame.var) <- c("M vs F, Benign", "M vs F, Stressful", "Benign vs Stressful, Female", "Benign vs Stressful, Male", "Benign vs Stressful, Both")
+anova.frame.var %>% pander(split.table = Inf)
+
+#saveRDS(anova.frame.var, "PDF_RDS_files/ST20.rds")
+```
+
+____________________
+
+###Estimating lnCVR Heterogeneity Using _I^2^_
+
+Similar to the meta-analysis on Hedges' g we can obtain _I^2^_ for lnCVR REML model. In this case (compared to Hedges' g) we see Taxon has more of a variable effect on overall _I^2^_ estimates and Study.ID has the variance component ($\sigma^2$) esgtimated at zero.
+
+```{r}
+I2.model.lnCVr <- rma.mv(lnCVr, V = var.lnCVr, 
+                          mods = ~ 1 + Sex * Environment, 
+                          random = list(~ 1 | Study.ID,
+                                        ~ 1 | Outcome,
+                                        ~ 1 | Taxon,
+                                        ~ 1 | Observation.level), 
+                          method = "REML", 
+                          data = strict_dataset %>% mutate(Observation.level = 1:n()))
+
+I2(I2.model.lnCVr, na.omit(strict_dataset$var.lnCVr)) %>% pander(digits = 3)
+```
+
+**Disclaimer**: Noticeabley, the Study.ID $I^2$ is estimated at zero with no CIs. This result is sourced from the variance component for Study.ID ($\sigma_2$) being estimated at zero with a standard error of zero. This result is questionable, thus we run the above model using ``brms`` and find the variance of the Study.ID group-level effect to be non-zero with confidence intervals including zero (see below). This is potential advantage of the Bayesian approach.  
+
+```{r}
+if(!file.exists("data/I2.variance.brms.rds")){
+
+I2.variance.brms <- brm(lnCVr| se(SE.v)  ~ 1 + Sex * Environment 
+                + (1|Taxon) 
+                + (1|Study.ID)
+                + (1|Outcome) 
+                + (1|Observation.level),
+                family = "gaussian", 
+                seed = 1,
+                cores = 4, chains = 4, iter = 4000, 
+                control = list(adapt_delta = 0.999, max_treedepth = 15),
+                data = strict_dataset %>% mutate(SE.v = sqrt(var.lnCVr)) %>% mutate(Observation.level = 1:n()))
+  saveRDS(I2.variance.brms, "data/I2.variance.brms.rds")
+  
+}
+I2.variance.brms <- readRDS(file = "data/I2.variance.brms.rds") #Avoid re-running model above
+
+I2.variance.brms
+```
+
+
+_________
+
+###lnVr Effect Size of Variance
+
+In this meta-analysis we used the the log-coefficient of variaince ratio (lnCVR) as the response variable when investigating the impact of sexual selection on the variation in the distribution of traits associated with fitness. The lnCVR was used over the log-variance ration (lnVR) because lnVR does not account for the mean-variance relationship  [@Nakagawa_2015; @Senior_2016] seen in this meta-analysis (see below). However, for completeness we present a similar style meta-analysis for lnVR to investigate the effects of environment 
+
+```{r, warning = F, message=F}
+full_dataset %>% ggplot(aes(x = mean.high, y = sd.high))+
+  geom_point()+
+  scale_x_log10()+
+  scale_y_log10()+
+  xlab("Mean of Treatment Group")+
+  ylab("Standard Deviation of Treatment Group") +
+  geom_smooth(method = "lm", colour = "red")
+```
+
+**Supplementary Figure 5:** The use of lnCVR (as opposed to lnVR) is justified in this meta-analysis due to the strong mean-variance relationship. In this case the standard deviation from the treatment group is compared to the means of the treatment group on a log-scale. 
+
+```{r, warning = FALSE}
+lnVR.data <- 
+escalc(measure = "VR",
+       m1i = mean.high, 
+       m2i = mean.low,
+       sd1i = sd.high,
+       sd2i = sd.low,
+       n1i = n.high,
+       n2i = n.low,
+       vtype = "LS",
+       data = full_dataset, var.names=c("lnVR","lnVR_var"), digits=4) %>% 
+  filter(lnVR != "NA") %>% 
+  mutate(lnVR = round(lnVR, 3),
+         Sex = relevel(Sex, ref = "M"),
+         Environment = relevel(Environment, ref = "Unstressed"),
+         Taxon = relevel(Taxon, ref = "Beetle"),
+         Outcome.Class = relevel(factor(Outcome.Class), ref = "Indirect"))
+
+lnCVR.data <- 
+escalc(measure = "CVR",
+       m1i = mean.high, 
+       m2i = mean.low,
+       sd1i = sd.high,
+       sd2i = sd.low,
+       n1i = n.high,
+       n2i = n.low,
+       vtype = "LS",
+       data = full_dataset, var.names=c("lnCVR","lnCVR_var"), digits=4) %>% 
+  filter(lnCVR != "NA") %>% 
+  mutate(lnCVR = round(lnCVR, 3),
+         Sex = relevel(Sex, ref = "M"),
+         Environment = relevel(Environment, ref = "Unstressed"),
+         Taxon = relevel(Taxon, ref = "Beetle"),
+         Outcome.Class = relevel(factor(Outcome.Class), ref = "Indirect"))
+
+
+#MA on lnVR
+lnVR.model <- rma.mv(lnVR, V = lnVR_var, mods = ~ 1 + Sex*Environment, 
+                          random = list(~ 1 | Taxon,
+                                        ~ 1 | Study.ID,
+                                        ~ 1 | Outcome), 
+                         method = "REML", data = lnVR.data %>% filter(Outcome.Class != "Ambiguous" & Environment != "Not Stated"))
+
+
+#Generate predictions
+get.predictions.lnVR <- function(newdata){
+  B<-0; F<-0; Stressed<-0; interaction1<-0; interaction2<-0; interaction3<-0
+  if(newdata[1] == "B") B<-1 
+  if(newdata[1] == "F") F<-1 
+  if(newdata[2] == "Stressed") Stressed<-1
+  if(newdata[1] == "B" & newdata[2] == "Stressed") interaction1<-1
+  if(newdata[1] == "F" & newdata[2] == "Stressed") interaction2<-1
+
+  predict(lnVR.model, newmods=c(B, F, Stressed, interaction1=interaction1, interaction2=interaction2))
+}
+# Get the predictions for each combination of moderators
+predictions.lnVR <- as.data.frame(expand.grid(Sex = c("M", "B", "F"),
+                           Environment = c("Unstressed", "Stressed")))
+predictions.lnVR <- cbind(predictions.lnVR, do.call("rbind", apply(predictions.lnVR, 1, get.predictions.lnVR))) %>%
+  select(Sex, Environment, pred, se, ci.lb, ci.ub) 
+for(i in 3:6) predictions.lnVR[,i] <- unlist(predictions.lnVR[,i])
+
+countpred <- count_(lnVR.data, c("Sex", "Environment"))
+
+predictions.lnVR <- left_join(predictions.lnVR, countpred, by = c("Sex", "Environment"))
+
+#Change names to make them more clear
+predictions.lnVR <- predictions.lnVR %>% 
+      mutate(Sex = replace(as.character(Sex), Sex == "B", "Both"),
+         Sex = replace(Sex, Sex == "M", "Male"),
+         Sex = replace(Sex, Sex == "F", "Female")) %>%
+  mutate(Environment = replace(as.character(Environment), Environment == "Stressed", "Stressful"),
+         Environment = replace(Environment, Environment == "Unstressed", "Benign"))
+
+colnames(predictions.lnVR) <- c("Sex", "Environment", "Prediction", "SE", "CI.lb", "CI.ub", "n")
+
+if(!file.exists("data/lnVR.brms.rds")){
+  lnVR.brms <- brm(lnVR| se(SE.lnVR)  ~ 1 + Sex * Environment 
+                + (1|Taxon) 
+                + (1|Study.ID)
+                + (1|Outcome),
+                family = "gaussian", 
+                seed = 1,
+                cores = 4, chains = 4, iter = 4000, 
+                control = list(adapt_delta = 0.999, max_treedepth = 15),
+                data =  lnVR.data %>% mutate(SE.lnVR = sqrt(lnVR_var)) %>% filter(Outcome.Class != "Ambiguous" & Environment != "Not Stated"))
+  saveRDS(lnVR.brms, "data/lnVR.brms.rds")
+}
+lnVR.brms <- readRDS(file = "data/lnVR.brms.rds") #Avoid re-running model above
+```
+
+
+```{r, fig.height=6, fig.width=6, warning=FALSE, message=FALSE, error = FALSE}
+post.lnVR <- (posterior_samples(lnVR.brms, 
+                           pars = c("b_Intercept", "b_SexB", "b_SexF", 
+                                    "b_EnvironmentStressed", "b_SexB:EnvironmentStressed", 
+                                    "b_SexF:EnvironmentStressed")) %>%
+         mutate(both_benign = b_Intercept + b_SexB,
+         both_stressful = b_Intercept + b_SexB + b_EnvironmentStressed + `b_SexB:EnvironmentStressed`,
+         male_benign = b_Intercept,
+         male_stressful = b_Intercept + b_EnvironmentStressed,
+         female_benign = b_Intercept + b_SexF,
+         female_stressful = b_Intercept + b_SexF + b_EnvironmentStressed + `b_SexF:EnvironmentStressed`))[,-(1:6)]
+
+#Add columns for Environment and Sex
+post.lnVR <- as.data.frame(t(post.lnVR))
+post.lnVR$Sex <- c("Both", "Both", "Male", "Male", "Female", "Female")
+post.lnVR$Environment <- c("Benign", "Stressful", "Benign", "Stressful", "Benign", "Stressful")
+
+#Clean up dataframe
+post.lnVR <- melt(post.lnVR, id = c("Sex", "Environment"))
+post.lnVR$variable <- NULL
+
+#And plot the results, first for the posterior results of the brms model then for the metafor predictions
+
+lnVR.plot.posterior <- post.lnVR %>% 
+  mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))) %>% 
+  ggplot() +
+  stat_density_ridges(aes(x=value, y = Environment, fill = Sex), alpha = 0.65, scale = 0.6, position = position_nudge(y = 0.15), height = 10, show.legend = F, quantile_lines = T, quantiles = 2)+
+  geom_vline(xintercept = 0, linetype = 2, colour = "black") + 
+  ylab("Environment\n")+
+  xlab("\nPhenotypic Variance (lnVR)")+
+  scale_x_continuous(limits = c(-1.6, 1.75), breaks = c(-2, -1.5, -1, -0.5, 0, 0.5, 1))+
+  scale_fill_manual(values = c("Male" = "#ff7f00", "Female" = "#984ea3", "Both" = "#4daf4a"))+
+  scale_color_manual(values = c("Male" = "#ff7f00", "Female" = "#984ea3", "Both" = "#4daf4a"))+
+  
+  theme_bw()+
+  
+  theme(panel.spacing = unit(0.1, "lines"),
+        text = element_text(size=16),
+        panel.border= element_blank(),
+        axis.line=element_line(), 
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(), 
+        legend.text = element_text(size=16), 
+        legend.title=element_text(size=16, face = "bold"),
+        axis.title.x = element_text(hjust = 0.5, size = 14),
+        axis.title.y = element_text(size = 16, hjust = 0.35, margin = margin(r=-10)),
+        axis.text.y = element_text(angle = 0),
+        plot.title = element_text(size = 16))
+
+both.lnVR.plots <- lnVR.plot.posterior +
+  geom_errorbarh(data = predictions.lnVR %>% 
+                   mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))), 
+                 aes(xmin = predictions.lnVR$CI.lb, 
+                     xmax = predictions.lnVR$CI.ub, y = Environment,
+                     color = Sex), 
+                 height = 0, position = pd, show.legend = F) +
+  geom_point(data = predictions.lnVR %>% 
+               mutate(Sex = factor(Sex, levels = c("Male", "Both", "Female"))), 
+             aes(x = Prediction, y = Environment, size=n, fill = Sex), 
+             shape=21, color = "grey20", position = pd) +
+  guides(fill = guide_legend(reverse=T, override.aes = list(size = 7.5)))+
+  scale_size(guide = 'none')+  
+  scale_y_discrete(expand=c(0.075,0))
+
+#pdf("PDF_RDS_files/SF6.pdf", width =6, height = 6)
+both.lnVR.plots
+#dev.off()
+```
+
+**Supplementary Figure 6:** The effects of sexual selection on the log-variance ratio (lnVR). Without accounting for the mean variance relationship (lnCVR) sexual selection has different effects on the variance measure.
+
+
+**Supplementary Table 21:** The points in the above plot are based on the following REML model and predictions. While the predicted effects of sexual selection on lnVR in stressful conditions is non-significantly negative, there is still a negative significant interaction between stressful environments and the female sex.   
+```{r}
+summary(lnVR.model, digits = 2)
+predictions.lnVR %>% pander(digits = 2) 
+#saveRDS(predictions.lnVR, "PDF_RDS_files/ST21.rds")
+```
+
+
+_______________________
+
+## Publication Bias
+
+### Funnel plots and Egger's Test
+
+Here we check for publication bias with a funnel plot. Note that the trim and fill or Eggers test method does not work with rma.mv objects. We can perform Eggers test using the ``regtest()`` function. This tests for asymmetry via assessing relationships between effect size and a specified predictor. Because the Eggers test does not work for ``rma.mv`` objects we remove the random effects and run with Sex * Environment as moderators. 
+```{r}
+standard.model <- rma(g, var.g, 
+                      mods = ~ Sex * Environment, 
+                      data = full_dataset)
+regtest(standard.model)
+```
+
+We can use ggplot to create a nice funnel plot. The following code takes inspiration from [John K. Sakaluk](https://sakaluk.wordpress.com/2016/02/16/7-make-it-pretty-plots-for-meta-analysis/).
+
+```{r, fig.height= 6, fig.width=8, warning=FALSE, message=FALSE}
+#Using residuals for the funnel plot means that we need to generate residuals (intercept only)
+forest.model <- rma.mv(g, var.g,
+                       mods = ~ 1,
+                       random = list(~ 1 | Study.ID,
+                                      ~ 1 | Outcome,
+                                      ~ 1 | Taxon),
+                       method = "REML",
+                       data = full_dataset)
+
+# Obtain residuals
+resstandards <- rstandard.rma.mv(forest.model, type = "response")
+
+# Obtain grand mean effect size 
+grand.mean <- as.numeric(forest.model$b) 
+
+# Create new df with residuals replacing raw
+df.forest.model <- full_dataset
+df.forest.model$g <- resstandards$resid + grand.mean 
+df.forest.model$sei <- resstandards$se
+
+# Funnel plot for all outcome classes
+
+make.funnel <- function(dataset, model){
+  
+  apatheme <- theme_bw() +  
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          axis.line = element_line(),
+          text = element_text(family = 'Times'),
+          legend.position = 'none')
+  
+  estimate <- model$b %>% as.numeric()
+  SE <- model$se
+  se.seq <- seq(0, max(sqrt(dataset$var.g)), 0.001)
+  dfCI <- data.frame(ll95 = estimate - (1.96 * se.seq), 
+                     ul95 = estimate + (1.96 * se.seq), 
+                     ll99 = estimate - (3.29 * se.seq), 
+                     ul99 = estimate + (3.29 * se.seq), 
+                     se.seq = se.seq, 
+                     meanll95 = estimate - (1.96 * SE), 
+                     meanul95 = estimate + (1.96 * SE))
+  
+  ggplot(dataset, aes(x = sqrt(var.g), y = g)) +
+    geom_point(size=1.5, shape = 21, color= "grey20") +
+    xlab("Standard Error") + ylab("Effect Size (Hedges' g)") +
+    geom_line(aes(x = se.seq, y = ll95), linetype = 'dotted', data = dfCI) + # confidence lines
+    geom_line(aes(x = se.seq, y = ul95), linetype = 'dotted', data = dfCI) +
+    geom_line(aes(x = se.seq, y = ll99), linetype = 'dashed', data = dfCI) +
+    geom_line(aes(x = se.seq, y = ul99), linetype = 'dashed', data = dfCI) +
+    geom_segment(aes(x = min(se.seq), y = meanll95, xend = max(se.seq), yend = meanll95), linetype='dotdash', data=dfCI, colour = "tomato", size =0.75) +
+    geom_segment(aes(x = min(se.seq), y = meanul95, xend = max(se.seq), yend = meanul95), linetype='dotdash', data=dfCI, colour = "tomato",size=0.75) +
+    scale_x_reverse() +
+    coord_flip() +
+    scale_fill_brewer(palette = "Set1")+
+
+    theme_bw()+
+  
+    theme(panel.spacing = unit(0.5, "lines"),
+        panel.border= element_blank(),
+        text = element_text(size=14),
+        axis.line=element_line(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        legend.text = element_text(size=12),
+        legend.title=element_text(size=12,
+                                  face = "bold"),
+        axis.title.x = element_text(hjust = 0.5, size = 12),
+        axis.title.y = element_text(size = 12))
+
+}
+
+funnel.plot <- make.funnel(df.forest.model, forest.model)
+
+#ggsave(plot = funnel.plot, filename = "figures/funnel_plot.eps", height = 7.5, width = 10)
+funnel.plot
+```
+<br></br>
+**Figure 3a:** A funnel plot of 459 effect sizes shows asymmetry, indicating potential publication bias, egger's regression test for funnel plot asymmetry also suggests the plot is asymmetrical (z = 6.22, p < 0.0001). The asymmetry appears to come from a spread of positive effect sizes outside the funnel and of varying degrees of precision. Counter to expectations of publication bias these positive studies are not just 'low precision, large effect' results. Funnel plot asymmetry may also be due to genuine heterogeneity in effect sizes between studies, which is high in the present meta-analysis because it covers many species, outcome measurements, and experimental designs. 
+
+
+### Journal Impact Factor
+
+If we see a positive trend with effect size and Journal Impact Factor (JIF) it may represent publication bias whereby significant (positive) results are published more readily and in more circulated journals and non-confirmitory or negative results are not published or publiushed in lower impact journals. Our journal impact factor dataset is not evenly distributed as several publications in Nature (JIF ~ 40) are much larger than the next highest JIF (~11). 
+
+```{r, fig.height= 4, fig.width=8, warning=FALSE}
+JIF.plot <- ggplot(data = full_dataset, aes(x=JIF, y=g, size = 1 / var.g))+
+  geom_point(fill='darkgreen', shape = 21, colour = 'grey20', alpha = 0.75)+
+  geom_hline(yintercept=0, linetype = 'dotted')+
+  geom_smooth(method='lm', color='darkgreen', linetype="solid")+
+  scale_x_log10(limits = c(-5, 40), breaks = c(0, 1, 2, 5, 10, 20, 40))+
+  labs(size = 'Weight (%)', y="Effect size (Hedges' g)", x= 'Journal Impact Factor (log-scale)')+ 
+  guides(size = F)+
+  theme_bw()+
+  theme(panel.spacing = unit(0.5, "lines"),
+        panel.border= element_blank(),
+        text = element_text(size=14),
+        axis.line=element_line(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        legend.text = element_text(size=12),
+        legend.title=element_text(size=12,face = "bold"),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12))
+
+JIF.plot
+```
+<br></br>
+**Figure 3b:** Journal impact factor is not correlated with effect size. Point size is proportional to the precision of the effect size.
+
+Testing the effect of JIF on effect size with a simple linear model (slope = +0.1, p = 0.25): 
+```{r}
+JIFlm <- lm(g ~ log(JIF), data = full_dataset)
+summary(JIFlm)
+```
+
+
+### Time-lag Bias
+
+We can also look at the time-lag bias, which suggests effect size decreases over time. Again, because one publication from 1980 is well before the next publication in the late 1990s we see a very uneven distribution of data points.
+
+```{r, fig.height= 4, fig.width=8, warning=FALSE}
+time.plot <- full_dataset %>% 
+  ggplot(aes(x=Year, y=g, size = 1/(var.g)))+
+  geom_jitter(fill='darkorange', alpha=.75, shape = 21, colour ='grey20')+
+  geom_hline(yintercept=0, linetype = 'dotted')+
+  guides(size = F)+
+  geom_smooth(method='lm', color='darkorange')+
+  labs(y="Effect size (Hedges' g)", x= 'Year')+
+    theme_bw()+
+    theme(panel.spacing = unit(0.5, "lines"),
+        panel.border= element_blank(),
+        axis.line=element_line(),
+        text = element_text(size=14),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        legend.text = element_text(size=12),
+        legend.title=element_text(size=12,
+                                  face = "bold"),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12))
+
+time.plot
+```
+<br></br>
+**Figure 3c:** The effect size dataset shows little to no signs of the time-lag bias: the average effect size from published studies has remained consistent across the two previous decades. Point size is proportional to the precision of the effect size.
+
+
+Again, a linear model for the regression line in the plot shows no effect (slope = -0.007, p = 0.3):
+```{r}
+Yearlm <- lm(g ~ Year, data = full_dataset)
+summary(Yearlm)
+```
+
+
+________________
+
+## Other Moderators
+
+### Blinding
+
+In addition to publication bias, other forms of bias may exist within studies. We initially collected data on whether studies were blind or not. Although not many studies (n=8) used blinding there was multiple effect sizes reported in these studies, thus we can visualise whether blinding affects the effect sizes from the model. Blinding was regarded as a redundant predictor in the model (estimate = 0.0287, p = 0.8974) and was dropped. 
+
+```{r, fig.height= 6, fig.width=8}
+blind.plot <- df.forest.model %>% ggplot(aes(x=Blinding, y=g))+
+  geom_jitter(aes(fill=Blinding, size = ((1/var.g)/27708.14)*100), shape=21, color='grey20')+ #total 1/var.g
+  geom_boxplot(outlier.shape = NA, fill = NA)+
+  geom_hline(yintercept=0, linetype = 'dotted') + 
+  scale_fill_brewer(palette = "Set2")+
+  labs(y="Effect size (Hedges' g)", x= 'Blinding', size = 'Weight (%)')+
+  guides(fill=FALSE, size = guide_legend(override.aes = list(fill = "#66c2a5")))+
+  theme_bw()+
+  theme(panel.spacing = unit(0.5, "lines"),
+        panel.border= element_blank(),
+        axis.line=element_line(),
+        text = element_text(size=14),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        legend.text = element_text(size=12),
+        legend.title=element_text(size=12, face = "bold"),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12))
+
+#ggsave(plot = blind.plot, filename = "PDF_RDS_files/blind_plot.pdf", height = 6, width = 8)
+blind.plot
+```
+<br></br>
+**Supplementary Figure 7:** Blinding does not appear to alter the magnitude or direction of effect sizes for the studies used in this meta-analysis. However, this should not be viewed as evidence against the validity of blinding as a research method. 
+
+____________
+
+### Generations
+
+We recorded the number of generations of experimental exolution each study used. The number of generations proved a negligible predictor in the meta-analytic models (estimate = 0.0019, p = 0.2341). The effect sizes are plotted against the generation at which the effect size was extracted. 
+
+```{r, fig.height= 6, fig.width=8, warning=FALSE}
+generations.plot <- strict_dataset %>% ggplot(aes(x=Generations, y=g))+
+  geom_jitter(shape=21, color = "grey20", size=2, aes(fill=Taxon))+
+  ylim(-3.5,3.5)+
+  geom_hline(yintercept=0, linetype="dashed") + 
+  scale_fill_brewer(palette = "Set3")+
+  geom_smooth(method = 'lm', color='black')+
+  labs(y="Effect size (Hedges' g)", x= 'Generations', size= 'Weight (%)')+
+  theme_bw()+
+  theme(panel.spacing = unit(0.5, "lines"),
+        panel.border= element_blank(),
+        axis.line=element_line(),
+        text = element_text(size=14),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        legend.text = element_text(size=12),
+        legend.title=element_text(size=12, face = "bold"),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12))
+
+#ggsave(plot = generations.plot, filename = "PDF_RDS_files/generations_plot.pdf", height = 7.5, width = 10)
+
+generations.plot
+```
+<br></br>
+**Supplementary Figure 8:** The number of generations an experimental evolution procedure is run for does not appear to affect the magnitude or direction of the effect size from the fitness related outcome measured at that point. 
+
+
+A linear model shows next to no effect of generations on effect size: 
+```{r}
+summary(lm(g ~ Generations, data = strict_dataset))
+```
+
+@Kawecki_2012 reviewed the field of experimental evolution and noted that changes to variation may need longer generations to become apparent. The following graph looks at the relationship between number of generations and lnCVr:
+
+```{r, fig.height= 7.5, fig.width=10, warning=FALSE}
+generations.plot.var <- strict_dataset %>% ggplot(aes(x=Generations, y=lnCVr))+
+  geom_jitter(shape=21, color = "grey20", size=2, aes(fill=Taxon))+
+  ylim(-3.5,3.5)+
+  geom_hline(yintercept=0, linetype="dashed") + 
+  scale_fill_brewer(palette = "Set3")+
+  geom_smooth(method = 'lm', color='black')+
+  labs(y='Effect size (lnCVR)', x= 'Generations', size= 'Weight (%)')+
+  theme_bw()+
+  theme(panel.spacing = unit(0.5, "lines"),
+        panel.border= element_blank(),
+        text = element_text(size=14),
+        axis.line=element_line(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        legend.text = element_text(size=12),
+        legend.title=element_text(size=12,
+                                  face = "bold"),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12))
+
+#ggsave(plot = generations.plot.var, filename = "PDF_RDS_files/generations_plot_var.pdf", height = 7.5, width = 10)
+generations.plot.var
+```
+<br></br>
+**Supplementary Figure 9:** Phenotypic variation (lnCVR) is not affected by the number of generations an experiment is ran for.
+
+```{r}
+summary(lm(lnCVr ~ Generations, data = strict_dataset))
+```
+
+
+________________
+
+## R Session Information
+
+This section shows the operating system and R packages attached during the production of this document
+
+```{r}
+sessionInfo() %>% pander
+```
+
+
+________________
+
+## References
+ 

@@ -1,0 +1,1932 @@
+---
+title: 'Code and Simulations for: Plastic responses to novel environments are biased
+  towards dimensions with high genetic variance'
+author: "Daniel Noble, Reinder Radersma & Tobias Uller"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    theme: united
+    toc: yes
+    toc_float: yes
+always_allow_html: yes
+---
+
+
+# 1.0 – Simulation 1: G and P Comparisons Within and Across Environments
+
+## 1.1 – Setting up and Loading the Packages and Data
+
+### 1.1.1 – **Packages and Functions**
+
+Lets first load the relevant packages and functions. Note that, because the .Rmd file is located within the `R/` folder we need to modify the source script for the "homemade" functions. Note that we have `#` out kableExtra as this only needs to be done once.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+	rm(list=ls())
+	source("./R/GP_compare_func.R")
+	source("./R/evolvability_func.R")
+	pacman::p_load(grid, png, shape, car, tidyr, dplyr, kableExtra, latex2exp, metafor, brms, rstan, timetree, MCMCglmm, data.table, ggplot2, knitr, rmarkdown)
+  	#devtools::install_github("haozhu233/kableExtra")
+```
+
+### 1.1.2 – **Loading the Matrices from the `data/` Folder**
+
+We want to be able to get into all the paper folders, bring in all the matrices and information about traits, perform operations on the matrices and extract the relevant information from them so we can do Monte Carlo simulations. To start, we can acquire the path names of all the matrix and description files within each paper folder of the matrices in `data_GP_compare/`.The below code will use a function that is custom built to grab all the above information.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+	  matrices <- files(dir = "./data_GP_compare/", type = "matrix", file_pattern = "[WRs][BR]")
+	descripDat <- files(dir = "./data_GP_compare/", type = "D", file_pattern = "[WRs][BR]")
+```
+
+### 1.1.3 – **Load the Meta-Data**
+
+The meta data is needed as it contains the relevant moderators and information for each of the papers that are included in order to merge this data with the simulations before running the meta-regression models. We can also see the data in the table below:
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+	meta <- read.csv("./data_GP_compare/stdy_metadata_final.csv", stringsAsFactor = FALSE)
+	kable(meta) %>%
+	kable_styling(font = 10) %>%
+  	scroll_box(width = "100%", height = "200px")
+```
+**file** – Described the path to the filename for the specific matrix that has been extracted from the paper.
+
+**authors** – First name of author for the paper matrices were extracted from. 
+
+**year** – Year study was published
+
+**study** – Study identifier 
+
+**env** – Environment traits were measured. `B` = Benign; `S` = stressful; `A` = non-novel; `N` = novel. Note that `B` and `S` are really just more detailed descriptors of the environments being stressful based on reading of the paper and the authors' understanding of the system.
+
+**type** – The type of matrix.`G` = Genetic variance/covariance matrix; `P` Phenotypic variance/covariance matrix
+
+**n** – The average sample size. For `P` this is the total number of individuals, if `G` this is the number of families.
+
+**avg_n_env** – Is the average sample size across environments
+
+**avg_n_type** – Is the average sample size across the `G` and `P` matrices
+
+**trait_num** – The number of traits in the matrices
+
+**col** – Column indicator which matches names of matrices with meta-data.
+
+**genus** Genus name
+
+**species** Binomial species name
+
+**design_raw** – The raw breeding design described in the paper. Can be `half-sib`, `full-sib` or `RIL` (Recombinant Inbred Lines). These are recoded so that `RIL` is just part of a `half-sib` design
+
+**design** – Simplified breeding design
+
+**group** – General taxonomic group studied
+
+**name.type** – Interaction/ composite variable of study number and matrix type.
+
+**name.env** – Interaction/ composite variable of study number and environment type.
+
+**env.comp** – Environmental comparison moderator; `BS` = benign/stressful comparisons; `AN` = non-novel/novel comparison.
+
+
+### 1.1.4 – **Importing the Matrices**
+
+Import matrices and relevant data. 
+		
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+		 mats <- import_mat(matrices)
+		dscrp <- import_mat(descripDat)
+```
+
+Scale the data to prevent disproportionately large effects of the traits with large values. Not scaling will likely lead to similar results, but this is a safer option. 
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+  standard <- list()
+  for (i in 1:length(dscrp)){
+    # standardize descriptive data
+    # calculate the average mean for each trait
+    dscrp[[i]]$stanfac <- ave(dscrp[[i]]$mean,dscrp[[i]]$trait)
+    #standardize mean, sd, se, Va
+    dscrp[[i]]$mean <- dscrp[[i]]$mean/dscrp[[i]]$stanfac
+    dscrp[[i]]$sd <- dscrp[[i]]$sd/dscrp[[i]]$stanfac
+    dscrp[[i]]$se <- dscrp[[i]]$se/dscrp[[i]]$stanfac
+    dscrp[[i]]$Va <- dscrp[[i]]$Va/(dscrp[[i]]$stanfac^2)
+    # save the standardization factor in to another list
+    standard[[i]] <- data.frame(trait=unique(dscrp[[i]]$trait),stanfac=dscrp[[i]]$stanfac[which(!duplicated(dscrp[[i]]$trait))]) 
+    # remove spaces and dashes from the trait names to be consistent with the names in the covariance-matrices.
+    standard[[i]]$trait <- gsub(" ","\\.", as.character(standard[[i]]$trait))
+    standard[[i]]$trait <- gsub("-","\\.", standard[[i]]$trait)
+    rownames(standard[[i]]) <- standard[[i]]$trait
+    }
+  
+  id_d <- sapply(names(dscrp),function(x){strsplit(x,"/")[[1]][3]})
+  id_m <- sapply(names(mats),function(x){strsplit(x,"/")[[1]][3]})
+  for (i in 1:length(mats)){
+    # select the right standarization factors
+    j <- which(id_d == id_m[[i]])
+    std <- standard[[j]]
+    # remove traits not represented in the covar-matrix
+    std <- std[which(std$trait %in% names(mats[[i]])),]
+    # order traits as in the covar-matrix
+    std <- std[names(mats[[i]]),]
+    # check whether the standardization factors line up
+    if(sum(names(mats[[i]]) != std$trait)>0){stop("There is a inconsistency between trait names of a matrix and a description file")}
+    mats[[i]] <- mats[[i]]/(std$stanfac %*% t(std$stanfac))
+    }
+  
+  # remove studies without means which therefore cannot be standardized 
+  rm.ids <- which(is.na(lapply(mats,sum)))
+  mats <- mats[-rm.ids]
+  dscrp <- dscrp[-which(id_d %in% id_m[rm.ids])]
+  
+```
+
+Extract the sample size and get a sense of the number of traits from the filenames of each list.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+		        n <- match_n(names(mats))						
+		trait_num <- unlist(lapply(mats, function(x) nrow(x)))
+```
+
+
+## 1.2 – Simulations using G and P matrices with given sample sizes
+
+Now that we have loaded all the data we can run the simulations described in the paper. This is done iteratively for each matrix and for each effect size. This generally does not take too long, even for 5000 simulations.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	
+		sims = 5000
+
+		system.time(
+			# Proportion of variance of the dominant eigen value
+		tota_var <- mapply(function(x,y) sim(matrix = as.matrix(x), n = y, type = "totalVar", cor = FALSE, sims = sims, matrix_fix = "bend"), x = mats, y = split(n, 1:length(n))) )
+
+		system.time(
+			# Proportion of variance of the dominant eigen value
+		var_along_logit <- mapply(function(x,y) sim(matrix = as.matrix(x), n = y, type = "varAlong", cor = FALSE, logit = TRUE, sims = sims, matrix_fix = "bend"), x = mats, y = split(n, 1:length(n))) )
+
+		system.time(
+			# raw simulated matrices 
+		matrices <- mapply(function(x,y) sim(matrix = as.matrix(x), n = y, type = "raw_matrix", cor = FALSE, sims = sims, matrix_fix = "bend"), x = mats, y = split(n, 1:length(n))) )
+```
+
+## 1.3 – Generating Effect Sizes and Sampling Variances for Meta-analysis
+
+Now that we have got all the simulations of the **G** and **P** matrices for the three different effect sizes of interest, we can extract from these distributions the average effect size and corresponding sampling error (i.e., the standard deviation). Note that, to generate some of the effect sizes we need to rely on the raw simulated matrices (i.e., the `matrices` object)
+
+First, lets create the datasets for the first two effect sizes as they are already done for us. We will plot these data to to have a look and make sure nothing crazy is happening. We will also calculate the weights for the effect sizes and add these into the data frame.
+
+First for standardised mean difference (SMD) in variance:
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+
+# Extract the relevant columns from the metadata file
+	 meta_sub_env <- meta[,c("authors", "year", "study",  "env", "avg_n_env", "trait_num", "genus", "species", "design", "group", "env.comp")]
+
+	meta_sub_type <- meta[,c("authors", "year", "study", "type",  "avg_n_type", "trait_num", "genus", "species", "design", "group", "env.comp")]
+```
+
+ We can have a look at the simulated distributions for each study graphically and print out a list used for comparisons to make sure things are working as expected.
+
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE, fig.width=9.242291, fig.height=7.841410}
+	create_data(tota_var, 
+		 		type = "SMD", 
+		 		environment = "across", 
+		 		plot = "yes")
+```
+
+**Figure 1.3.1** – Effect size distributions of the standardised mean differences in total variance between matrices. 
+
+Now that this looks good we can create the data, add important information to the data frame, and save the datafile so that we no longer need to re-run these simulations each time we want to re-run analyses.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+# Final data 
+# Standardized mean difference in variance between G-G and P-P across environments
+	
+		       SMD <- create_data(tota_var, 
+		 					      type = "SMD", 
+		 					      environment = "across", 
+		 					      plot = "no")
+	
+	      SMD_data <- combine_meta_data(SMD, 
+	      								meta_sub_type, 
+	      								environment = "across")
+
+	SMD_data$err   <- 1:nrow(SMD_data)
+	 SMD_data$wi   <- 1/SMD_data$S_var
+	
+	write.csv(SMD_data, file = "./data_GP_compare/SMD_data_standardised.csv")
+```
+
+**Directionality of Effects**: It's important to remember here that positive values mean that the total variance in $G_{novel}$ or $P_{novel}$ is larger than $G_{non-novel}$ or $P_{non-novel}$, where as negative values mean that the total variance in $G_{novel}$ or $P_{novel}$ is smaller than $G_{non-novel}$ or $P_{non-novel}$.
+
+Second, we can get the logit transformed proportion of variance along $g_{max}$. This is to make the differences at the extremes (i.e., 0 and 1) less crazy compared to other values as it stretches out the ends of the distribution and normalises things as best as possible. Again, we can plot the simulations out to make sure that they look good before creating the data.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE, fig.width=9.242291, fig.height=7.841410}
+		     create_data(var_along_logit, 
+  				        type = "raw_diff", 
+  				        environment = "across", 
+  						plot = "yes")
+```
+**Figure 1.3.2** – Effect size distributions of the logit transformed proportion of variance along $g/p_{max}$ between matrices. 
+
+Once we are satisfied, we can create the data frame so we don't need to run the simulations again.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+  	      var_along_logit_d <- create_data(var_along_logit, 
+  				                           type = "raw_diff", 
+  				                           environment = "across", 
+  										   plot = "no")
+  
+  	    var_along_logit_data <- combine_meta_data(var_along_logit_d, 
+  											       meta_sub_type, 
+  												   environment = "across")
+
+  	var_along_logit_data$err <- 1:nrow(var_along_logit_data)
+	 var_along_logit_data$wi <- 1/var_along_logit_data$S_var
+
+  	write.csv(var_along_logit_data, file = "./data_GP_compare/var_along_logit_data_standardised.csv")
+```
+
+**Directionality of Effects**: It's important to remember here that positive values mean that the proportion of variance along $gmax_{novel}$ or $pmax_{novel}$ is larger than $gmax_{non-novel}$ or $pmax_{non-novel}$, where as negative values mean that the total variance in $gmax_{novel}$ or $pmax_{novel}$ is smaller than $gmax_{non-novel}$ or $pmax_{non-novel}$. We also need to remember that these are logit transformed.
+
+Last, we can then calculate the angle between **G**-**G** across environments and **G**-**P** within each of the environments.
+
+Plot to have a look at the effect size distribution across studies:
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE, fig.width=9.242291, fig.height=7.841410}
+			create_data(matrices, 
+	         			type = "angle", 
+	         			environment = "across", 
+	         			plot = "yes")
+```
+**Figure 1.3.3** – Effect size distributions of the logit transformed angle between $g_{max}$ across environments. 
+
+The distributions are not as clean as the others, but not terrible and we can create the data for comparisons of the same matrix (e.g., $G_{novel}$ compared to $G_{non-novel}$) across environments.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+
+# Angle between P-P and G-G across environments for each study.
+	
+	         angle_across <- create_data(matrices, 
+	         								type = "angle", 
+	         								environment = "across", 
+	         								plot = "no")
+	
+	    angle_across_data <- combine_meta_data(angle_across, 
+	    										meta_sub_type, 
+	    										environment = "across")
+
+	angle_across_data$err <- 1:nrow(angle_across_data)
+	 angle_across_data$wi <- 1/angle_across_data$S_var
+
+	write.csv(angle_across_data, file = "./data_GP_compare/angle_across_data_standardised.csv")
+```
+
+**Directionality of Effects**: Angles are logit transformed by log transformation of the angle itself and dividing this by 90 degrees. Positive effect sizes indicate that the angle between $gmax_{non-novel}$ and $gmax_{novel}$ or $pmax_{non-novel}$ and $pmax_{novel}$ is approaching 90 degrees (i.e., values around 7 = 90 degrees). In contrast, negative effect sizes indicate that the angle between $gmax_{non-novel}$ and $gmax_{novel}$ or $pmax_{non-novel}$ and $pmax_{novel}$ is approaching 0 degrees (i.e., values around -7 = 0 degrees). 
+
+We can then do the same for comparisons of different matrices within each environment to understand how **G** and **P** align, for example (i.e., **$G_{novel}$** compared to **$P_{novel}$**)
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE, fig.width=9.242291, fig.height=7.841410}
+	  	create_data(matrices, type = "angle", environment = "within", plot = "yes")
+```
+**Figure 1.3.4** – Effect size distributions of the logit transformed angle between $g_{max}$ and $p_{max}$ within environments. 
+
+Once we are happy with this we can create the data frame so we again don't need to re-run these simulations again.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	# Angle between P and G within an environment for each study.
+
+	         angle_within <- create_data(matrices, type = "angle", environment = "within", plot = "no")
+	
+	    angle_within_data <- combine_meta_data(angle_within, meta_sub_env, environment = "within")
+
+	angle_within_data$err <- 1:nrow(angle_within_data)
+ 	 angle_within_data$wi <- 1/angle_within_data$S_var
+
+	write.csv(angle_within_data, file = "./data_GP_compare/angle_within_data_standardised.csv")
+```
+
+**Directionality of Effects**: Angles are logit transformed by log transformation of the angle itself and dividing this by 90 degrees. Positive effect sizes indicate that the angle between $gmax_{non-novel}$ and $pmax_{non-novel}$ or $gmax_{novel}$ and $pmax_{novel}$ is approaching 90 degrees (i.e., values around 7 = 90 degrees). In contrast, negative effect sizes indicate that the angle between $gmax_{non-novel}$ and $pmax_{non-novel}$ or $gmax_{novel}$ and $pmax_{novel}$ is approaching 0 degrees (i.e., values around -7 = 0 degrees). Values in between are varying angles.
+
+# 2.0 – Simulation 2: Alignment of Plastic Responses with **G**~novel~ and **G**~non-novel~
+
+Now that we have simulated all the data that is relevant for comparisons between **G** and **P** we can begin to ask questions about the evolvability of plastic responses. Since we only need the mean trait changes for traits across environments to generate a phenotype response vector we can actually increase the total sample size of studies included because we don't need to rely on getting the entire **P** matrix for simulations. 
+
+### 2.1 – **Importing the data**
+
+To import the data we have separated out all of the matrices for each of the two simulations and put these in separate folders. This just makes it a little more clear what data was used for each of the simulations described. 
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+	  matrices_evolve <- files(dir = "./data_evolvability/", type = "matrix", file_pattern = "[WRs][BR]")
+	descripDat_evolve <- files(dir = "./data_evolvability/", type = "D", file_pattern = "[WRs][BR]")
+```
+
+We also need to bring in some new meta-data that includes the additional studies that are added. One can view the data below.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+	meta_evolve <- read.csv("./data_evolvability/metadata_final.csv", stringsAsFactor = FALSE)
+	kable(meta_evolve) %>%
+	kable_styling(font = 10) %>%
+  	scroll_box(width = "100%", height = "200px")
+```
+
+We can then import the matrices and descriptive data. 
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+	     mats_evolve <- import_mat(matrices_evolve)
+		dscrp_evolve <- import_mat(descripDat_evolve)
+```
+
+Scale the data to prevent disproportional large effects of the traits with large values: 
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+  standard <- list()
+  for (i in 1:length(dscrp_evolve)){
+    # standardize descriptive data
+    # calculate the average mean for each trait
+    dscrp_evolve[[i]]$stanfac <- ave(dscrp_evolve[[i]]$mean,dscrp_evolve[[i]]$trait)
+    #standardize mean, sd, se, Va
+    dscrp_evolve[[i]]$mean <- dscrp_evolve[[i]]$mean/dscrp_evolve[[i]]$stanfac
+    dscrp_evolve[[i]]$sd <- dscrp_evolve[[i]]$sd/dscrp_evolve[[i]]$stanfac
+    dscrp_evolve[[i]]$se <- dscrp_evolve[[i]]$se/dscrp_evolve[[i]]$stanfac
+    dscrp_evolve[[i]]$Va <- dscrp_evolve[[i]]$Va/(dscrp_evolve[[i]]$stanfac^2)
+    # save the standardization factor in to another list
+    standard[[i]] <- data.frame(trait=unique(dscrp_evolve[[i]]$trait),stanfac=dscrp_evolve[[i]]$stanfac[which(!duplicated(dscrp_evolve[[i]]$trait))]) 
+    # remove spaces and dashes from the trait names to be consistent with the names in the covariance-matrices.
+    standard[[i]]$trait <- gsub(" ","\\.", as.character(standard[[i]]$trait))
+    standard[[i]]$trait <- gsub("-","\\.", standard[[i]]$trait)
+    rownames(standard[[i]]) <- standard[[i]]$trait
+    }
+  
+  id_d <- sapply(names(dscrp_evolve),function(x){strsplit(x,"/")[[1]][3]})
+  id_m <- sapply(names(mats_evolve),function(x){strsplit(x,"/")[[1]][3]})
+  for (i in 1:length(mats_evolve)){
+    # select the right standardization factors
+    j <- which(id_d == id_m[[i]])
+    std <- standard[[j]]
+    # remove traits not represented in the covar-matrix
+    std <- std[which(std$trait %in% names(mats_evolve[[i]])),]
+    mats_evolve[[i]] <- mats_evolve[[i]][which(names(mats_evolve[[i]]) %in% std$trait),]
+    mats_evolve[[i]] <- mats_evolve[[i]][,which(names(mats_evolve[[i]]) %in% std$trait)]
+    # order traits as in the covar-matrix
+    std <- std[names(mats_evolve[[i]]),]
+    # check whether the standardization factors line up
+    if(sum(names(mats_evolve[[i]]) != std$trait)>0){stop("There is a inconsistency between trait names of a matrix and a description file")}
+    mats_evolve[[i]] <- mats_evolve[[i]]/(std$stanfac %*% t(std$stanfac))
+    }
+  
+  length(mats_evolve)
+  length(dscrp_evolve)
+  
+```
+
+### 2.2 – **Descriptors of the Studies**
+
+Using these matrices we can also get some descriptor information about the studies
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+           env_mats_evolve <- extract_matrix_env(names(mats_evolve), type = "full")
+		 names_mats_evolve <- extract_matrix_studynames(names(mats_evolve))
+		  type_mats_evolve <- extract_matrix_type(names(mats_evolve))
+
+		means_env <- plyr::ldply(lapply(dscrp_evolve, function(x) x[,c("env","trait","mean")]))
+		
+		# make trait names consistent with the row and column names
+		means_env$trait <- gsub(" ","\\.",means_env$trait)
+		means_env$trait <- gsub("_","\\.",means_env$trait)
+		
+    means_env$.id <- gsub("/DecsrpData.csv", "", means_env$.id)
+    means_env$.id <- gsub("./data/", "", means_env$.id)
+  means_env$env_r <- gsub("[1-9]", "", as.character(means_env$env))
+  means_env$match <- paste0(means_env$.id, "_", means_env$env)
+
+```
+
+Now that we have extracted the mean vectors for all traits within each study and environment we can extract the **G** matrices for novel and non-novel environments.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+		   G_matrices <- mats_evolve[ grep("G", names(mats_evolve)) ]
+		G_matrices_NS <- G_matrices[ grep("/[NS]", names(G_matrices)) ]
+		G_matrices_AB <- G_matrices[ grep("/[AB]", names(G_matrices)) ]
+
+		n_G_NS <- match_n(names(G_matrices_NS))
+		n_G_AB <- match_n(names(G_matrices_AB))
+```
+
+We can check that everything matches, so we can be sure that nothing has been disorganized using some simple tests
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+	# First, we can subset just the G matrices from the metadata file
+		tst <- meta_evolve %>% filter(type == "G")
+
+	# Extract n from the G matrices
+		n_tst <- match_n(names(G_matrices))
+
+	# We can test that the sample sizes match what is actually in the file names
+		all(tst$n == n_tst)  # TRUE, so we are good here.
+
+	# We can also make sure that the col matches with the G-matrices
+		all(tst$col == match(tst$file, names(mats_evolve))) # TRUE, so good.
+
+	# Check that the sample sizes match with the matrices for each matrix. That way we can be absolutely sure that N matches the matrix
+		n_NS_tst <- match_n(names(G_matrices_NS))
+		n_AB_tst <- match_n(names(G_matrices_AB))
+
+		all(n_G_NS == n_NS_tst) # TRUE
+		all(n_G_AB == n_AB_tst) # TRUE
+
+```
+
+### 2.3 – **Simulations for Evolvability Metrics**
+
+We now have 5000 simulated **G** matrices with the sample sizes (number of families) used to estimate these matrices. Given that we don't have the P matrices for these data, we can't simulate changes in the means using the same approaches (but see below). For now, we will use the mean differences in traits across environments to superimpose the plasticity vector on each **G** matrix. First, we need the centroid differences in means between the two environments:
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+	# To make things easy to compare, just split the data
+	means_env$study <- gsub("./data_evolvability/", "", means_env$.id)
+	split_mean_stdy <- base::split(means_env, means_env$study)
+	split_mean_stdy <- lapply(split_mean_stdy, function(x) arrange(x, env))
+
+	# Get the plasticity response vector between the non-novel / benign and novel / stressful.
+	cen.diff <- lapply(split_mean_stdy, function(x)centroid.diff(x[x$env_r == "A" | x$env_r == "B",]$mean, x[x$env_r == "N" | x$env_r == "S",]$mean)$vector)
+	
+	# Get corresponding trait names
+	cen.diff.names <- lapply(split_mean_stdy, function(x){as.character(x[x$env_r == "A" | x$env_r == "B",]$trait)})
+```
+
+Locate cases in which the number of traits do not match up 
+
+```{r echo = TRUE, eval = TRUE, message = FALSE}
+
+	ids <- unique(c(which(unlist(lapply(cen.diff,length))!=unlist(lapply(G_matrices_AB,function(x){dim(x)[1]}))),which(unlist(lapply(cen.diff,length))!=unlist(lapply(G_matrices_NS,function(x){dim(x)[1]})))))
+
+	for(i in ids){
+	  # Identify the trait which all have in common
+	  intsect <- intersect(cen.diff.names[[i]],intersect(names(G_matrices_NS[[i]]),names(G_matrices_AB[[i]])))
+	  # select only the traits in common
+	  cen.diff[[i]] <- cen.diff[[i]][which(cen.diff.names[[i]]%in%intsect)]
+	  G_matrices_AB[[i]] <- G_matrices_AB[[i]][which(names(G_matrices_AB[[i]])%in%intsect),]
+	  G_matrices_AB[[i]] <- G_matrices_AB[[i]][,which(names(G_matrices_AB[[i]])%in%intsect)]
+	  G_matrices_NS[[i]] <- G_matrices_NS[[i]][which(names(G_matrices_NS[[i]])%in%intsect),]
+	  G_matrices_NS[[i]] <- G_matrices_NS[[i]][,which(names(G_matrices_NS[[i]])%in%intsect)]  
+	}
+
+```
+
+Now that we have checked things and we have the novel (i.e., `NS`) and non-novel (i.e., `AB`) matrices extracted we can do some simulations with the matrices
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	# Simulate G matrices for environments
+		sims = 5000
+
+		G_sim_NS <- mapply(function(x,y) sim_G(x, y, sims = sims, cor = FALSE, matrix_fix = "bend"), 
+			                x = G_matrices_NS, 
+			                y = split(n_G_NS, 1:length(n_G_NS)))
+		G_sim_AB <- mapply(function(x,y) sim_G(x, y, sims = sims, cor = FALSE, matrix_fix = "bend"), 
+			                x = G_matrices_AB, 
+			                y = split(n_G_AB, 1:length(n_G_AB)))
+```
+
+Plasticity vectors are based on the multivariate mean centroid differences. We can now project these vectors on the **G** matrices in the non-novel and novel environment to understand how plastic responses brought about by the environment lead to greater, lower or no change in evolvability. We note that the trait means themselves also have sampling variances associated with them, however, we are assuming that these are fixed given we don't have a **P** matrix to simulate the mean response vector for all studies. However, given that we are incorporating sampling error associated with **G** this will drive weighted differences among studies. Adding any additional sampling variance resulting from **P** vectors is likely not to change results because this will just add proportionally more sampling variance across studies in many cases. 
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	# Here we can get the amount of genetic variance along the plastic vector
+		evolv_max_G_NS <- evolveability_along_plastic_vector(G_sim_NS, cen.diff, compare = "max")
+
+		evolv_max_G_AB <- evolveability_along_plastic_vector(G_sim_AB, cen.diff, compare = "max")
+
+	# Here we test whether the amount of genetic variance along the plastic vector is higher than expected
+		evolv_max_G_NS_test <- evolveability_along_plastic_vector(G_sim_NS, cen.diff, compare = "maxcorr")
+
+		evolv_max_G_AB_test <- evolveability_along_plastic_vector(G_sim_AB, cen.diff, compare = "maxcorr")
+		
+	# Here we can get the angle between the plastic vector and gmax
+		evol_angle_NS <- evolveability_angle_along_plastic_vector(G_sim_NS, cen.diff)
+		
+		evol_angle_AB <- evolveability_angle_along_plastic_vector(G_sim_AB, cen.diff)
+```
+
+### 2.4 – **Plotting Simulations**
+Now that we have all the simulations finished we can explore the distribution of effects across the studies
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE, fig.width=9.242291, fig.height=7.841410}
+	plot_effect_dist(evolv_max_G_NS)
+```
+**Figure 2.4.1** – Distribution of effects for the proportion of genetic variation along plastic response vector for $G_{novel}$.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE, fig.width=9.242291, fig.height=7.841410}
+	plot_effect_dist(evolv_max_G_AB)
+```
+**Figure 2.4.2** – Distribution of effects for the proportion of genetic variation along plastic response vector for $G_{non-novel}$.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE, fig.width=9.242291, fig.height=7.841410}
+	plot_effect_dist(evol_angle_NS)
+```
+**Figure 2.4.3** – Distribution of effects for the angle between $gmax_{novel}$ and the plastic response vector for $G_{novel}$.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE, fig.width=9.242291, fig.height=7.841410}
+	plot_effect_dist(evol_angle_AB)
+```
+**Figure 2.4.4** – Distribution of effects for the angle between $gmax_{nonnovel}$ and the plastic response vector for $G_{non-novel}$.
+
+
+### 2.5 – **Generating the Data for Meta-analysis**
+
+We now want to condense down the simulated distributions and sampling variance so that we can more easily meta-analyse these data. Of course, one could technically use the entire distribution, but computationally this will make the models take a long time to run. So, we will keep it simple. We will first generate the data for $\pi_{e}$.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+                effect_G_NS <- create_data_evolve(evolv_max_G_NS, meta_evolve, env = c("N", "S"))
+
+		        effect_G_AB <- create_data_evolve(evolv_max_G_AB, meta_evolve, env = c("A", "B"))
+
+		    evolve_max_data <- rbind(effect_G_NS, effect_G_AB)
+		evolve_max_data$err <- 1:nrow(evolve_max_data)
+evolve_max_data$environment <- ifelse(evolve_max_data$env == "B" | evolve_max_data$env == "A", "Non-novel", "Novel")
+		 evolve_max_data$stdy <- substring(evolve_max_data$study,1, 5)
+	   
+		write.csv(evolve_max_data, file = "./data_evolvability/evolve_max_data_standardised.csv",row.names=FALSE)
+```
+
+Next for will generate the data for $\pi_{e-0}$.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+                effect_G_NS_test <- create_data_evolve(evolv_max_G_NS_test, meta_evolve, env = c("N", "S"))
+
+		        effect_G_AB_test <- create_data_evolve(evolv_max_G_AB_test, meta_evolve, env = c("A", "B"))
+
+		    evolve_max_data_test <- rbind(effect_G_NS_test, effect_G_AB_test)
+		evolve_max_data_test$err <- 1:nrow(evolve_max_data_test)
+evolve_max_data_test$environment <- ifelse(evolve_max_data_test$env == "B" | evolve_max_data_test$env == "A", "Non-novel", "Novel")
+		 evolve_max_data_test$stdy <- substring(evolve_max_data_test$study,1, 5)
+	   
+		write.csv(evolve_max_data_test, file = "./data_evolvability/evolve_max_data_test.csv",row.names=FALSE)
+```
+
+Now that we have data for $pi_{e}$, we can generate $\theta_{e}$ in the same way:
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	                 angle_G_NS <- create_data_evolve(evol_angle_NS, meta_evolve, env = c("N", "S"))
+
+	    			 angle_G_AB <- create_data_evolve(evol_angle_AB, meta_evolve, env = c("A", "B"))
+
+		      evolve_angle_data <- rbind(angle_G_NS, angle_G_AB)
+		  evolve_angle_data$err <- 1:nrow(evolve_angle_data)
+  evolve_angle_data$environment <- ifelse(evolve_angle_data$env == "B" | evolve_angle_data$env == "A", "Non-novel", "Novel")
+	   evolve_angle_data$stdy <- substring(evolve_angle_data$study,1, 5)
+
+
+		write.csv(evolve_angle_data, file = "./data_evolvability/evolve_angle_data_standardised.csv", row.names=FALSE)
+```
+
+# 3.0 – Meta-analysis 1: General patterns of G and P within and across environments
+### 3.1 – **Load Data**
+```{r, echo = TRUE, eval = TRUE, message = FALSE, error = FALSE}
+
+	# Load libraries
+		library(metafor)
+		library(knitr)
+		library(rmarkdown)
+
+	# Load data
+	            SMD_data <- read.csv("./data_GP_compare/SMD_data_standardised.csv")
+	          angle_data <- read.csv("./data_GP_compare/angle_across_data_standardised.csv")
+	   angle_data_within <- read.csv("./data_GP_compare/angle_within_data_standardised.csv")
+	var_along_logit_data <- read.csv("./data_GP_compare/var_along_logit_data_standardised.csv")
+
+
+```
+### 3.2 – **Meta-analysis of SDV**
+
+First, we can have a look at the dataset more carefully before running the analysis.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	kable(SMD_data) %>%
+	kable_styling(font = 10) %>%
+  	scroll_box(width = "100%", height = "400px")
+```
+
+Once we are happy with the data we can run a simple intercept only meta-analytic model to estimate point estimates for heterogeneity estimates. Basically, these allow us to partition the variance into residual and between-study variance. We can also can estimate total sampling variance. All these measures are quite useful as they can tell us what might be driving differences in effects in the datasets.
+
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	
+	# Meta-analysis - Intercept Only Model
+		# G 
+			G_SMD_data <- subset(SMD_data, type == "G")
+			
+			model_intcp_SMD_het_G <- rma.mv(ES ~ 1, V = G_SMD_data$S_var, random = list(~1|stdy, ~1|err), data = G_SMD_data)
+
+		# P 
+			P_SMD_data <- subset(SMD_data, type == "P")
+			
+			model_intcp_SMD_het_P <- rma.mv(ES ~ 1, V = P_SMD_data$S_var, random = list(~1|stdy, ~1|err), data = P_SMD_data)
+
+	# Extract the variance estimates from the model
+		#G
+			 stdy_sig_SMD_G <- model_intcp_SMD_het_G$sigma2[1]
+			  err_sig_SMD_G <- model_intcp_SMD_het_G$sigma2[2]
+
+		#P
+			 stdy_sig_SMD_P <- model_intcp_SMD_het_P$sigma2[1]
+			  err_sig_SMD_P <- model_intcp_SMD_het_P$sigma2[2]
+
+	# Calculate total sampling variance
+		#G
+				wi_SMD_G <- 1 / G_SMD_data$S_var
+				vi_SMD_G <- sum(wi_SMD_G) * ( nrow(G_SMD_data) - 1) / ( (sum(wi_SMD_G)^2) - sum(wi_SMD_G))
+				
+		#P
+				wi_SMD_P <- 1 / P_SMD_data$S_var
+				vi_SMD_P <- sum(wi_SMD_P) * ( nrow(P_SMD_data) - 1) / ( (sum(wi_SMD_P)^2) - sum(wi_SMD_P))
+
+	# Generate points estimates for I2 – heterogeneity at different levels
+		#G
+			I2total_SMD_G <- round((stdy_sig_SMD_G + err_sig_SMD_G) / (stdy_sig_SMD_G + err_sig_SMD_G + vi_SMD_G), digits = 2)
+
+			I2stdy_SMD_G <- round((stdy_sig_SMD_G) / (stdy_sig_SMD_G + err_sig_SMD_G + vi_SMD_G), digits = 2)
+
+		#P
+			I2total_SMD_P <- round((stdy_sig_SMD_P + err_sig_SMD_P) / (stdy_sig_SMD_P + err_sig_SMD_P + vi_SMD_P), digits = 2)
+
+			I2stdy_SMD_P <- round((stdy_sig_SMD_P) / (stdy_sig_SMD_P + err_sig_SMD_P + vi_SMD_P), digits = 2)
+```
+
+This will provide estimates of heterogeneity for **G** (`I2total_SMD` = `r I2total_SMD_G` and between study heterogeneity as `I2stdy_SMD` = `r I2stdy_SMD_G`) and for **P** (`I2total_SMD` = `r I2total_SMD_P` and between study heterogeneity as `I2stdy_SMD` = `r I2stdy_SMD_P`). While these are useful, the model it self isn't particularly helpful as we know, *a priori* that a number of moderator variables are likely driving effects. Hence, we should use a meta-regression model. We explore only main effects of moderators especially given we don't have a lot of data. We will account for differences in trait number across studies, the type of matrix (**G** or **P**), and the environmental comparison for the effect. In other words, whether the effect size comes from a study where stressful environmental conditions were indicated. We will run a model without an intercept for simplicity just in order to get estimates that we can back convert to get a handle on what the actual effect in the original units would be. Note that we are just doing some simple back transformations, but because of Jensen's Inequality if the distributions are skewed this will reflect the median of the distribution of untransformed values rather than the mean.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	
+	# Meta-regression models
+		model_SMD_G <- metafor::rma.mv(ES ~ design + env.comp + scale(trait_num), V = G_SMD_data$S_var, random = list(~1|stdy, ~1|err), data = G_SMD_data)
+		model_SMD_G_stress <- metafor::rma.mv(ES ~ design + relevel(env.comp, ref = "BS") + scale(trait_num), V = G_SMD_data$S_var, random = list(~1|stdy, ~1|err), data = G_SMD_data)
+		model_SMD_G_half <- metafor::rma.mv(ES ~ relevel(design, ref = "half-sib") + env.comp + scale(trait_num), V = G_SMD_data$S_var, random = list(~1|stdy, ~1|err), data = G_SMD_data)
+		
+		 n_design_SMD <- table(G_SMD_data$design)
+		n_encComp_smd <- table(G_SMD_data$env.comp)
+		
+		# Marginalised means for different groups
+		SMD_D_AN <- marginal(model_SMD_G, "design", G_SMD_data)
+		SMD_D_BS <- marginal(model_SMD_G_stress, "design", G_SMD_data)
+
+		AN_BS_SMD <- cbind(rbind(SMD_D_AN, SMD_D_BS), n_encComp_smd)
+
+		SMD_D_full <- marginal(model_SMD_G, "env.comp", G_SMD_data)
+		SMD_D_half <- marginal(model_SMD_G_half, "env.comp", G_SMD_data)
+
+		design_SMD <- cbind(rbind(SMD_D_full, SMD_D_half), n_design_SMD)
+
+		SMD_marg_table <- rbind(AN_BS_SMD, design_SMD)
+
+		# We will just fit the P model
+		model_SMD_P <- metafor::rma.mv(ES ~ design + env.comp + scale(trait_num), V = P_SMD_data$S_var, random = list(~1|stdy, ~1|err), data = P_SMD_data)
+```
+
+Once we have these models run we can have a look at the table of estimates:
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	table_SMD <- data.frame(Est. = round(rbind(model_SMD_G$b, model_SMD_P$b), digits =3), L95CI = round(c(model_SMD_G$ci.lb, model_SMD_P$ci.lb), digits=3), U95CI = round(c(model_SMD_G$ci.ub, model_SMD_P$ci.ub), digits =3))
+	rownames(table_SMD) <- c(paste0(c("Intercept", "Half-sib Breeding Design", "Stressful Environment", "Trait Number"), "_G"), paste0(c("Intercept", "Half-sib Breeding Design", "Stressful Environment", "Trait Number"), "_P"))
+	kable(table_SMD) %>% kable_styling(font = 12, full_width = TRUE)
+```
+
+### 3.3 – **Meta-analysis of Proportion of Variance Along max**
+
+First, we can have a look at the dataset more carefully before running the analysis.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	kable(var_along_logit_data) %>%
+	kable_styling(font = 10) %>%
+  	scroll_box(width = "100%", height = "400px")
+```
+
+Once we are happy with the data we can run a simple intercept only meta-analytic model to estimate point estimates for heterogeneity of effects. Basically, these allow us to partition the variance into residual, between-study variance and we can estimate total sampling variance. All these measures are quite useful as they can tell us what might be driving differences in effects in the datasets.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	# Multi-level meta-analysis
+	# Subset the data and run the intercept only models
+		# G
+			G_varAlong_data <- subset(var_along_logit_data, type == "G")
+			
+			model_intcp_varAlong_het_G <- rma.mv(ES ~ 1, V = G_varAlong_data$S_var, random = list(~1|stdy, ~1|err), data = G_varAlong_data)
+
+		# P
+			P_varAlong_data <- subset(var_along_logit_data, type == "P")
+			
+			model_intcp_varAlong_het_P <- rma.mv(ES ~ 1, V = P_varAlong_data$S_var, random = list(~1|stdy, ~1|err), data = P_varAlong_data)
+
+	# Extract the variance estimates from the model
+		#G
+			stdy_sig_varAlong_G <- model_intcp_varAlong_het_G$sigma2[1]
+			 err_sig_varAlong_G <- model_intcp_varAlong_het_G$sigma2[2]
+
+		#P
+			 stdy_sig_varAlong_P <- model_intcp_varAlong_het_P$sigma2[1]
+			 err_sig_varAlong_P <- model_intcp_varAlong_het_P$sigma2[2]
+
+	# Calculate total sampling variance
+		#G
+			 	wi_varAlong_G <- 1 / G_varAlong_data$S_var
+				vi_varAlong_G <- sum(wi_varAlong_G) * ( nrow(G_varAlong_data) - 1) / ( (sum(wi_varAlong_G)^2) - sum(wi_varAlong_G))
+		#P
+				wi_varAlong_P <- 1 / P_varAlong_data$S_var
+				vi_varAlong_P <- sum(wi_varAlong_P) * ( nrow(P_varAlong_data) - 1) / ( (sum(wi_varAlong_P)^2) - sum(wi_varAlong_P))
+
+	# Generate points estimates for I2 – heterogenity at different levels
+		#G
+			I2total_varAlong_G <- round((stdy_sig_varAlong_G + err_sig_varAlong_G) / (stdy_sig_varAlong_G + err_sig_varAlong_G + vi_varAlong_G), digits = 2)
+
+			I2stdy_varAlong_G <- round((stdy_sig_varAlong_G) / (stdy_sig_varAlong_G + err_sig_varAlong_G + vi_SMD_G), digits = 2)
+
+		# P
+			I2total_varAlong_P <- round((stdy_sig_varAlong_P + err_sig_varAlong_P) / (stdy_sig_varAlong_P + err_sig_varAlong_P + vi_varAlong_P), digits = 2)
+
+			I2stdy_varAlong_P <- round((stdy_sig_varAlong_P) / (stdy_sig_varAlong_P + err_sig_varAlong_P + vi_SMD_P), digits = 2)
+
+```
+
+This will provide estimates of heterogeneity for **G** (`I2total_Varlong` = `r I2total_varAlong_G` and between study heterogeneity as `I2stdy_varAlong` = `r I2stdy_varAlong_G`) and for **P** (`I2total_varAlong` = `r I2total_varAlong_P` and between study heterogeneity as `I2stdy_varAlong` = `r I2stdy_varAlong_P`). While these are useful, the model it self isn't particularly helpful as we know, *a priori* that a number of moderator variables are likely driving effects. Hence, we should a meta-regression model. We explore only main effects of moderators especially given we don't have a lot of data. We will account for differences in trait number across studies, the type of matrix (**G** or **P**), and the environmental comparison for the effect. In other words, whether the effect size comes from a study where stressful environmental conditions were indicated. We will run a model without an intercept for simplicity just in order to get estimates that we can back convert to get a handle on what the actually effect in the original units would be. Note that we are just doing some simple back transformations, but because of Jensen's Inequality if the distributions are skewed this may reflect the median of the distribution of untransformed values rather than the mean. Models with a random slope for type within study converge nicely and so we include this in our models to account for correlations between **G** and **P**, not the least of which is the fact that they are based on the same underlying data. 
+
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+   # Total variance change along g/p max.
+		model_VarAlong_G <- rma.mv(ES ~ design + env.comp + scale(trait_num), V = G_varAlong_data$S_var, random = list(~1|stdy, ~1|err), data = G_varAlong_data)
+		model_VarAlong_G_stress <- rma.mv(ES ~ design + relevel(env.comp, ref = "BS") + scale(trait_num), V = G_varAlong_data$S_var, random = list(~1|stdy, ~1|err), data = G_varAlong_data)
+		model_VarAlong_G_half <- rma.mv(ES ~ relevel(design, ref = "half-sib") + env.comp + scale(trait_num), V = G_varAlong_data$S_var, random = list(~1|stdy, ~1|err), data = G_varAlong_data)
+
+		n_AN_S <- table(G_varAlong_data$env.comp)
+		n_design <- table(G_varAlong_data$design)
+
+		# Marginal means
+		varalong_G_AN <- marginal(model_VarAlong_G, "design", data = G_varAlong_data)
+		varalong_G_S  <- marginal(model_VarAlong_G_stress, "design", data = G_varAlong_data)
+
+		env_cmp_varAlong <- rbind(varalong_G_AN, varalong_G_S)
+		env_cmp_varAlong <- cbind(env_cmp_varAlong, n_AN_S)
+
+		varalong_G_full <- marginal(model_VarAlong_G, "env.comp", G_varAlong_data)
+		varalong_G_half <- marginal(model_VarAlong_G_half, "env.comp", G_varAlong_data)
+		  
+		design_varAlong <- rbind(varalong_G_full, varalong_G_half)
+		design_varAlong <- cbind(design_varAlong, n_design)
+
+		varalong_marg_means <- rbind(env_cmp_varAlong, design_varAlong)
+
+		model_VarAlong_P <- rma.mv(ES ~ design + env.comp + scale(trait_num), V = P_varAlong_data$S_var, random = list(~1|stdy, ~1|err), data = P_varAlong_data)
+```
+
+Once we have these models run we can have a look at the table of estimates:
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	table_varAlong <- data.frame(Est. = round(rbind(model_VarAlong_G$b, model_VarAlong_P$b), digits =3), L95CI = round(c(model_VarAlong_G$ci.lb, model_VarAlong_P$ci.lb), digits=3), U95CI = round(c(model_VarAlong_G$ci.ub, model_VarAlong_P$ci.ub), digits =3))
+	rownames(table_varAlong) <- c(paste0(c("Intercept", "Half-sib Breeding Design", "Stressful Environment", "Trait Number"), "_G"), paste0(c("Intercept", "Half-sib Breeding Design", "Stressful Environment", "Trait Number"), "_P"))
+	kable(table_varAlong) %>% kable_styling(font = 12, full_width = TRUE)
+```
+
+
+### 3.4 – **Meta-analysis of Angle Differences Across Environments**
+
+First, we can have a look at the dataset more carefully before running the analysis.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	kable(angle_data) %>%
+	kable_styling(font = 10) %>%
+  	scroll_box(width = "100%", height = "400px")
+```
+
+Once we are happy with the data we can run a simple intercept only meta-analytic model to estimate point estimates for heterogeneity estimates. Basically, these allow us to partition the variance into residual, between-study variance and we can estimate total sampling variance. All these measures are quite useful as they can tell us what might be driving differences in effects in the datasets.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	# Subset the data and run the intercept only models
+	 # G
+		G_angle_data <- subset(angle_data, type == "G")
+			
+		model_intcp_angle_het_G <- rma.mv(ES ~ 1, V = G_angle_data$S_var, random = list(~1|stdy, ~1|err), data = G_angle_data)
+
+	# P
+		P_angle_data <- subset(angle_data, type == "P")
+			
+		model_intcp_angle_het_P <- rma.mv(ES ~ 1, V = P_angle_data$S_var, random = list(~1|stdy, ~1|err), data = P_angle_data)
+			
+	# Extract the variance estimates from the model		
+		# G	
+			stdy_sig_angle_G <- model_intcp_angle_het_G$sigma2[1]
+			 err_sig_angle_G <- model_intcp_angle_het_G$sigma2[2]
+		# P
+			 stdy_sig_angle_P <- model_intcp_angle_het_P$sigma2[1]
+			 err_sig_angle_P <- model_intcp_angle_het_P$sigma2[2]
+
+	# Calculate total sampling variance
+		# G
+			 	wi_angle_G <- 1 / G_angle_data$S_var
+				vi_angle_G <- sum(wi_angle_G) * ( nrow(G_angle_data) - 1) / ( (sum(wi_angle_G)^2) - sum(wi_angle_G))
+		# P 
+				wi_angle_P <- 1 / P_angle_data$S_var
+				vi_angle_P <- sum(wi_angle_P) * ( nrow(P_angle_data) - 1) / ( (sum(wi_angle_P)^2) - sum(wi_angle_P))
+	
+	# Generate points estimates for I2 – heterogenity at different levels
+		#G
+			I2total_angle_G <- round((stdy_sig_angle_G + err_sig_angle_G) / (stdy_sig_angle_G + err_sig_angle_G + vi_angle_G), digits = 2)
+
+			I2stdy_angle_G <- round((stdy_sig_angle_G) / (stdy_sig_angle_G + err_sig_angle_G + vi_SMD_G), digits = 2)
+
+		#P
+			I2total_angle_P <- round((stdy_sig_angle_P + err_sig_angle_P) / (stdy_sig_angle_P + err_sig_angle_P + vi_angle_P), digits = 2)
+
+			I2stdy_angle_P <- round((stdy_sig_angle_P) / (stdy_sig_angle_P + err_sig_angle_P + vi_SMD_P), digits = 2)
+```
+
+This will provide estimates of heterogeneity for **G** (`I2total_angle` = `r I2total_angle_G` and between study heterogeneity as `I2stdy_angle` = `r I2stdy_angle_G`) and for **P** (`I2total_angle` = `r I2total_angle_P` and between study heterogeneity as `I2stdy_angle` = `r I2stdy_angle_P`). While these are useful, the model it self isn't particularly helpful as we know, *a priori* that a number of moderator variables are likely driving effects. Hence, we should a meta-regression model. We explore only main effects of moderators especially given we don't have a lot of data. We will account for differences in trait number across studies, the type of matrix (**G** or **P**), and the environmental comparison for the effect. In other words, whether the effect size comes from a study where stressful environmental conditions were indicated. We will run a model without an intercept for simplicity just in order to get estimates that we can back convert to get a handle on what the actually effect in the original units would be. Note that we are just doing some simple back transformations, but because of Jensen's Inequality if the distributions are skewed this may reflect the median of the distribution of untransformed values rather than the mean. Models with a random slope for type within study converge nicely and so we include this in our models to account for correlations between **G** and **P**, not the least of which is the fact that they are based on the same underlying data.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}  
+	# Multi-level meta-regression models of the angle changes for G and P across environments. 
+	           model_Angle_G <- rma.mv(ES ~ design + env.comp + scale(trait_num), V = G_angle_data$S_var, random = list(~1|stdy, ~1|err), data = G_angle_data)
+		model_Angle_G_stress <- rma.mv(ES ~ design + relevel(env.comp, ref = "BS") + scale(trait_num), V = G_angle_data$S_var, random = list(~1|stdy, ~1|err), data = G_angle_data)
+		  model_Angle_G_half <- rma.mv(ES ~ relevel(design, ref = "half-sib") + env.comp + scale(trait_num), V = G_angle_data$S_var, random = list(~1|stdy, ~1|err), data = G_angle_data)
+
+		n_AN_S_angle <- table(G_angle_data$env.comp)
+		n_design_angle <- table(G_angle_data$design)
+
+		# Marginal means
+		angle_G_AN <- marginal(model_Angle_G, "design", data = G_angle_data)
+		angle_G_S  <- marginal(model_Angle_G_stress, "design", data = G_angle_data)
+
+		env_cmp_angle <- rbind(angle_G_AN, angle_G_S)
+		env_cmp_angle <- cbind(env_cmp_angle, n_AN_S_angle)
+
+		Angle_G_full <- marginal(model_Angle_G, "env.comp", G_angle_data)
+		Angle_G_half <- marginal(model_Angle_G_half, "env.comp", G_angle_data)
+		  
+		design_angle <- rbind(Angle_G_full, Angle_G_half)
+		design_angle <- cbind(design_angle, n_design_angle)
+
+		angle_marg_means <- rbind(env_cmp_angle, design_angle)
+
+		  model_Angle_P <- rma.mv(ES ~ design + env.comp + scale(trait_num), V = P_angle_data$S_var, random = list(~1|stdy, ~1|err), data = P_angle_data)
+```
+
+Once we have these models run we can have a look at the table of estimates:
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	table_angle <- data.frame(Est. = round(rbind(model_Angle_G$b, model_Angle_P$b), digits =3), L95CI = round(c(model_Angle_G$ci.lb, model_Angle_P$ci.lb), digits=3), U95CI = round(c(model_Angle_G$ci.ub, model_Angle_P$ci.ub), digits =3))
+	rownames(table_angle) <- c(paste0(c("Intercept", "Half-sib Breeding Design", "Stressful Environment", "Trait Number"), "_G"), paste0(c("Intercept", "Half-sib Breeding Design", "Stressful Environment", "Trait Number"), "_P"))
+	kable(table_angle) %>% kable_styling(font = 12, full_width = TRUE)
+```
+
+### 3.5 – **Meta-analysis of Angle Differences Within Environments**
+
+First, we can have a look at the dataset more carefully before running the analysis.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	kable(angle_data_within) %>%
+	kable_styling(font = 10) %>%
+  	scroll_box(width = "100%", height = "400px")
+```
+
+Once we are happy with the data we can run a simple intercept only meta-analytic model to estimate point estimates for heterogeneity estimates. Basically, these allow us to partition the variance into residual, between-study variance and we can estimate total sampling variance. All these measures are quite useful as they can tell us what might be driving differences in effects in the datasets.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+
+	 model_intcp_angle_within_het <- rma.mv(ES ~ 1, V = angle_data$S_var,   random = list(~1|stdy, ~1|err), data = angle_data_within)
+
+			stdy_sig_angle_within <- model_intcp_angle_within_het$sigma2[1]
+			 err_sig_angle_within <- model_intcp_angle_within_het$sigma2[2]
+
+		# Calculate total sampling variance
+			wi_angle_within <- 1 / angle_data_within$S_var
+			vi_angle_within <- sum(wi_angle_within) * ( nrow(angle_data_within) - 1) / ( (sum(wi_angle_within)^2) - sum(wi_angle_within))
+
+		# Heterogeneity
+	I2total_angle_within <- round((stdy_sig_angle_within + err_sig_angle_within) / (stdy_sig_angle_within + err_sig_angle_within + vi_angle_within), digits = 2)
+
+	I2stdy_angle_within <- round((stdy_sig_angle_within) / (stdy_sig_angle_within + err_sig_angle_within + vi_angle_within), digits = 2)
+
+```
+
+Again, this will provide estimates of heterogeneity as the `I2total_angle_within` = `r I2total_angle_within` and between study heterogeneity as `I2stdy_angle_within` = `r I2stdy_angle_within`. While these are useful, the model it self isn't particularly helpful as we know, *a priori* that a number of moderator variables are likely driving effects. Hence, we should a meta-regression model. We explore only main effects of moderators especially given we don't have a lot of data. We will account for differences in trait number across studies, the environment type of matrix (**non-novel** or **novel**), and the environmental comparison for the effect. In other words, whether the effect size comes from a study where stressful environmental conditions were indicated. We will run a model without an intercept for simplicity just in order to get estimates that we can back convert to get a handle on what the actually effect in the original units would be. Note that we are just doing some simple back transformations, but because of Jensen's Inequality if the distributions are skewed this may reflect the median of the distribution of untransformed values rather than the mean. Models with a random slope for type within study converge nicely and so we include this in our models to account for correlations between **G** and **P**, not the least of which is the fact that they are based on the same underlying data.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	# Angle within environment multi-level meta regression models. Here we want to account for the fact that we have two environments per study and so these are correlated. 
+		model_Angle_withinenv <- rma.mv(ES ~ environment + design + env.comp + scale(trait_num), V = angle_data_within$S_var, random = list(~1 + environment|stdy, ~1|err), data = angle_data_within)
+			model_Angle_withinenv_stress <- rma.mv(ES ~ design + relevel(env.comp, ref = "BS") + scale(trait_num), V = angle_data_within$S_var, random = list(~1|stdy, ~1|err), data = angle_data_within)
+		  model_Angle_withinenv_half <- rma.mv(ES ~ relevel(design, ref = "half-sib") + env.comp + scale(trait_num), V = angle_data_within$S_var, random = list(~1|stdy, ~1|err), data = angle_data_within)
+
+		n_AN_S_angle_within <- table(angle_data_within$env.comp)
+		n_design_angle_within <- table(angle_data_within$design)
+
+		# Marginal means
+		angle_within_G_AN <- marginal(model_Angle_withinenv, "design", data = angle_data_within)
+		angle_within_G_S  <- marginal(model_Angle_withinenv_stress, "design", data = angle_data_within)
+
+		env_cmp_angle_within <- rbind(angle_within_G_AN, angle_within_G_S)
+		env_cmp_angle_within <- cbind(env_cmp_angle_within, n_AN_S_angle_within)
+
+		Angle_within_G_full <- marginal(model_Angle_withinenv, "env.comp", angle_data_within)
+		Angle_within_G_half <- marginal(model_Angle_withinenv_half, "env.comp", angle_data_within)
+		  
+		design_angle_within <- rbind(Angle_within_G_full, Angle_within_G_half)
+		design_angle_within <- cbind(design_angle_within, n_design_angle_within)
+
+		angle_within_marg_means <- rbind(env_cmp_angle_within, design_angle_within)
+```
+
+Once we have these models run we can have a look at the table of estimates:
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	table_angle_within <- data.frame(Est. = round(model_Angle_withinenv$b, digits =3), L95CI = round(model_Angle_withinenv$ci.lb, digits=3), U95CI = round(model_Angle_withinenv$ci.ub, digits =3))
+	rownames(table_angle_within) <- c("Intercept", "Novel Environment", "Half-sib Breeding Design", "Stressful Environment", "Trait Number")
+
+	kable(table_angle_within) %>% kable_styling(font = 12, full_width = TRUE)
+```
+
+# 4.0 – Meta-analysis 2: Evolvability of environmentally induced phenotypes 
+
+### 4.1 – **Load Data**
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+		      evolve_max_data <- read.csv("./data_evolvability/evolve_max_data_standardised.csv")
+		 evolve_max_data_test <- read.csv("./data_evolvability/evolve_max_data_test.csv")
+	        evolve_angle_data <- read.csv("./data_evolvability/evolve_angle_data_standardised.csv")
+
+	        evolve_max_data$stress <- ifelse(evolve_max_data$env == "S", "S", "A")
+	        evolve_angle_data$stress <- ifelse(evolve_angle_data$env == "S", "S", "A")
+
+```
+
+### 4.2 – **Meta-analysis of $\pi_{e}$**
+
+Again, we can view the raw data as normal. 
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	kable(evolve_max_data) %>%
+	kable_styling(font = 10) %>%
+  	scroll_box(width = "100%", height = "400px")
+```
+
+We can now estimate heterogeneity using a multi-level meta-analytic model
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+
+	mod_evolve_max_int <-  rma.mv(ES ~ 1, V = evolve_max_data$S_var, random = list(~1|stdy, ~1|err), data = evolve_max_data)
+
+			stdy_evolve_max_int <- mod_evolve_max_int$sigma2[1]
+			 err_evolve_max_int <- mod_evolve_max_int$sigma2[2]
+	
+	# Calculate total sampling variance
+			wi_evolve_max <- 1 / evolve_max_data$S_var
+			vi_evolve_max <- sum(wi_evolve_max) * ( nrow(evolve_max_data) - 1) / ( (sum(wi_evolve_max)^2) - sum(wi_evolve_max))
+
+			I2total_evolve_max_data <- round((stdy_evolve_max_int + err_evolve_max_int) / (stdy_evolve_max_int + err_evolve_max_int + vi_evolve_max), digits = 2)
+
+			I2stdy_evolve_max_data <- round((stdy_evolve_max_int) / (stdy_evolve_max_int + err_evolve_max_int + vi_evolve_max), digits = 2)
+	
+```
+
+OK, but again, we have a priori moderators we think should explain these 
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+			mod_evolve_max_trait_env <-  rma.mv(ES ~ 1 + environment + design + scale(trait_num), V = evolve_max_data$S_var, random = list(~1+environment|stdy, ~1|err), data = evolve_max_data)
+		    mod_evolve_max_trait_env_stress <-  rma.mv(ES ~ 1 + environment + design + stress + scale(trait_num), V = evolve_max_data$S_var, random = list(~1+environment|stdy, ~1|err), data = evolve_max_data)
+
+		# calculate marginal mean for non-novel, marginalised over design type. First, refit model
+			mod_evolve_max_trait_env_novel <-  rma.mv(ES ~ 1 + relevel(environment, ref = "Novel") + design + scale(trait_num), V = evolve_max_data$S_var, random = list(~1+environment|stdy, ~1|err), data = evolve_max_data)			
+			
+			marinal_means_evolve_max_A_N <- rbind(marginal(mod_evolve_max_trait_env, "design", data = evolve_max_data), marginal(mod_evolve_max_trait_env_novel, "design", data = evolve_max_data))
+			n_A_N <- table(evolve_max_data$environment)
+			marinal_means_evolve_max_A_N <- cbind(marinal_means_evolve_max_A_N, n_A_N)
+		    
+		# Now we can do this over design
+			mod_evolve_max_trait_env_half <-  rma.mv(ES ~ 1 + environment + relevel(design, ref = "half-sib") + scale(trait_num), V = evolve_max_data$S_var, random = list(~1+environment|stdy, ~1|err), data = evolve_max_data)
+			marinal_means_evolve_max_design <- rbind(marginal(mod_evolve_max_trait_env, "environment", data = evolve_max_data), marginal(mod_evolve_max_trait_env_half, "environment", data = evolve_max_data))
+			n_design <- table(evolve_max_data$design)
+			marinal_means_evolve_max_design <- cbind(marinal_means_evolve_max_design, n_design)
+
+			marg_evolve_max <- rbind(marinal_means_evolve_max_A_N, marinal_means_evolve_max_design)
+```
+
+Once we have these models run we can have a look at the table of estimates:
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	table_max_evolve <- data.frame(Est. = round(mod_evolve_max_trait_env$b, digits =3), L95CI = round(mod_evolve_max_trait_env$ci.lb, digits=3), U95CI = round(mod_evolve_max_trait_env$ci.ub, digits =3))
+	rownames(table_max_evolve) <- c("Intercept", "Novel Environment", "Half-sib Breeding Design", "Trait Number")	
+	kable(table_max_evolve) %>% kable_styling(font = 12, full_width = TRUE)
+```
+
+To test whether there is more additive genetic variation along the plasticity vector than expected we also run the model for the difference between $\pi_{e}$ and $\pi_{0}$.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+		mod_evolve_max_test_env <-  rma.mv(ES ~ 1 + environment + design + scale(trait_num), V = evolve_max_data_test$S_var, random = list(~1+environment|stdy, ~1|err), data = evolve_max_data_test)
+```
+
+Once we have this model run we can have a look at the table of estimates:
+
+### 4.3 – **Table S1**
+
+**Table S1** – Estimates testing whether the angle of **gmax** is aligned more than simply by chance. We are specifically interested in the intercept here and when the 95% confidence intervals exclude zero, there is evidence that alignment between plasticity vector and **$g_{max}$** is more then what we expect by chance alone.
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	table_max_evolve_test <- data.frame(Est. = round(mod_evolve_max_test_env$b, digits =3), L95CI = round(mod_evolve_max_test_env$ci.lb, digits=3), U95CI = round(mod_evolve_max_test_env$ci.ub, digits =3))
+	rownames(table_max_evolve_test) <- c("Intercept", "Novel Environment", "Half-sib Breeding Design", "Trait Number")	
+	kable(table_max_evolve_test) %>% kable_styling(font = 12, full_width = TRUE)
+```
+
+
+### 4.4 – **Meta-analysis of $\theta_{e}$**
+
+In case a reader is interested, we'll still spit out the raw data:
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	kable(evolve_angle_data) %>%
+	kable_styling(font = 10) %>%
+  	scroll_box(width = "100%", height = "400px")
+```
+
+We can now estimate heterogeneity using a multi-level meta-analytic model:
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	mod_evolve_angle_int <-  rma.mv(ES ~ 1, V = evolve_angle_data$S_var, random = list(~1|stdy, ~1|err), data = evolve_angle_data)
+
+		stdy_evolve_angle_int <- mod_evolve_angle_int$sigma2[1]
+	     err_evolve_angle_int <- mod_evolve_angle_int$sigma2[2]
+
+			# Calculate total sampling variance
+			wi_evolve_angle <- 1 / evolve_angle_data$S_var
+			vi_volve_angle <- sum(wi_evolve_angle) * ( nrow(evolve_angle_data) - 1) / ( (sum(wi_evolve_angle)^2) - sum(wi_evolve_angle))
+
+			I2total_evolve_max_data <- round((stdy_evolve_angle_int + err_sig_angle_within) / (stdy_evolve_angle_int + err_evolve_angle_int + vi_volve_angle), digits = 2)
+
+			I2stdy_evolve_max_data <- round((stdy_evolve_angle_int) / (stdy_evolve_angle_int + err_evolve_angle_int + vi_volve_angle), digits = 2)
+
+```
+
+But again, we need to control for a number of factors likely to drive variation in effects.
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+
+	# Multi-level meta-regression models
+		mod_evolve_angle_trait_env <-  rma.mv(ES ~ 1 + environment + design + scale(trait_num), V = evolve_angle_data$S_var, random = list(~1 + environment|stdy, ~1|err), data = evolve_angle_data)
+		mod_evolve_angle_trait_env_stress <-  rma.mv(ES ~ 1 + environment + design + stress + scale(trait_num), V = evolve_angle_data$S_var, random = list(~1 + environment|stdy, ~1|err), data = evolve_angle_data)
+		mod_evolve_angle_trait_env_stress_justNovel <-  rma.mv(ES ~ 1 + design + stress + scale(trait_num), V = evolve_angle_data$S_var, random = list(~1 |stdy, ~1|err), data = subset(evolve_angle_data, environment == "Novel"))
+
+	# calculate marginal mean for non-novel, marginalised over design type. First, refit model
+			mod_evolve_angle_trait_env_novel <-  rma.mv(ES ~ 1 + relevel(environment, ref = "Novel") + design + scale(trait_num), V = evolve_angle_data$S_var, random = list(~1+environment|stdy, ~1|err), data = evolve_angle_data)			
+			
+			marinal_means_evolve_angle_A_N <- rbind(marginal(mod_evolve_angle_trait_env, "design", data = evolve_angle_data), marginal(mod_evolve_angle_trait_env_novel, "design", data = evolve_angle_data))
+			n_A_N <- table(evolve_angle_data$environment)
+			marinal_means_evolve_angle_A_N <- cbind(marinal_means_evolve_angle_A_N, n_A_N)
+		    
+		# Now we can do this over design
+			mod_evolve_angle_trait_env_half <-  rma.mv(ES ~ 1 + environment + relevel(design, ref = "half-sib") + scale(trait_num), V = evolve_angle_data$S_var, random = list(~1+environment|stdy, ~1|err), data = evolve_angle_data)
+			marinal_means_evolve_angle_design <- rbind(marginal(mod_evolve_angle_trait_env, "environment", data = evolve_angle_data), marginal(mod_evolve_angle_trait_env_half, "environment", data = evolve_angle_data))
+			n_design <- table(evolve_angle_data$design)
+			marinal_means_evolve_angle_design <- cbind(marinal_means_evolve_angle_design, n_design)
+
+			marg_evolve_angle <- rbind(marinal_means_evolve_angle_A_N, marinal_means_evolve_angle_design)
+
+```
+
+Once we have these models run we can have a look at the table of estimates:
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+	table_angle_evolve <- data.frame(Est. = round(mod_evolve_angle_trait_env$b, digits =3), L95CI = round(mod_evolve_angle_trait_env$ci.lb, digits=3), U95CI = round(mod_evolve_angle_trait_env$ci.ub, digits =3))
+	rownames(table_angle_evolve) <- c("Intercept", "Novel Environment", "Half-sib Breeding Design", "Trait Number")
+	kable(table_angle_evolve) %>% kable_styling(font = 12, full_width = TRUE)
+```
+
+# 5.0 – **Supplemental Figures**
+### 5.1 – **Figure S1 – PRISMA**
+
+```{r fig.width=10, fig.height=8,echo=FALSE}
+img <- readPNG("./figures_rmd/PRISMA.png")
+grid.raster(img, width = unit(10, "inches"), height = unit(7, "inches"))
+```
+
+**Figure S1** – PRISMA diagram for the systematic search.
+
+### 5.2 – **Figure S2 – Funnel plots**
+
+We explored publication bias using funnel plots, but there was no clear evidence across the effect sizes for publication bias:
+
+```{r, eval = TRUE, echo = FALSE, fig.height = 8.731277, fig.width = 7.330396}
+		par(mfrow=c(3,2))
+		adj = -0.10
+		padj = -0.50
+		funnel(x = SMD_data$ES, vi =SMD_data$S_var, yaxis = "sei", las = 1, digits = 2, main = "Standardised difference in total variance")
+		points(sqrt(S_var) ~ ES, data = subset(SMD_data, type == "P"), col = "gray", pch = 16)
+		mtext(expression(italic("A)")), adj = adj, padj = padj, cex = 1.2)
+		funnel(x = var_along_logit_data$ES, vi =var_along_logit_data$S_var, yaxis = "sei", las = 1, digits = 2, main = "Proportion of variance along g/pmax")
+		points(sqrt(S_var) ~ ES, data = subset(var_along_logit_data, type == "P"), col = "gray", pch = 16)
+		mtext(expression(italic("B)")), adj = adj, padj = padj, cex = 1.2)
+		funnel(x = angle_data$ES, vi = angle_data$S_var, yaxis = "sei", las = 1, digits = 2, main = "Change in angle across environments")
+		points(sqrt(S_var) ~ ES, data = subset(angle_data, type == "P"), col = "gray", pch = 16)
+		mtext(expression(italic("C)")), adj = adj, padj = padj, cex = 1.2)
+
+		funnel(x = angle_data_within$ES, vi = angle_data_within$S_var, yaxis = "sei", las = 1, digits = 2, main = "Change in angle within environments", col = "forestgreen")
+		points(sqrt(S_var) ~ ES, data = subset(angle_data_within, env == "N" | env == "S"), col = "orange", pch = 16, cex = 1.12)
+		mtext(expression(italic("D)")), adj = adj, padj = padj, cex = 1.2)
+
+		funnel(x = evolve_max_data$ES, vi = evolve_max_data$S_var, yaxis = "sei", las = 1, digits = 2, main = expression(italic(e)[lambda~max]), col = "forestgreen", cex = 1.12)
+		points(sqrt(S_var) ~ ES, data = subset(evolve_max_data, environment == "Novel"), col = "orange", pch = 16, cex = 1.12)
+		mtext(expression(italic("E)")), adj = adj, padj = padj, cex = 1.2)
+
+		funnel(x = evolve_angle_data$ES, vi = evolve_angle_data$S_var, yaxis = "sei", las = 1, digits = 2, main = expression(italic(theta)[italic(e)~lambda~max]), col = "forestgreen")
+		points(sqrt(S_var) ~ ES, data = subset(evolve_angle_data, environment == "Novel"), col = "orange", pch = 16, cex = 1.12)
+		mtext(expression(italic("F)")), adj = adj, padj = padj, cex = 1.2)
+
+```
+
+**Figure S2** – Funnel plots of sampling standard error and effect size. (A-C) 'Gray' points represent effect sizes for **P**, whereas 'black' points represent effect sizes for **G**. (D–F) 'Orange' points are effect sizes from novel environments, whereas 'green' points are effect sizes from non-novel environments. Note that for C) there was a significant change in angle across environments that was impacted also by the type of environment (stress or not). See main manuscript for more details.
+
+### 5.3 – **Code for Figure 2 - 5 – Main Paper**
+
+### Figure 2 
+
+```{r, eval = TRUE, echo = TRUE, fig.height = 7.055555, fig.width = 17.513889}
+	
+	#pdf(file = "Fig2.pdf", height = 7.055555, width = 17.513889)
+	par(mfrow = c(1,2))
+
+	# Just in case these slots are already in, lets just remove so there are no errors
+	varalong_marg_means$name = NULL
+	varalong_marg_means$obs = NULL
+
+	marg_list_M1 <- list(SMD_marg_table, varalong_marg_means, angle_marg_means)
+	marg_list_M1 <- lapply(marg_list_M1, function(x) cbind(x, name = c("Non-stressful", "Stressful", "Full-sib", "Half-sib")))
+	marg_list_M1 <- lapply(marg_list_M1, function(x) cbind(x, obs = c(5,4,1,2)))
+
+	labels = c( "Breeding Design", "Novel Environment")
+	for(i in 1){
+		par(mar = c(5,13,2,0))
+		plot_marginal(marg_list_M1[[i]], "SDV", ylim = c(0,7), xexpan = c(-1.5, 1.5), cex.lab = 2, cex.axis = 1.5)
+		#text(marg_list_M1[[i]]$Freq, x = 2, y = marg_list_M1[[i]]$obs, cex = 2)
+		mtext(at = 3, side = 2, labels[1], las = 1, font = 2.5, cex = 1.5, adj = 1)
+		mtext(at = 6, side = 2, labels[2], las = 1, font = 2.5, cex = 1.5, adj = 1)
+		mtext(at = 7, side = 2, "A)", las = 1, font = 2.5, cex = 2.5, adj = 0.9, padj = -0.8)
+		text(y = 7, x = -1, expression(bold("Decreased")), las = 1, font = 3, cex = 1.3)
+		text(y = 6.7, x = -1,  "Total Variance", las = 1, font = 1, cex = 1.3)
+		text(y = 7, x = 1, expression(bold("Increased")), las = 1, font = 3, cex = 1.3)
+		text(y = 6.7, x = 1, "Total Variance", las = 1, font = 1, cex = 1.3)
+	}
+
+
+	for(i in 2){
+		par(mar = c(5,0,2,13))
+		plot_marginal(marg_list_M1[[i]], expression(PV[max]), ylim = c(0,7), xexpan = c(-1.5, 1.5), cex.lab = 2, cex.axis = 1.5, plotname = FALSE)
+		text(marg_list_M1[[i]]$Freq, x = 2, y = marg_list_M1[[i]]$obs, cex = 2)
+		text("N", x = 2, y = max(marg_list_M1[[i]]$obs)+1, font = 2, cex = 2)
+		mtext(at = 7, side = 2, "B)", las = 1, font = 2.5, cex = 2.5, adj = 0.7, padj = -0.8)
+		text(y = 7, x = -1, expression(bold("Decreased")), las = 1, font = 3, cex = 1.3)
+		text(y = 6.7, x = -1,  expression("variance along"~bold(g[max])), las = 1, font = 3, cex = 1.3)
+		text(y = 7, x = 1, expression(bold("Increased")), las = 1, font = 3, cex = 1.3)
+		text(y = 6.7, x = 1, expression("variance along"~bold(g[max])), las = 1, font = 3, cex = 1.3)
+	}
+	#dev.off()
+```
+
+### Figure 3
+
+```{r, eval = TRUE, echo = TRUE, fig.height = 7.055555, fig.width = 17.513889}
+	#pdf(file = "Fig3.pdf", height = 7.055555, width = 17.513889)
+	par(mfrow = c(1,2))
+	marg_list_M2 <- list(angle_within_marg_means, marg_evolve_max, marg_evolve_angle)
+	marg_list_M2 <- lapply(marg_list_M2, function(x) cbind(x, name = c("Non-novel", "Novel", "Full-sib", "Half-sib")))
+	marg_list_M2 <- lapply(marg_list_M2, function(x) cbind(x, obs = c(4,5,1,2)))
+
+
+	labels = c("Breeding Design", "Environment Type")
+
+	for(i in 2){
+		par(mar = c(5,13,2,0))
+		plot_marginal(marg_list_M2[[i]], expression(pi[e]), ylim = c(0,7), xexpan = c(-2.5, 1.5), cex.lab = 2, cex.axis = 1.5)
+		#text(marg_list_M2[[i]]$Freq, x = 2, y = marg_list_M2[[i]]$obs, cex = 2)
+		mtext(at = 3, side = 2, labels[1], las = 1, font = 2.5, cex = 1.5, adj = 1)
+		mtext(at = 6, side = 2, labels[2], las = 1, font = 2.5, cex = 1.5, adj = 1)
+		mtext(at = 7, side = 2, "A)", las = 1, font = 2.5, cex = 2.5, adj = 0.9, padj = -0.8)
+		text(y = 7, x = -1, expression(bold("Low")), las = 1, font = 3, cex = 1.3)
+		text(y = 6.7, x = -1,  "Genetic Variance", las = 1, font = 1, cex = 1.3)
+		text(y = 7, x = 1, expression(bold("High")), las = 1, font = 3, cex = 1.3)
+		text(y = 6.7, x = 1, "Genetic Variance", las = 1, font = 1, cex = 1.3)
+	}
+
+	for(i in 3){
+		par(mar = c(5,0,2,13))
+		plot_marginal(marg_list_M2[[i]], expression(theta[e]), ylim = c(0,7), xexpan = c(-1.5, 2.5), cex.lab = 2, cex.axis = 1.5, plotname = FALSE)
+		text(marg_list_M2[[i]]$Freq, x = 2, y = marg_list_M2[[i]]$obs, cex = 2)
+		text("N", x = 2, y = max(marg_list_M2[[i]]$obs)+1, font = 2, cex = 2)
+		mtext(at = 7, side = 2, "B)", las = 1, font = 2.5, cex = 2.5, adj = 0.7, padj = -0.8)
+		text(y = 7, x = -1.2, expression(bold("G More Aligned")), las = 1, font = 3, cex = 1.3)
+		text(y = 6.7, x = -1.2, "with plasticity vector", las = 1, font = 1, cex = 1.3)
+		text(y = 7, x = 1.1, expression(bold("G Less Aligned")), las = 1, font = 3, cex = 1.3)
+		text(y = 6.7, x = 1.1, "with plasticity vector", las = 1, font = 1, cex = 1.3)
+	}
+	#dev.off()
+```
+
+### Figure 4 Code
+
+Note that this is not the complete figure. It was modified in Adobe Illustrator. 
+```
+	        Gn_e <- subset(evolve_max_data, environment == "Novel")
+			Ga_e <- subset(evolve_max_data, environment == "Non-novel")
+
+			Gn_angle_e <- subset(evolve_angle_data, environment == "Novel")
+			Ga_angle_e <- subset(evolve_angle_data, environment == "Non-novel")
+
+		par(mfrow = c(1,2), mar = c(6,6,1,1))
+		adj = -0.15
+		padj = 0.70
+		#emax
+		plot(Gn_e$ES ~ Ga_e$ES, ylab = expression(bolditalic(pi[e])~" Novel"), xlab = expression(italic(pi[e])~" Non-Novel"), pch = 16, cex = 1, ylim = c(-5, 16), xlim = c(-5, 16), cex.lab = 1.5, las = 1)
+		abline(a = 0, b = 1, lty = 2, lwd = 1.5)
+		abline(h = 0, col = "gray", lty = 2, lwd = 1.5)
+		abline(v = 0, col = "gray", lty = 2, lwd = 1.5)
+		
+		arrows(x0 = Ga_e$ES, y0 = Gn_e$ES, x1 = Ga_e$ES, y1 = (Gn_e$ES+(1.96*sqrt(Gn_e$S_var))), length = 0, angle = 90)
+		arrows(x0 = Ga_e$ES, y0 = Gn_e$ES, x1 = Ga_e$ES, y1 = (Gn_e$ES-(1.96*sqrt(Gn_e$S_var))), length = 0, angle = 90)
+
+		arrows(x0 = Ga_e$ES, y0 = Gn_e$ES, x1 = (Ga_e$ES+(1.96*sqrt(Ga_e$S_var))), y1 = Gn_e$ES, length = 0, angle = 90)
+		arrows(x0 = Ga_e$ES, y0 = Gn_e$ES, x1 = (Ga_e$ES-(1.96*sqrt(Ga_e$S_var))), y1 = Gn_e$ES, length = 0, angle = 90)
+		#text(x = Ga_e$ES+0.2, y = Gn_e$ES+0.2, Gn_e$study, cex = 0.2)
+		mtext(expression(bolditalic("A)")), adj = adj, padj = padj,cex = 2)
+
+
+		adj = -0.18
+		padj = 0.70
+		# e angle
+		plot(Gn_angle_e$ES ~ Ga_angle_e$ES, ylab = expression(bolditalic(theta[e])~" Novel"), xlab = expression(italic(theta[e])~" Non-Novel"), pch = 16, cex = 1, ylim = c(-8.5, 6), xlim = c(-8.5, 6), cex.lab = 1.5, las = 1)
+		abline(a = 0, b = 1, lty = 2, lwd = 1.5)
+		abline(h = 0, col = "gray", lty = 2, lwd = 1.5)
+		abline(v = 0, col = "gray", lty = 2, lwd = 1.5)
+
+		arrows(x0 = Ga_angle_e$ES, y0 = Gn_angle_e$ES, x1 = Ga_angle_e$ES, y1 = (Gn_angle_e$ES+(1.96*sqrt(Gn_angle_e$S_var))), length = 0, angle = 90)
+		arrows(x0 = Ga_angle_e$ES, y0 = Gn_angle_e$ES, x1 = Ga_angle_e$ES, y1 = (Gn_angle_e$ES-(1.96*sqrt(Gn_angle_e$S_var))), length = 0, angle = 90)
+
+		arrows(x0 = Ga_angle_e$ES, y0 = Gn_angle_e$ES, x1 = (Ga_angle_e$ES+(1.96*sqrt(Ga_angle_e$S_var))), y1 = Gn_angle_e$ES, length = 0, angle = 90)
+		arrows(x0 = Ga_angle_e$ES, y0 = Gn_angle_e$ES, x1 = (Ga_angle_e$ES-(1.96*sqrt(Ga_angle_e$S_var))), y1 = Gn_angle_e$ES, length = 0, angle = 90)
+
+		#text(x = Ga_angle_e$ES+0.2, y = Gn_angle_e$ES+0.2, Gn_angle_e$study, cex = 0.2)
+		mtext(expression(bolditalic("B)")), adj = adj, padj = padj, cex = 2)
+
+		# Identify values where Gn_e CI's overlap the CI of the Ga_e
+
+
+	dev.copy2pdf(file = "figure3_standardised10Mar.pdf", useDingbats=FALSE)
+```
+**Figure 4** – A)  The total amount of genetic variation in the direction of the plastic response vector as a proportion of the maximum amount of variation in any direction, π_e. Smaller values on the axes (i.e., negative numbers on axis) correspond to situations where genetic variation along the plasticity is low (‘Low’ label) whereas larger positive values correspond to situations where genetic variation along the plasticity vector is high (‘High’ label) Insets show schematic multivariate ellipses for the Non-novel (‘green’) and novel (‘orange’). Dashed arrows are the plastic response vector (the difference between centroids of multi-variate phenotype space across environments). Arrow length corresponds to ‘smaller’ (negative numbers on axis) or ‘larger’ (positive numbers on axis) amounts of genetic variation along the plasticity vector for the Non-novel (‘green’ text) and novel (‘orange’ text) environments. B) the The angle between the plastic response vector and g_max (θ_e) in novel and Non-novel environments across all studies. Labels correspond to values on the axes where the plasticity vector does not align with the major axis of genetic variation, g_max , (‘Not Aligned’) or where g_max aligns with the plasticity vector (‘Aligned’) in both the Non-novel (‘green’ text) and novel (‘orange’ text) environments. Insets show schematic angles between the plastic response vector (‘dashed arrow’) and g_max in the Non-novel (‘green’) and novel (‘orange’) environments. Axes are on transformed scale to facilitate comparisons with analyses. Large negative values (e.g., -8) indicate that the plastic response vector and g_max is fully aligned (i.e., ~0 degrees), whereas large positive values (e.g., 8) indicate that the plastic response vector and g_maxis not aligned (i.e., ~90). Values of 0 indicate that the plastic response vector and g_max are 45 degrees to one another. For both A) and B), studies that deviate from the expected 1:1 (dashed line) under the assumption of a constant G are colored, and indicate changes in the alignment between G and the plastic response vector across environments. ‘Green’ effects are those where the plasticity vector and G aligns better in the Non-novel environment relative to the novel environment. In contrast, ‘orange’ effects are effects where the plasticity vector and G aligns better with the novel environment relative to the Non-novel environment.
+
+### Figure 5 Code
+
+```
+	pdf(height = 9, width = 8)
+	titles <- c("A) Kasule 1991", "B) Blanckenhorn & Heyland 2005", "C) Via & Connor 1995","D) Kause & Morin 2001")  
+
+	# locations of the data in the dscrp and mats lists.
+	findmeans <- c(6,8,28,20)
+	findmats <- rbind(c(22,21,24,23),c(29,30,31,32),c(110,109,112,111),c(78,77,80,79))
+
+	#par(mfrow=c(2,2))
+	for each of the for studies:
+	for(t in 1:4){
+	 
+	  # extract matrices
+	  mat <- list()
+	  mat[[1]] <- mats[[findmats[t,1]]]
+	  mat[[2]] <- mats[[findmats[t,2]]]
+	  mat[[3]] <- mats[[findmats[t,3]]]
+	  mat[[4]] <- mats[[findmats[t,4]]]
+	  
+	  # extract mean values
+	  mns <- array(NA,dim=c(2,4))
+	  mns[,1] <- dscrp[[findmeans[t]]]$mean[1:2]
+	  mns[,2] <- dscrp[[findmeans[t]]]$mean[1:2]
+	  mns[,3] <- dscrp[[findmeans[t]]]$mean[3:4]
+	  mns[,4] <- dscrp[[findmeans[t]]]$mean[3:4]#
+	  # colors for each matrix
+	  cols <- c("#348B08A0","#54AB28A0","#DE8601A0","#FEA621A0")#
+	  # calculate eigenvalues and vectors
+	  eig <- lapply(mat,eigen)
+	  
+	  # calculate coordinates of vectors
+	  crs <- lapply(eig,function(x)x$vectors*matrix(sqrt(x$values),nrow=2,ncol=2,byrow =TRUE))
+	  
+	  # calculate the plotting range
+	  xlim <- ylim <- list()
+	  for(i in 1:4){
+	    x1 <- mns[,c(i,i)]+1.5*crs[[i]]
+	    x2 <- mns[,c(i,i)]-1.5*crs[[i]]
+	    xlim[[i]] <- c(x1[1,],x2[1,])
+	    ylim[[i]] <- c(x1[2,],x2[2,])  
+	    }
+	  xlim <- range(unlist(xlim))
+	  ylim <- range(unlist(ylim))#
+	  # draw plotting plane 
+	  plot(NA,xlim=xlim,ylim=ylim,xlab="trait 1",ylab="trait 2", main=titles[t])#
+	  # add ellipses and their axes for the G and P-matrices
+	  for(i in 1:4){
+	    ell <- car::ellipse(mns[,i], as.matrix(mat[[i]]), draw=FALSE, radius=1, center.pch=16, center.cex=1)
+	    polygon(ell[,1],ell[,2], col=cols[i])
+	    for(j in 1:2){
+	      segments(mns[1,i],mns[2,i],mns[1,i]+crs[[i]][1,j],mns[2,i]+crs[[i]][2,j])
+	      segments(mns[1,i],mns[2,i],mns[1,i]-crs[[i]][1,j],mns[2,i]-crs[[i]][2,j])    
+	      }
+	  }
+	## add plasticity vector
+	segments(mns[1,1],mns[2,1],mns[1,3],mns[2,3],lwd=3, lty=2) 
+	Arrows(mns[1,1],mns[2,1],mns[1,3],mns[2,3],lwd=1, segment ="false" ,arr.type="triangle", arr.width=0.3 , arr.length=0.4, arr.adj = 1)   
+	}
+	dev.off()
+```
+
+**Figure 5** – Examples of studies (with two trait matrices) with high (A, B) or low (C, D) alignment between the direction of plastic responses and standing genetic variation. Arrows are plastic response vectors; large ellipses are P matrices and smaller ellipses are G matrices. Colors correspond to the Non-novel (i.e., ‘green’) and novel (i.e., ‘orange’) environments. A) Kasule (25) used the cotton stainer bug (*Dysdercus fasciatus*) to estimate quantitative genetic variation in fecundity and adult size under stressful conditions using a half-sib breeding design. B) Blanckenhorn & Heyland (26) used a full-sib breeding design to estimate quantitative genetic variation for hind limb size and development time in the yellow dung fly (*Scathophaga stercoraria*) under stressful conditions. C) Via & Conner (27) studied the flour beetle (*Tribolium castaneum*) using a half-sib breeding design to estimate quantitative genetic variation for pupal weight and development time under novel (not stressful) conditions. D) Kause & Morin (28) studied the sawfly (*Priophorus pallipes*), and estimated quantitative genetic parameters for development time and body size using a full-sib breeding design (broad-sense estimates) under stressful environmental conditions. 
+
+# 6.0 – **Additional Supplemental Tables**
+
+### 6.1 – Table S2
+
+**Table S2**  – Model estimates for (1) standardized differences in total trait genetic variance (SDV) between Non-novel and novel environments,  (2) the change in proportion of variance along g_max (PV_max) between Non-novel and novel environments, and (3) the angle between g_max (θ_G) between Non-novel and novel environments. 95% confidence intervals are provided. Intercept values are the average effect size for a study with an average number of traits conducting a full-sib breeding design in a benign environment. All other parameters are contrasts from this mean. Estimates in boldface indicate significant effects (P < 0.05).
+
+|                          | Est. (1)  | L 95 % | U 95 % | Est. (2)  | L 95 % | U 95 % | Est. (3)  | L 95 % | U 95 % |
+|--------------------------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
+| Intercept                | 0.623  | 0.086  | 1.159  | 0.465  | -0.501 | 1.431  | -1.97  | -3.015 | -0.925 |
+| Half-sib Breeding Design | -1.092 | -1.749 | -0.434 | -1.475 | -2.676 | -0.275 | -1.245 | -2.551 | 0.062  |
+| Stressful Environment    | -0.012 | -0.634 | 0.610  | 0.751  | -0.387 | 1.889  | 1.51   | 0.269  | 2.752  |
+| Number of Traits         | -0.090 | -0.358 | 0.179  | 0.454  | -0.044 | 0.952  | 0.89   | 0.353  | 1.427  |
+
+### 6.2 – Table S3
+
+**Table S3** – Estimates of the (1) the angle between g_max and p_max within environments, (2) total amount of genetic variance in the direction of plastic response vector (as a proportion of g_max), π_e, and (3) the  angle between the plastic response vector and g_max, θ_e, in in both the novel and Non-novel environments. 95% confidence intervals are provided. Intercept values are the average effect size for a study with an average number of traits conducting a full-sib breeding design in an Non-novel environment. All other parameters are contrasts from this mean. Estimates in boldface indicate significant effects (P < 0.05). 
+
+|                          | Est. (1)  | L 95 % | U 95 % | Est. (2)  | L 95 % | U 95 % | Est. (3)  | L 95 % | U 95 % |
+|--------------------------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
+| Intercept                | -2.083 | -3.781 | -0.385 | 1.274  | -0.353 | 2.900  | -0.525 | -1.569 | 0.520  |
+| Novel Environment        | 0.094  | -0.251 | 0.439  | 0.088  | -0.420 | 0.597  | -0.102 | -0.458 | 0.254  |
+| Half-sib Breeding Design | 1.080  | -0.995 | 3.155  | -0.756 | -2.689 | 1.177  | 0.449  | -0.790 | 1.689  |
+| Number of Traits         | 0.080  | -1.876 | 2.036  | -1.074 | -1.875 | -0.273 | 0.733  | 0.213  | 1.254  |
+
+# 7.0 – **Functions Used Throughout**
+
+Here we provide the details of the various functions that we use throughout so that readers can have a look at what they are doing in more detail. 
+
+```{r echo = TRUE, eval = TRUE, message = FALSE, cache = TRUE}
+## Comparing G and P matrices Functions
+
+# Write files from a list
+	writeFiles <- function(listFiles, dir="./data/", add = ".csv"){
+		names <- paste0(dir, names(listFiles), add)
+		
+		for(i in 1:length(names)){
+			write.csv(listFiles[[i]], file = names[i])
+		}
+	}
+
+# Function will go into the data folder and grab all the relevant matrix files ("matrix")or the descriptive data ("D"). It will return a list of folder names with the files within these contents, ignoring irrelevant folders. 
+
+	files <- function(dir = "./data/", file_pattern = "[WRs][BR]", type = c("D", "matrix")){
+		type <- match.arg(type)
+		 tmp <- paste0(dir, list.files(dir)[grep(file_pattern, list.files(dir))])
+
+		if(type == "D"){
+			file_names <- lapply(tmp, function(x) paste0(x, "/",list.files(x)[grep("Data", list.files(x))]))
+		}
+
+		if(type == "matrix"){
+			file_names <- lapply(tmp, function(x) paste0(x, "/",list.files(x)[grep("n=", list.files(x))]))
+		}
+		names(file_names) <- tmp
+		return(file_names)
+	}
+
+
+# Importing matrices
+	
+	import_mat <- function(list){
+			tmp <- as.character(unlist(list))
+			mat <- suppressWarnings(lapply(tmp, function(x) read.csv(file = x, header = TRUE)))
+			names(mat) <- tmp
+
+			return(mat)
+	}
+
+
+## Function for extracting the sample sizes from the file names. Argument takes the string name for the various matrices and extracts the sample sizes, returning a numeric vector.
+
+	match_n <- function(string){
+			m <- regexpr("=[0-9]*(_|.)", string)
+			tmp <- regmatches(string, m)
+			tmp2 <- gsub("=","", tmp)
+			tmp3 <- as.numeric(gsub("_","", tmp2))
+		return(tmp3)
+	}
+
+## Function extracts the study names of the folders from each of the matrices	
+	extract_matrix_studynames <- function(string, pattern = "[WRs][BR][0-9][0-9][0-9].*/"){
+			m <- regexpr(pattern, string)
+			tmp <- regmatches(string, m)
+			tmp2 <- gsub("/","", tmp)
+			return(tmp2)
+	}
+
+# Extract Environments
+	
+	extract_matrix_env <- function(string, pattern = "/[ABNSU].", type = c("full", "reduced")){
+			m <- regexpr(pattern, string)
+			tmp <- regmatches(string, m)
+			tmp2.1 <- gsub("/","", tmp)
+			tmp2.2 <- gsub("_","", tmp2.1)
+			tmp2.3 <- gsub("[0-9]","", tmp2.2)
+
+			if(type == "full"){
+				tmp3 <- gsub("_","", tmp2.1)
+				return(tmp3)
+			}
+
+			if(type == "reduced"){
+				return(tmp2.3)	
+			}
+	}
+
+
+# Extract whether matrix is a G or P
+	extract_matrix_type <- function(string, pattern = "_[GP].csv"){
+				m <- regexpr(pattern, string)
+				tmp <- regmatches(string, m)
+				tmp2 <- gsub("_","", tmp)
+				tmp3 <- gsub(".csv","", tmp2)
+				return(tmp3)
+
+	}
+
+
+	## Simulation function. This will use Monte Carlo simulations to generate various statistics from a given matrix, assuming the traits follow a multivariate normal distribution. A number of different statistics can be chosen, including the total variance in a matrix Vt or "totalVar", which can be used to then look at the difference between two matrices; the proportion of variation along g/p max "varAlong", or it can even extract the full set of eigen values from a matrix ("eigen") or only the G/P max of a matrix ("max"). This works by simply taking a matrix, with it's corresponding sample size and assuming the traits follow a multivariate normal distribution. TThe matrix is used to simulate 1000 matrices according to this MVN distribution, generating the various statistics from each simulated dataset that follows this matrix structure. From these we can get a fairly robust estimate of sampling variance for each matrix and this entire simulated distribution can be used to generate effect sizes.
+# x = means
+	 sim <- function(matrix, x, n, sims = 1000, cor = FALSE, type = c("totalVar", "varAlong", "raw_matrix"), logit = TRUE, matrix_fix = c("shrinkage", "bend"), mu = rep(0, nrow(matrix))){
+			  
+			  	if(corpcor::is.positive.definite(matrix) == FALSE){
+
+			  		if(matrix_fix == "shrinkage"){
+			  			matrix <- corpcor::cov.shrink(matrix)
+			  		}
+				  	
+				  	if(matrix_fix == "bend"){
+			  			matrix <- make.positive.definite(matrix)
+			  		}	  	
+				}
+
+			  		eigens <- list()
+			  		
+			  		if(type == "totalVar"){
+				  		for(i in 1:sims){
+				  		  d <- MASS::mvrnorm(n, mu, matrix)
+				  		  if(cor == FALSE){
+				  		  cov <- cov(d)
+				  		  } else {cov <- cor(d)}
+				  		  eigens[[i]] <- sum(eigen(cov)$values)
+				  		}
+			  		}
+
+			  		if(type == "varAlong"){
+				  		for(i in 1:sims){
+				  		  d <- MASS::mvrnorm(n, mu, matrix)
+				  		  if(cor == FALSE){
+				  		  cov <- cov(d)
+				  		  } else {cov <- cor(d)}
+				  		  
+				  		  if(logit){
+				  		  	p <- (eigen(cov)$values[1]) / sum(eigen(cov)$values)
+				  		  	eigens[[i]] <- log(p / (1-p)) 	  	
+				  		  } else{
+							eigens[[i]] <- (eigen(cov)$values[1]) / sum(eigen(cov)$values) 	  	
+				  		  }
+				  		}
+			  		}
+
+			  		if(type == "raw_matrix"){
+				  		for(i in 1:sims){
+				  		  d <- MASS::mvrnorm(n, mu, matrix)
+				  		  if(cor == FALSE){
+				  		  cov <- cov(d)
+				  		  } else {cov <- cor(d)}
+				  		  eigens[[i]] <- cov
+				  		}
+			  		}
+
+			  		if(type == "raw_matrix"){
+			  			return(eigens)
+			  		}else{
+			  			return(do.call(rbind,eigens))
+			  		}
+	 }
+
+
+# Function for matrix bending by Reinder
+
+	make.positive.definite <- function(x, tol=1e-6){
+	  eig <- eigen(x, symmetric=TRUE)
+	  rtol <- tol * eig$values[1]
+	  if(min(eig$values) < rtol) {
+	    vals <- eig$values
+	    vals[vals < rtol] <- rtol
+	    srev <- eig$vectors %*% (vals * t(eig$vectors))
+	    dimnames(srev) <- dimnames(x)
+	    return(srev)
+	  } else {
+	    return(x)
+	  }
+	}
+
+# Angle between two vectors a and b
+	angle <- function(a,b){
+	  
+	  angle <- acos( sum(a*b) / ( sqrt(sum(a * a)) * sqrt(sum(b * b)) ) ) * (180/pi)
+
+	  angtmp <- ifelse(angle > 90, 180-angle, angle)
+
+	  # Logit transformation of the angle to normalise the distribution.
+	  ang <- log( (angtmp/90) / (1 - (angtmp/90) ) )
+	  
+	  return(ang)
+
+	}
+
+## Use function below to calculate differences between effects within a study and one environment between G and P. Note that P is subtracted from G. NOTE::: "angle" can ONLY be used with a simulated effect of "max". p = the proportion of vectors, rounded to compare for angles and similarity. x = the columns from the metadata frame. Stats is the simulation object.
+	
+#type = "SMD"
+#p = 0.5
+#environment = "across"
+#stats = sim_object
+#x = metadata
+	
+	compare_within_env <- function(x, stats, type = c("raw_diff", "SMD", "angle"), environment = c("within", "across")){
+		    
+		    cols <- as.vector(x$col)   
+
+		if(type == "raw_diff"){
+			col_compute <- data.frame( SMD = (stats[, cols][,2] - stats[, cols][,1]) )
+		}
+
+		if(type == "SMD"){
+			col_compute <- data.frame( SMD = (stats[, cols][,2] - stats[, cols][,1]) / ( (stats[, cols][,1] + stats[, cols][,2] ) / 2) )
+		}
+
+
+		if(type == "angle"){
+				# NOTE::: this can ONLY be used with simulated matrices
+				matrix1 <- stats[, cols][,1]
+				matrix2 <- stats[, cols][,2]
+		
+				eig1 <- lapply(matrix1, function(x) eigen(x)$vectors[,1])
+				eig2 <- lapply(matrix2, function(x) eigen(x)$vectors[,1])
+
+				# Compute angle
+			    angle <- mapply(function(a,b) angle(a,b), a = eig1, b = eig2)	
+				
+				col_compute <- as.data.frame(angle)
+			}
+
+		if(environment == "within"){
+			colnames(col_compute) <- unique(x$nam.env)
+		} else{
+			colnames(col_compute) <- unique(x$nam.type)
+		}
+		
+			return(col_compute)
+		
+	}
+
+
+# After simulating and creating effects sizes, create the data frame. Change the type of effect size that you wish to generate using the type argument. The choice of this really depends on the specific simulated product that you get. The choices are: c("raw_diff", "SMD", "angle_krzanowski", "angle", "similarity_krzanowski"). raw_diff is simply the subtraction of TOTAL variance of the matrix and the SMD is the standardised mean difference, where the difference in variance is standardised by the combined total variance of each of the matrices. This is important to make sure that G and P are put on comparative scales for between environment comparisons of each matrix.
+
+create_data <- function(sim_object, type = c("SMD", "angle"), environment = c("within", "across"), plot = c("yes", "no")){
+	
+		      nam <- extract_matrix_studynames(colnames(sim_object))
+		      env <- extract_matrix_env(colnames(sim_object), type = "reduced")
+		type_name <- extract_matrix_type(colnames(sim_object))
+
+	# Create a metadata file to summarize and check that everything so far has gone smoothly and as expected.
+		
+		metadata <- data.frame( file = colnames(sim_object), 
+								 nam = nam, 
+								 env = env, 
+								type = type_name, 
+								   n = n, 
+								 col = 1:length(colnames(sim_object)), 
+								 stringsAsFactors = FALSE )
+
+			metadata$nam.env  <- paste0(metadata$nam, ".", metadata$env)
+			metadata$nam.type <- paste0(metadata$nam, ".", metadata$type)
+
+	## Calculate the difference between G & P within an environment
+	
+	## Make sure that every study is arranged by environment and G/P in the same way so that calculations between columns are done correctly. Or, if interested in the GP comparison across environments then we can arrange slightly differently
+
+	# Split metadata on study and environment
+		if(environment == "within"){
+
+			split_within <-  split(metadata, metadata$nam.env, drop = TRUE)
+			split_within <-  lapply(split_within, function(x) dplyr::arrange(x, type))
+
+		} else {
+
+			split_within <- split(metadata, metadata$nam.type, drop = TRUE)
+			split_within <-  lapply(split_within, function(x) dplyr::arrange(x, env))
+
+		}
+		
+
+	# Calculate for all environments 
+		
+		effect_size <- do.call(cbind, lapply(split_within, function(x) compare_within_env(x, sim_object, type = type, environment = environment)))
+
+
+	# From the simulated distributions, calculate the mean and the sampling variance (i.e., the variance of the distribution)
+	       
+	          mean <- sapply(effect_size, mean)
+				Vi <- sapply(effect_size, var)
+	
+	#Create a dataframe
+	
+	if(environment == "within"){
+		dat   <- data.table(study = gsub("[.][SNAB]", "", names(mean)), 
+							env = gsub(".+[.]", "", names(mean)), 
+							ES = mean, 
+							S_var = Vi )
+	} else{
+		dat   <- data.table(study = gsub("[.][GP]", "", names(mean)), 
+							type = gsub(".+[.]", "", names(mean)), 
+							ES = mean, 
+							S_var = Vi )
+	}
+	
+	# Final data for differences in g/pmax within an environment
+		
+	if(environment == "within"){
+		data <- dplyr::arrange(dat, study, env)
+	} else{
+		data <- dplyr::arrange(dat, study, type)
+	}
+
+	if(plot == "yes"){
+			tmp <- effect_size %>% gather()
+			fig <- ggplot(tmp, aes(value)) + 
+    		geom_histogram() + 
+    		facet_wrap(~key, scales = 'free_x') + theme(axis.text.x=element_text(size=rel(0.5))) + labs(x = "Effect Size")
+    		return(fig)
+		} else{
+			return(data)	
+		}
+
+}
+	
+
+
+## Evolvability Specific Functions
+
+evolveability_along_plastic_vector <- function(G_sim, cen.diff, compare = "max"){
+		
+			    colnames(G_sim) <- extract_matrix_studynames(colnames(G_sim))
+			names_cen.diff_evolve <- names(cen.diff)
+
+			# check that names match
+			if(sum(colnames(G_sim)!=names_cen.diff_evolve)>0) {stop("Sorry, you have different matrices and response vectors") }
+			
+			evol <- c()
+			
+			for(j in names_cen.diff_evolve){
+					    
+					    G <- G_sim[,j]
+					r_vec <- cen.diff[[j]]
+				
+					tmp <- do.call("rbind", lapply(G, function(x) project.matrix(x, r_vec, compare = compare)))
+					colnames(tmp) <- j
+					
+					evol <- cbind(evol, tmp)
+			}
+
+			return(as.data.frame(evol))
+}
+
+
+evolveability_angle_along_plastic_vector <- function(G_sim, cen.diff){
+		
+			    colnames(G_sim) <- extract_matrix_studynames(colnames(G_sim))
+			names_cen.diff_evolve <- names(cen.diff)
+
+			# check that names match
+			if(sum(colnames(G_sim)!=names_cen.diff_evolve)>0) {stop("Sorry, you have different matrices and response vectors") }
+			
+			evol <- c()
+			
+			for(j in names_cen.diff_evolve){
+				
+					# Grab the same study for response vector and G	    
+					    G <- G_sim[,j]
+					r_vec <- cen.diff[[j]]
+					
+					# Calculate the angle between gmax and response vector
+					tmp <- do.call("rbind", lapply(G, function(x) angle(eigen(x)$vectors[,1], r_vec)))
+					colnames(tmp) <- j
+					
+					evol <- cbind(evol, tmp)
+			}
+
+			return(as.data.frame(evol))
+}
+
+create_data_evolve <- function(sim_object, meta_evolve, env = c("N", "S")){
+	
+		columns <- c("authors", "year", "study", "env", "type", "n", "trait_num", "genus", "species", "design", "group", "name.type", "name.env")
+	trim_meta <- meta_evolve[meta_evolve$type == "G", columns] 
+	trim_meta <- trim_meta[trim_meta$env %in% env,]
+
+			mean <- sapply(sim_object, mean)
+			 Vi <- sapply(sim_object, var)
+			 study <- names(mean)
+
+			 dat   <- data.table(study=study,  
+							ES = mean, 
+							S_var = Vi )
+
+			 data_fin<- left_join(trim_meta, dat, by = "study")
+
+			 return(data_fin)
+}
+
+
+combine_meta_data_evolve <- function(es_data, meta_sub){
+			
+				es_data <- unique(left_join(es_data, meta_sub, by = c("file")))
+
+			# Fix up a couple columns
+			es_data$species_full <- paste0(es_data$genus, "_", es_data$species)
+			es_data$stdy <- substr(es_data$study, 1, 5)
+			rownames(es_data) <- 1:nrow(es_data)
+		return(es_data)
+}
+
+
+sim_G <- function(Gmatrix, n, sims = 1000, cor = FALSE, matrix_fix = c("shrinkage", "bend")){
+			  		
+			  		mu <- rep(0, nrow(Gmatrix))
+			  	
+			  	if(corpcor::is.positive.definite(Gmatrix) == FALSE){
+
+			  		if(matrix_fix == "shrinkage"){
+			  			Gmatrix <- corpcor::cov.shrink(Gmatrix)
+			  		}
+				  	
+				  	if(matrix_fix == "bend"){
+			  			Gmatrix <- make.positive.definite(Gmatrix)
+			  		}	  	
+				}
+
+				matrices <- list()
+			  		
+				  		for(i in 1:sims){
+				  		  
+				  		  d <- MASS::mvrnorm(n, mu, Gmatrix)
+				  		  
+				  		  if(cor == FALSE){
+				  		  	cov <- cov(d)
+				  		  } else {
+				  		  	cov <- cor(d)
+				  		  }
+				  		  
+				  		  matrices[[i]] <- cov
+						}	  	
+
+				return(matrices)			  		
+}
+
+centroid.diff <- function(a,b){
+  # a: vector a
+  # b: vector b
+  dz <- b-a
+  val <- sqrt(sum(dz^2))
+  vec <- dz/val
+  return(list(value=val,vector=vec))
+}
+
+# Function to project a covariance matrix onto a vector.
+
+project.matrix <- function(mat,vec,compare=NA){
+  # mat: covariance matrix that needs to be projected
+  # vec: vector on which the covariance matrix needs to be projected
+  # compare: to what does the amount of variance of mat on vec needs to be compared to:
+  #   NA        : no comparison, output is the amount of variance on vec
+  #   "max"     : as proportion of the first eigenvector of mat
+  #   "maxcorr" : as proportion of the first eigenvector of mat, corrected for the expected value
+  #   "mean"    : as proportional difference to mean value of all eigenvectors of mat
+  #   "total"   : as proportion of the sum of the values of all eigenvectors of mat
+  
+  dims       <- length(vec)
+  beta_prime <- matrix(vec,ncol=dims,nrow=dims)
+  beta       <- matrix(vec,ncol=dims,nrow=dims,byrow=TRUE)
+  abs_beta_2 <- sum(vec^2)
+  pv <- as.numeric((t(vec)%*%mat%*%vec)/abs_beta_2)
+  ev <- eigen(mat)$values
+  if(is.na(compare)){
+    return(pv)
+  }else if(compare=="max"){
+    return(log( (pv/ev[1]) / (1 - (pv/ev[1]))))
+  }else if(compare=="maxcorr"){
+    return(log( (pv/ev[1]) / (1 - (pv/ev[1])))-log( (mean(ev)/ev[1]) / (1 - (mean(ev)/ev[1]))))
+  }else if(compare=="total"){
+    return(pv/sum(ev))    
+  }else{
+    return((pv-mean(ev))/mean(ev))    
+  }
+}
+
+
+## Adding some new functions for calculating marginalised means. 
+
+# Relevels the data based on a factor in the model and a reference level of the factor
+	re_level_dat <- function(data, factor, ref){
+		data[, factor] <- 	relevel(data[, factor], ref = ref)
+		return(data)
+	}
+
+	#@example test <- re_level_dat(evolve_max_data, "design", ref = "half-sib")
+
+
+## Extract coefficients from models
+	extract_coefs <- function(model){
+		mean <- model$b[1]
+		  se <- model$se[1]
+
+		  dat <- data.frame(mean = mean, se = se)
+
+	 return(dat)
+	}
+
+# Calculate marginal means for a single factor
+	marg_mean <- function(coefs){
+		mean_mar <- ( (coefs[1,"mean"]*coefs[1,"n"]) + (coefs[2,"mean"]*coefs[2,"n"]) ) / sum(coefs$n)
+		return(mean_mar)
+	}
+
+	#@examples marg_mean(coefs)
+
+#Calculate marginal SE's for a single factor
+
+	marg_se <- function(coefs){
+		n1 <- (coefs[1,"n"] / sum(coefs$n))
+		n2 <- (coefs[2,"n"] / sum(coefs$n))
+
+		mar_se  <- sqrt((coefs[1,"se"]^2)*(n1^2) + (coefs[2,"se"]^2)*(n2^2))
+		return(mar_se)
+	}
+
+	#@example marg_se(coefs)
+
+# Function for producing marginalised mean and se across a single factor level. To get estimates for a 2x2 factor design simply refit the model re-leveling the second factor (i.e., not the one used in the "marginal" function)
+	
+	marginal <- function(model, factor, data){
+			
+		# Get relevant data
+			     ref <- levels(data[ , factor])
+			n_levels <- table(data[ , factor])
+
+		# Get first set of estimates from model
+			   coef1 <- cbind(extract_coefs(model), name = ref[1])
+
+		# Update data, to get the new estimates
+			 dat_new <- re_level_dat(data, factor, ref = ref[2])
+
+		# Refit model
+			model_new <- update(model, data = dat_new)
+
+		# Extract updated coefs
+			coef2 <- cbind(extract_coefs(model_new), name = ref[2])
+
+		# Concatenate the two rows
+			coefs <- cbind(rbind(coef1, coef2), n = as.vector(n_levels))
+
+		#Calculate the marginal mean and SE across the levels of "factor"
+			marginal <- data.frame(mean = marg_mean(coefs),
+								   se   = marg_se(coefs)  )
+		
+		return(marginal)
+	}
+
+ #	@example{
+# 			full_A <-  rma.mv(ES ~ 1 + environment + design + scale(trait_num), V = evolve_max_data$S_var, random = list(~1+environment|stdy, ~1|err), data = evolve_max_data)#
+
+#			marginal(full_A, "design", evolve_max_data) # Marginal mean of Non-novel across design#
+
+#			full_N <-  rma.mv(ES ~ 1 + relevel(environment, ref = "Novel") + design + scale(trait_num), V = evolve_max_data$S_var, random = list(~1+environment|stdy, ~1|err), data = evolve_max_data)#
+
+#			marginal(full_N, "design", evolve_max_data) # Marginal mean of Novel across design
+#	}
+
+
+	plot_marginal <- function(table, effectsize, xexpan, plotname = TRUE, ...){
+		plot(obs ~ mean, type = "n", las = 1, ylab = "", xlab = effectsize, data = table, bty = "n", yaxt = "n",  xlim = range(table$mean)+xexpan, ...)
+		abline(v=0, lty = 2, lwd = 1.5)
+		points(obs ~ mean, data = table, pch = 16, cex = 1.8)
+
+		arrows(x0=table$mean, y0=table$obs, x1=table$mean + 1.96*(table$se), y1=table$obs, length = 0, angle = 90)
+		arrows(x0=table$mean, y0=table$obs, x1=table$mean - 1.96*(table$se), y1=table$obs, length = 0, angle = 90)	
+
+		if(plotname){
+			mtext(table$name, at = table$obs, side = 2, cex = 1.3, las = 1)
+		}
+	}
+```
