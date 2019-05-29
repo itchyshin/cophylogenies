@@ -1,17 +1,19 @@
 ---
 title: "Testing the generality of host-symbiont cophylogeny"
-subtitle: Electronic Supplementary Material
 author: "Alexander Hayward, Robert Poulin & Shinichi Nakagawa"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
-  html_document: 
-    toc: true # show a table of contents
-    toc_float: true # make table of contents float at the side of the page
-    depth: 3  # upto three depths of headings (specified by #, ## and ###)
-    number_sections: false  # set to true if you want to number sections at each table header
-    theme: lumen # nice fonts and colours
-    code_folding: hide # Add some buttons to show/hide the code
-bibliography: references.bib 
+  html_document:
+    code_folding: hide
+    depth: 3
+    number_sections: no
+    theme: lumen
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+subtitle: Electronic Supplementary Material
+bibliography: references.bib
 ---
 
 <!--- Try to add references for this!!!! --->
@@ -31,9 +33,9 @@ tidy = TRUE
 
 ### Loading pacakges and custum functions
 
-```{r, results = 'hide'}
+```{r}
 # clearning up
-#rm(list=ls())
+rm(list=ls())
 
 # loading packages
 pacman::p_load(tidyverse, # tidy family and related pacakges below
@@ -43,7 +45,7 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                magrittr, # extending piping
                pander,   # nice tables
                metafor,  # package for meta-analysis
-               MCMCglmm  # Bayeisan mixed model package
+               MCMCglmm#,  # Bayeisan mixed model package
                #mi,      # missing data analysis
                #betareg   # dependance of the above
 )
@@ -170,7 +172,7 @@ n_table2 <-t(n_table1[,-1])
 colnames(n_table2) <- n_table1$method
 n_table2 %>% as_tibble(rownames = "Number") %>% 
   mutate(Combined = Parafit + TreeMap, Combined = replace(Combined, 2, n_authors)) %>%  
-  rename_("Number of" = "Number", "Parafit (n)" = "Parafit", "TreeMap (n)" = "TreeMap",  "Combined (n)" = "Combined") %>% 
+  rename("Number of" = "Number", "Parafit (n)" = "Parafit", "TreeMap (n)" = "TreeMap",  "Combined (n)" = "Combined") %>% 
   kable() %>% kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "250px")
   #pander(split.cell = 40, split.table = Inf) # not as nice as kable
@@ -184,9 +186,9 @@ Here we have the number of missing data (cells) for all the varaibles used in th
 ```{r}
 # summaring missingness in our dataset
 # funs(sum(is.na(.))) needs to be in funs as is.na has "." = each column
-dat %>% summarise_all(funs(sum(is.na(.)))) %>% # map(~sum(is.na(.)) # this is an alterantive way 
+dat %>% summarise_all(~sum(is.na(.))) %>% # map(~sum(is.na(.)) # this is an alterantive way 
   t() %>% as_tibble(rownames = "Variable") %>% 
-  rename_("Number of missing data (n)" = "V1") %>% 
+  rename("Number of missing data (n)" = "V1") %>% 
   #pander(split.cell = 40, split.table = Inf)
   kable() %>% kable_styling("striped", position = "left") %>%
   scroll_box(width = "50%", height = "250px")
@@ -200,7 +202,7 @@ dat %>% summarise_all(funs(sum(is.na(.)))) %>% # map(~sum(is.na(.)) # this is an
 
 ### Calculating effect sizes
 
-Here, we create our effect size (correlation coefficent *r* and its Fisher's z transformaiton *Zr*) from p values and associated sample sizes. We used the sum of `host_tips_linked_corrected` and `symbiont_tips_linked` as our sample size (i.e., the number of both host and symbiont species) for each effect size (an indicator of congruence). Also, we creat a column with unique ID for each observation (i.e. an observation level random effect), which is required for the `rma.mv` function in `metafor`.
+Here, we create our effect size (correlation coefficent *r* and its Fisher's z transformaiton *Zr*) from p values and associated sample sizes. We used the sum of `host_tips_linked_corrected` and `symbiont_tips_linked` as our sample size (i.e., the number of both host and symbiont species) for each effect size (an indicator of congruence). Also, we creat a column with unique ID for each observation (i.e. an observation level random effect), termed `observation`, which is required for the `rma.mv` function in `metafor`.
 
 NOTE!!!
 * creating Zr and sample size - done
@@ -212,13 +214,11 @@ NOTE!!!
 * Factor re-ordering - we probably do this 
 
 ```{r}
-dat %>% 
-  # getting sample size
-  mutate(sample_size = host_tips_linked_corrected + symbiont_tips_linked) %>% 
+dat %<>% 
+  # getting sample size & observation level random effect
+  mutate(sample_size = host_tips_linked_corrected + symbiont_tips_linked,observation = factor(1:nrow(.))) %>% 
   # calcuating effect size 
-  p_to_Zr(p_value, sample_size) %>% 
-  # observation level random effect
-  mutate(obs = factor(1:nrow(dat))) -> dat 
+dat %<>% p_to_Zr(p_value, sample_size) 
 
 # TODO
 # some factor reordering required!!!
@@ -228,23 +228,23 @@ dat %>%
 
 ### Intercept model (meta-analytic model)
 
-#### Running Multilevel Meta-analytic models with 3 datasets
+First, we checked what random effects should be put into the main model to do this we fitted two random effects `authors` and `observation`; the former term is to account for non-independence of effect sizes orginating from the same papers (i.e., `authors`). 
+
 ```{r}
+# 2 random effects
+model_test1 <- rma.mv(yi = Zr, V = VZr, random = list(~ 1 | authors, ~1|observation), data = dat)
 
-main_model_all <- rma.mv(yi = Zr, V = VZr, mods = ~ symbiosis, random = list(~ 1 | authors, ~1|obs), data = dat)
-
-summary(main_model_all)
-
-
-main_model_all2 <- rma.mv(yi = Zr, V = VZr, mods = ~ symbiosis, random = ~ 1 | authors, data = dat)
-
-summary(main_model_all2)
-
-AIC(main_model_all)
-AIC(main_model_all2)
+# 1 random effect
+model_test2 <- rma.mv(yi = Zr, V = VZr, random = ~ 1 | authors, data = dat)
 
 ```
 
+The model (`model_test1`), which included both random factors, had a larger AIC value (`r AIC(model_test1)`) than the model with only one random effect . This is becuase `observation` hardly account any variance ($< 0.0001$) compared to `authors` ().
+
+#### Running Multilevel Meta-analytic models with 3 datasets
+```{r}
+
+```
 
 
 NOTE!!!

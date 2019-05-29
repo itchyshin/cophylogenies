@@ -43,6 +43,15 @@ p_to_Zr <- function(data, pval, N) {
 # General modeling functions 
 # Functions for I2
 
+#' Title
+#'
+#' @param model 
+#' @param method 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 I2 <- function(model, method = c("Wolfgang", "Shinichi")){
   warning("Make sure you have the observation (effec size) level random effect\n")
   ## evaluate choices
@@ -81,6 +90,14 @@ I2 <- function(model, method = c("Wolfgang", "Shinichi")){
 # Functions for R2
 # make a version which provides both R types of R^2
 
+#' Title
+#'
+#' @param model 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 R2 <- function(model){
   warning("Make sure you have the observation (effec size) level random effect as the last in the formula\n")
   
