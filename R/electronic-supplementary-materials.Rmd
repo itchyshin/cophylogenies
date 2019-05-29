@@ -7,7 +7,7 @@ output:
     code_folding: hide
     depth: 3
     number_sections: no
-    theme: lumen
+    theme:  spacelab # “default”, “cerulean”, “journal”, “flatly”, “darkly”, “readable”, “spacelab”, “united”, “cosmo”, “lumen”, “paper”, “sandstone”, “simplex”, “yeti”
     toc: yes
     toc_float: yes
   pdf_document:
@@ -133,7 +133,7 @@ V. __no_randomizations__:	The number of phylogenetic randomizations performed du
 
 W. __p_value__:	The p-value reported for the cophylogenetic analysis, representing the likelihood that host and symbtion phylogenies display cospeciation.
 
-X. __method__:	Whether TreeMap or was used to obtain codivergence or a p value.
+X. __method__:	Whether TreeMap or Parafit was used to obtain co-divergence or a p value.
 
 ### Table of sample sizes
 
@@ -204,20 +204,12 @@ dat %>% summarise_all(~sum(is.na(.))) %>% # map(~sum(is.na(.)) # this is an alte
 
 Here, we create our effect size (correlation coefficent *r* and its Fisher's z transformaiton *Zr*) from p values and associated sample sizes. We used the sum of `host_tips_linked_corrected` and `symbiont_tips_linked` as our sample size (i.e., the number of both host and symbiont species) for each effect size (an indicator of congruence). Also, we creat a column with unique ID for each observation (i.e. an observation level random effect), termed `observation`, which is required for the `rma.mv` function in `metafor`.
 
-NOTE!!!
-* creating Zr and sample size - done
-* we only use corrected sample size..(need to write about this) - done!
-* Just two varaibles??? - done
-* observation level random factor....
-* probably make (what is this??)
-
-* Factor re-ordering - we probably do this 
-
 ```{r}
 dat %<>% 
   # getting sample size & observation level random effect
-  mutate(sample_size = host_tips_linked_corrected + symbiont_tips_linked,observation = factor(1:nrow(.))) %>% 
-  # calcuating effect size 
+  mutate(., sample_size = host_tips_linked_corrected + symbiont_tips_linked, observation = factor(1:nrow(.)))  
+# calcuating effect size 
+# somehow it did not run by piping with above (not recognising the first aurgument)  
 dat %<>% p_to_Zr(p_value, sample_size) 
 
 # TODO
@@ -228,24 +220,30 @@ dat %<>% p_to_Zr(p_value, sample_size)
 
 ### Intercept model (meta-analytic model)
 
-First, we checked what random effects should be put into the main model to do this we fitted two random effects `authors` and `observation`; the former term is to account for non-independence of effect sizes orginating from the same papers (i.e., `authors`). 
+First, we checked what random effects should be put into the main model to do this we fitted two random effects, `authors` and `observation`; the former term is to account for non-independence of effect sizes orginating from the same papers (i.e., `authors`). 
 
-```{r}
-# 2 random effects
-model_test1 <- rma.mv(yi = Zr, V = VZr, random = list(~ 1 | authors, ~1|observation), data = dat)
+```{r, cache=TRUE}
+# 2 random effects & model AIC 
+# note that probably only base stuff works outside of main chunck so need to create AIC here
+ma_test1 <- rma.mv(yi = Zr, V = VZr, random = list(~ 1 | authors, ~1|observation), data = dat)
+aic1 <- AIC(ma_test1)
 
-# 1 random effect
-model_test2 <- rma.mv(yi = Zr, V = VZr, random = ~ 1 | authors, data = dat)
+# 1 random effect & model AIC 
+ma_test2 <- rma.mv(yi = Zr, V = VZr, random = ~ 1 | authors, data = dat)
+aic2 <- AIC(ma_test2)
 
 ```
 
-The model (`model_test1`), which included both random factors, had a larger AIC value (`r AIC(model_test1)`) than the model with only one random effect . This is becuase `observation` hardly account any variance ($< 0.0001$) compared to `authors` ().
+The model (`ma_test1`), which included both random factors, had a larger AIC value (`r round(aic1,2)`) than the model with only one random effect (`r round(aic2, 2)`) . This is becuase `observation` hardly accounted any variance (< 0.0001) compared to `authors` (`r round(ma_test1$sigma2[1], 4)`). Therefore, we will only have `authors` as our random factor in subsquent.
+
+Now, we run intercept models (meta-analyses) with 3 different datasets (`Parafit`, `TreeMap` and both combined; see the explantion of `method` above)
 
 #### Running Multilevel Meta-analytic models with 3 datasets
 ```{r}
 
 ```
 
+These models give all consistant results
 
 NOTE!!!
 * Justification of the use of combined datasets....
