@@ -7,7 +7,7 @@ output:
     code_folding: hide
     depth: 3
     number_sections: no
-    theme:  sandstone # “default”, “cerulean”, “journal”, “flatly”, “darkly”, “readable”, “spacelab”, “united”, “cosmo”, “lumen”, “paper”, “sandstone”, “simplex”, “yeti”
+    theme:  cosmo # “default”, “cerulean”, “journal”, “flatly”, “darkly”, “readable”, “spacelab”, “united”, “cosmo”, “lumen”, “paper”, “sandstone”, “simplex”, “yeti”
     toc: yes
     toc_float: yes
   pdf_document:
@@ -46,7 +46,7 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                pander,   # nice tables
                metafor,  # package for meta-analysis
                MCMCglmm,  # Bayeisan mixed model package
-               ggbeeswarm, #
+               ggbeeswarm #
                #mi,      # missing data analysis
                #betareg   # dependance of the above
 )
@@ -289,53 +289,32 @@ These models give all consistant results including heterogeneity. Given these re
 
 ```{r,  fig.width=7, fig.height=2.5}
 
-get_est(ma_all) %>% 
-  ggplot(aes(x = esr, y = "Overall mean")) +
-  geom_vline(xintercept = 0, linetype = 2, colour = "black") +
-  geom_quasirandom(data = dat, aes(x= tanh(Zr), y = "Overall mean", size = 1/VZr), groupOnX = FALSE, alpha=0.2) + 
-  geom_errorbarh(aes(xmin = lcir, xmax = ucir),  height = 0, show.legend = F) +
-  geom_point(size=3, shape=21, fill = "black") +
-  labs(x = expression(paste(italic(r), " (correlaton)")), y = "") +
-  theme_bw() +
-  theme(legend.position="none") +
-  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) -> fig_ma
+# eq <- substitute(italic(Sepal.Length) == a - b %*% italic(Petal.Length)~","~italic(R)^2~"="~r2~","~italic(P)~"="~p, d)
+# annotate('text', 7, 4, label=paste("italic(Sepal.Length)==", d$a, "~-~", d$b, "~x~", "~italic(Petal.Length)~';'~italic(r)^2==", d$r2, "~italic(P)==", d$p), parse=TRUE, hjust=1, size=3.5)
 
-#ggsave(plot = fig_ma, filename = "fig_meta-analysis.pdf", height = 2, width = 8)
+#xxx
+effect_ma <- get_est(ma_all)
+fig_ma <- ggplot(data = effect_ma, aes(x = esr, y = "Overall mean")) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_errorbarh(aes(xmin = lcir, xmax = ucir),  height = 0, show.legend = F, size = 1) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(size=3, shape=21, fill = "black") +
+  geom_quasirandom(data = dat, aes(x= tanh(Zr), y = "Overall mean", size = 1/VZr), groupOnX = FALSE, alpha=0.2) + 
+  # it is difficult to mix italitc and r code in geom_text (annoate will be easier)
+  #geom_text(data = dat, aes( x = -1, y = "Overall mean", label = str_c("k = ", length(Zr)) ), size = 3, hjust = "left") +
+  #dgeom_text(data = dat, aes( x = -1, y = "Overall mean", label = "italic('k =')~233", ), size = 3, hjust = "left", parse = TRUE) +
+  annotate('text', x = -1, y = "Overall mean", label=paste("italic(k)==", length(dat$Zr)), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (sample size)")) ) +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction="horizontal") +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) 
+
+#ggsave(plot = fig_ma, filename = "fig_1a.pdf", height = 2, width = 8)
 
 fig_ma
-
-# # example
-# s_plot <- function(res, title = "", N = TRUE) {
-#   
-#   if(N == TRUE) {
-#    p <- ggplot(res, aes(x = name, y = estimate, colour = name)) +
-#      geom_pointrange(aes(ymin = lowerCL, ymax = upperCL), size = 1.5) +
-#      geom_hline(yintercept = 0, lty = 2, lwd = 1, alpha = 0.5) +
-#      geom_text(aes(y = -0.2, label = str_c("n = ", n)), size = 5, hjust = "left", nudge_x = 0.2) +
-#      coord_cartesian(ylim = c(-0.2, 1)) + # this is not working
-#      labs(x = "", y = "Zr (effect size)", title = title) +
-#      coord_flip()
-#   } else {
-#    p <- ggplot(res, aes(x = name, y = estimate, colour = name)) +
-#       geom_pointrange(aes(ymin = lowerCL, ymax = upperCL), size = 1.5) +
-#       geom_hline(yintercept = 0, lty = 2, lwd = 1, alpha = 0.5) +
-#       coord_cartesian(ylim = c(-0.2, 1)) + # this is not working
-#       +
-#       coord_flip()
-#   }
-#     # ggplot theme
-#   p + theme(#panel.background = element_rect(fill = "white"),
-#     axis.line.x = element_line(size = 2, colour = "black"),
-#     axis.ticks.x = element_line(size = 2),
-#     axis.ticks.length = unit(0.3,"cm"),
-#     axis.text.x = element_text(size = 10),
-#     axis.ticks.y = element_line(size = 0, colour = "white"),
-#     axis.text.y = element_text(size = 15, face = "plain", colour = "black"),
-#     title = element_text(size = 15, face = "italic"),
-#     axis.title.x = element_text(size = 15, face = "plain"),
-#     legend.position="none")
-# }
-
 ```
 **Figure 2a:** The effect .....
 
@@ -363,7 +342,7 @@ NOTE!!!
 
 
 ```{r}
-dat %>% 
+dat %<>% 
     # host_tax_broad*symbiosis (host_tax_symbiosis) 
   mutate(host_tax_symbiosis = str_c(host_tax_broad, symbiosis), 
          host_tax_symbiosis = ifelse(host_tax_symbiosis == "InvertNA", NA, host_tax_symbiosis),
@@ -371,7 +350,7 @@ dat %>%
     # symbiont_tax_broad*symbiosis (symbiont_symbiosis)     
          symbiont_symbiosis = factor(str_c(symbiont_tax_broad, symbiosis)),
     # host_tax_broad*symbiont_tax_broad (host_symbiont_tax)     
-         host_symbiont_tax  = factor(str_c(host_tax_broad, symbiont_tax_broad))) -> dat 
+         host_symbiont_tax  = factor(str_c(host_tax_broad, symbiont_tax_broad))) 
 
 ```
 

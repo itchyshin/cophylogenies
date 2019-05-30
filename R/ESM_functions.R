@@ -141,6 +141,7 @@ get_est <- function (model, mod = " ") {
   
   tibble(name = name, esZr = estimate, lciZr  = lowerCL, uclZr = upperCL) %>% 
     mutate(esr = tanh(esZr), lcir = tanh(lciZr), ucir = tanh(uclZr)) -> table
+  return(table)
 }
 
 
