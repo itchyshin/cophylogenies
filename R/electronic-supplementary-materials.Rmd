@@ -7,7 +7,7 @@ output:
     code_folding: hide
     depth: 3
     number_sections: no
-    theme:  spacelab # “default”, “cerulean”, “journal”, “flatly”, “darkly”, “readable”, “spacelab”, “united”, “cosmo”, “lumen”, “paper”, “sandstone”, “simplex”, “yeti”
+    theme:  sandstone # “default”, “cerulean”, “journal”, “flatly”, “darkly”, “readable”, “spacelab”, “united”, “cosmo”, “lumen”, “paper”, “sandstone”, “simplex”, “yeti”
     toc: yes
     toc_float: yes
   pdf_document:
@@ -45,7 +45,8 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                magrittr, # extending piping
                pander,   # nice tables
                metafor,  # package for meta-analysis
-               MCMCglmm#,  # Bayeisan mixed model package
+               MCMCglmm,  # Bayeisan mixed model package
+               ggbeeswarm, #
                #mi,      # missing data analysis
                #betareg   # dependance of the above
 )
@@ -79,7 +80,6 @@ Below is the dataset used for our meta-analysis follwed by explanations of 24 va
 #  mutate_if(is.character, as.factor)
 full_data <- read_csv("../data/2019-04-04-source-data-dat.csv", na = "NA") %>% 
    mutate_if(is.character, as.factor)
-
 
 # making a scrollable table
 kable(full_data, "html") %>%
@@ -225,38 +225,135 @@ First, we checked what random effects should be put into the main model to do th
 ```{r, cache=TRUE}
 # 2 random effects & model AIC 
 # note that probably only base stuff works outside of main chunck so need to create AIC here
-ma_test1 <- rma.mv(yi = Zr, V = VZr, random = list(~ 1 | authors, ~1|observation), data = dat)
+ma_test1 <- rma.mv(yi = Zr, 
+                   V = VZr, 
+                   random = list(~ 1 | authors, ~1|observation), 
+                   data = dat)
 aic1 <- AIC(ma_test1)
 
 # 1 random effect & model AIC 
-ma_test2 <- rma.mv(yi = Zr, V = VZr, random = ~ 1 | authors, data = dat)
+ma_test2 <- rma.mv(yi = Zr, 
+                   V = VZr, 
+                   random = ~ 1 | authors, 
+                   data = dat)
 aic2 <- AIC(ma_test2)
-
 ```
 
 The model (`ma_test1`), which included both random factors, had a larger AIC value (`r round(aic1,2)`) than the model with only one random effect (`r round(aic2, 2)`) . This is becuase `observation` hardly accounted any variance (< 0.0001) compared to `authors` (`r round(ma_test1$sigma2[1], 4)`). Therefore, we will only have `authors` as our random factor in subsquent.
 
-Now, we run intercept models (meta-analyses) with 3 different datasets (`Parafit`, `TreeMap` and both combined; see the explantion of `method` above)
+Now, we run intercept models (meta-analyses) with 3 different datasets (`Parafit`, `TreeMap` and both combined; see the explantion of `method` above). Also, we note that we use adjustments for test statistics and confidence intervals (`test = "t"`), which is similar to (but not the same as) those proposed by Kanpp and Hartung (2003); probably this approch is a more conservative approach.
 
 #### Running Multilevel Meta-analytic models with 3 datasets
-```{r}
-
+```{r, cache=TRUE}
+# think about making this into a tibble
+# meta-analysis with Parafit
+ma_parafit <- rma.mv(yi = Zr, 
+                 V = VZr, 
+                 random = ~ 1 | authors, 
+                 test = "t",
+                 subset = which(method == "TreeMap"),
+                 data = dat)
+I2_parafit <- I2(ma_parafit)
+# meta-analysis with TreeMap
+ma_treemap <- rma.mv(yi = Zr, 
+                 V = VZr, 
+                 random = ~ 1 | authors, 
+                 test = "t",
+                 subset = which(method == "Parafit"),
+                 data = dat)
+I2_treemap <- I2(ma_treemap)
+# meta-analysis with all the data combined
+ma_all <- rma.mv(yi = Zr, 
+                 V = VZr, 
+                 test = "t",
+                 random = ~ 1 | authors, 
+                 data = dat)
+I2_all <- I2(ma_all)
 ```
 
-These models give all consistant results
+**Supplementary Table X:**
+Overall effects (meta-analytic means), 95% confidence intervals (CIs), variance components (V) and heterogeneity, *I*^2^ (I2) from `metafor` model using the 3 datasets (`Parafit`, `TreeMap` and both combined, or `All`). Note that in these models, *I*^2^~[total]~ = *I*^2^~[authors]~ (see Nakagawa & Santos 2012; REF - probably Senior as well?), as we only have one random factor. 
+```{r}
+pander(tibble(
+  Dataset = c("Parafit", "TreeMap", "All"),
+  `Overall mean (Zr)` = c(ma_parafit$b, ma_treemap$b, ma_all$b),
+  `Lower CI [0.025]` = c(ma_parafit$ci.lb, ma_treemap$ci.lb, ma_all$ci.lb),
+  `Upper C  [0.975]` = c(ma_parafit$ci.ub, ma_treemap$ci.ub, ma_all$ci.ub),
+  `V[authors]` = c(ma_parafit$sigma2, ma_treemap$sigma2, ma_all$sigma2),
+  `I2[total] %` = c(I2_parafit[1], I2_treemap[1], I2_all[1])), 
+  # split.table = Inf stops spliting - also text gets wrapped
+  split.table = Inf, digits = 3)
+```
 
-NOTE!!!
-* Justification of the use of combined datasets....
-* just do the main one for all three datasets but not others
-* You need
-* or we could - provide forest plots of all the three datasets???? (do it later)
-* heterogeneity
+These models give all consistant results including heterogeneity. Given these results, we will proceed with only analysing the whole dataset (`All`) from this on.    
 
+```{r,  fig.width=7, fig.height=2.5}
 
+get_est(ma_all) %>% 
+  ggplot(aes(x = esr, y = "Overall mean")) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black") +
+  geom_quasirandom(data = dat, aes(x= tanh(Zr), y = "Overall mean", size = 1/VZr), groupOnX = FALSE, alpha=0.2) + 
+  geom_errorbarh(aes(xmin = lcir, xmax = ucir),  height = 0, show.legend = F) +
+  geom_point(size=3, shape=21, fill = "black") +
+  labs(x = expression(paste(italic(r), " (correlaton)")), y = "") +
+  theme_bw() +
+  theme(legend.position="none") +
+  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) -> fig_ma
+
+#ggsave(plot = fig_ma, filename = "fig_meta-analysis.pdf", height = 2, width = 8)
+
+fig_ma
+
+# # example
+# s_plot <- function(res, title = "", N = TRUE) {
+#   
+#   if(N == TRUE) {
+#    p <- ggplot(res, aes(x = name, y = estimate, colour = name)) +
+#      geom_pointrange(aes(ymin = lowerCL, ymax = upperCL), size = 1.5) +
+#      geom_hline(yintercept = 0, lty = 2, lwd = 1, alpha = 0.5) +
+#      geom_text(aes(y = -0.2, label = str_c("n = ", n)), size = 5, hjust = "left", nudge_x = 0.2) +
+#      coord_cartesian(ylim = c(-0.2, 1)) + # this is not working
+#      labs(x = "", y = "Zr (effect size)", title = title) +
+#      coord_flip()
+#   } else {
+#    p <- ggplot(res, aes(x = name, y = estimate, colour = name)) +
+#       geom_pointrange(aes(ymin = lowerCL, ymax = upperCL), size = 1.5) +
+#       geom_hline(yintercept = 0, lty = 2, lwd = 1, alpha = 0.5) +
+#       coord_cartesian(ylim = c(-0.2, 1)) + # this is not working
+#       +
+#       coord_flip()
+#   }
+#     # ggplot theme
+#   p + theme(#panel.background = element_rect(fill = "white"),
+#     axis.line.x = element_line(size = 2, colour = "black"),
+#     axis.ticks.x = element_line(size = 2),
+#     axis.ticks.length = unit(0.3,"cm"),
+#     axis.text.x = element_text(size = 10),
+#     axis.ticks.y = element_line(size = 0, colour = "white"),
+#     axis.text.y = element_text(size = 15, face = "plain", colour = "black"),
+#     title = element_text(size = 15, face = "italic"),
+#     axis.title.x = element_text(size = 15, face = "plain"),
+#     legend.position="none")
+# }
+
+```
+**Figure 2a:** The effect .....
 
 ## Meta-regression
 
+
 ### Univaraite (Uni-predictor) analyses
+
+
+NOTE!!!
+* Do the REF REF REF 
+* Justification of the use of combined datasets.... - done
+* just do the main one for all three datasets but not others
+* or we could - provide forest plots of all the three datasets???? (do it later)
+* heterogeneity - done 
+
+
+
 
 #### Testing 
 
