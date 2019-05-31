@@ -71,7 +71,7 @@ We have XX custum functions: .......
 
 ### Table of the dataset
 
-Below is the dataset used for our meta-analysis follwed by explanations of 24 variables original collected (not all varaibles were used for our analyses; variables which were neither 'directly' and 'indirectly' used in our analyses are indicated by *)
+Below is the dataset used for our meta-analysis follwed by explanations of 24 variables original collected (not all varaibles were used for our analyses; variables which were neither 'directly' nor 'indirectly' used in our analyses are indicated by *)
 
 ```{r}
 # getting the data and formating some variables (turning chraracter vectors to factors)
@@ -202,7 +202,7 @@ dat %>% summarise_all(~sum(is.na(.))) %>% # map(~sum(is.na(.)) # this is an alte
 
 ### Calculating effect sizes
 
-Here, we create our effect size (correlation coefficent *r* and its Fisher's z transformaiton *Zr*) from p values and associated sample sizes. We used the sum of `host_tips_linked_corrected` and `symbiont_tips_linked` as our sample size (i.e., the number of both host and symbiont species) for each effect size (an indicator of congruence). Also, we creat a column with unique ID for each observation (i.e. an observation level random effect), termed `observation`, which is required for the `rma.mv` function in `metafor`.
+Here, we creatde our effect size (correlation coefficent *r* and its Fisher's z transformaiton *Zr*) from p values and associated sample sizes. We used the sum of `host_tips_linked_corrected` and `symbiont_tips_linked` as our sample size (i.e., the number of both host and symbiont species) for each effect size (an indicator of congruence). Also, we creat a column with unique ID for each observation (i.e. an observation level random effect), termed `observation`, which is required for the `rma.mv` function in `metafor`.
 
 ```{r}
 dat %<>% 
@@ -214,13 +214,13 @@ dat %<>% p_to_Zr(p_value, sample_size)
 
 # TODO
 # some factor reordering required!!!
-
+levels = c("small", "medium", "large")
 ```
 
 
 ### Intercept model (meta-analytic model)
 
-First, we checked what random effects should be put into the main model to do this we fitted two random effects, `authors` and `observation`; the former term is to account for non-independence of effect sizes orginating from the same papers (i.e., `authors`). 
+First, we checked what random effects should be put into the main model to do this we fitted two random effects, `authors` and `observation`; the former term was added to account for non-independence of effect sizes orginating from the same papers (i.e., `authors`). 
 
 ```{r, cache=TRUE}
 # 2 random effects & model AIC 
@@ -239,9 +239,9 @@ ma_test2 <- rma.mv(yi = Zr,
 aic2 <- AIC(ma_test2)
 ```
 
-The model (`ma_test1`), which included both random factors, had a larger AIC value (`r round(aic1,2)`) than the model with only one random effect (`r round(aic2, 2)`) . This is becuase `observation` hardly accounted any variance (< 0.0001) compared to `authors` (`r round(ma_test1$sigma2[1], 4)`). Therefore, we will only have `authors` as our random factor in subsquent.
+The model (`ma_test1`), which included both random factors, had a larger AIC value (`r round(aic1,2)`) than the model with only one random effect (`r round(aic2, 2)`) . This is becuase `observation` hardly accounted any variance (< 0.0001) compared to `authors` (`r round(ma_test1$sigma2[1], 4)`). Therefore, we only had `authors` as our random factor in subsquentb analyses.
 
-Now, we run intercept models (meta-analyses) with 3 different datasets (`Parafit`, `TreeMap` and both combined; see the explantion of `method` above). Also, we note that we use adjustments for test statistics and confidence intervals (`test = "t"`), which is similar to (but not the same as) those proposed by Kanpp and Hartung (2003); probably this approch is a more conservative approach.
+We ran intercept models (meta-analyses) with 3 different datasets (`Parafit`, `TreeMap` and both combined; see the explantion of `method` above). Also, we note that we used adjustments for test statistics and confidence intervals (`test = "t"`), which is similar to (but not the same as) those proposed by Kanpp and Hartung (2003); probably this approch is a more conservative approach.
 
 #### Running Multilevel Meta-analytic models with 3 datasets
 ```{r, cache=TRUE}
@@ -285,7 +285,71 @@ pander(tibble(
   split.table = Inf, digits = 3)
 ```
 
-These models give all consistant results including heterogeneity. Given these results, we will proceed with only analysing the whole dataset (`All`) from this on.    
+These models gave all consistant results including heterogeneity. Given these results, we proceeded with only analysing the whole dataset (`All`) from this on.    
+
+```{r,  fig.width=7, fig.height=2.5}
+#xxx
+effect_ma <- get_est(ma_all)
+#xxxxx
+fig_ma <- ggplot(data = effect_ma, aes(x = esr, y = "Overall mean")) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_errorbarh(aes(xmin = lcir, xmax = ucir),  height = 0, show.legend = F, size = 1) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(size=3, shape=21, fill = "black") +
+  geom_quasirandom(data = dat, aes(x= tanh(Zr), y = "Overall mean", size = 1/VZr), groupOnX = FALSE, alpha=0.2) + 
+  # it is difficult to mix italitc and r code in geom_text (annoate will be easier)
+  #geom_text(data = dat, aes( x = -1, y = "Overall mean", label = str_c("k = ", length(Zr)) ), size = 3, hjust = "left") +
+  #geom_text(data = dat, aes( x = -1, y = "Overall mean", label = "italic('k =')~233", ), size = 3, hjust = "left", parse = TRUE) +
+  annotate('text', x = -1, y = "Overall mean", label=paste("italic(k)==", length(dat$Zr)), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (sample size)")) ) +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction="horizontal") +
+  theme(legend.background = element_blank()) +
+  # put a box around ledgend.....
+  
+  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) 
+
+#ggsave(plot = fig_ma, filename = "fig_1a.pdf", height = 2, width = 8)
+
+fig_ma
+```
+**Figure 2a:** The effect .....
+
+## Meta-regression
+
+We ran a univaraite meta-regression model for each of following moderators: 1) `symbiosis`, 2) `symbiont_tax_broad`, 3) `host_tax_symbiosis`, 4) `host_range_link_ratio`, 5) `host_range_taxonomic_breadth`, 6) `mode_of_transmission_broad`, and 7) `endo_or_ecto`. The results from these models are mentioned in the main text. In addtion to these, we ran three more univariate models: 1) , 2) and 3) .
+
+NOTE - making interaction terms
+NOTE - Reording - factors!!!
+
+#### Interactions between 
+```{r}
+dat %<>% 
+    # host_tax_broad*symbiosis (host_tax_symbiosis) 
+  mutate(host_tax_symbiosis = str_c(host_tax_broad, symbiosis), 
+         host_tax_symbiosis = ifelse(host_tax_symbiosis == "InvertNA", NA, host_tax_symbiosis),
+         host_tax_symbiosis = factor(host_tax_symbiosis),
+    # symbiont_tax_broad*symbiosis (symbiont_symbiosis)     
+         symbiont_symbiosis = factor(str_c(symbiont_tax_broad, symbiosis)),
+    # host_tax_broad*symbiont_tax_broad (host_symbiont_tax)     
+         host_symbiont_tax  = factor(str_c(host_tax_broad, symbiont_tax_broad))) 
+
+```
+
+### Univaraite (Uni-predictor) analyses
+
+#### Testing - 
+
+```{r}
+sizes <- factor(sizes, levels = c("small", "medium", "large"))
+sizes
+#> [1] small  large  large  small  medium
+#> Levels: small medium large
+```
+
+
 
 ```{r,  fig.width=7, fig.height=2.5}
 
@@ -303,25 +367,24 @@ fig_ma <- ggplot(data = effect_ma, aes(x = esr, y = "Overall mean")) +
   geom_quasirandom(data = dat, aes(x= tanh(Zr), y = "Overall mean", size = 1/VZr), groupOnX = FALSE, alpha=0.2) + 
   # it is difficult to mix italitc and r code in geom_text (annoate will be easier)
   #geom_text(data = dat, aes( x = -1, y = "Overall mean", label = str_c("k = ", length(Zr)) ), size = 3, hjust = "left") +
-  #dgeom_text(data = dat, aes( x = -1, y = "Overall mean", label = "italic('k =')~233", ), size = 3, hjust = "left", parse = TRUE) +
+  #geom_text(data = dat, aes( x = -1, y = "Overall mean", label = "italic('k =')~233", ), size = 3, hjust = "left", parse = TRUE) +
   annotate('text', x = -1, y = "Overall mean", label=paste("italic(k)==", length(dat$Zr)), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (sample size)")) ) +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
   theme(legend.direction="horizontal") +
   theme(legend.background = element_blank()) +
+  # put a box around ledgend.....
+  
   theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) 
 
 #ggsave(plot = fig_ma, filename = "fig_1a.pdf", height = 2, width = 8)
 
 fig_ma
 ```
-**Figure 2a:** The effect .....
+#### 
 
-## Meta-regression
-
-
-### Univaraite (Uni-predictor) analyses
+#### Testing specialization: 
 
 
 NOTE!!!
@@ -330,31 +393,6 @@ NOTE!!!
 * just do the main one for all three datasets but not others
 * or we could - provide forest plots of all the three datasets???? (do it later)
 * heterogeneity - done 
-
-
-
-
-#### Testing 
-
-#### 
-
-#### Interactions between 
-
-
-```{r}
-dat %<>% 
-    # host_tax_broad*symbiosis (host_tax_symbiosis) 
-  mutate(host_tax_symbiosis = str_c(host_tax_broad, symbiosis), 
-         host_tax_symbiosis = ifelse(host_tax_symbiosis == "InvertNA", NA, host_tax_symbiosis),
-         host_tax_symbiosis = factor(host_tax_symbiosis),
-    # symbiont_tax_broad*symbiosis (symbiont_symbiosis)     
-         symbiont_symbiosis = factor(str_c(symbiont_tax_broad, symbiosis)),
-    # host_tax_broad*symbiont_tax_broad (host_symbiont_tax)     
-         host_symbiont_tax  = factor(str_c(host_tax_broad, symbiont_tax_broad))) 
-
-```
-
-#### Testing specialization: 
 
 
 
