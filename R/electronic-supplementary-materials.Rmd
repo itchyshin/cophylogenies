@@ -27,6 +27,9 @@ cache = TRUE,# Cacheing to save time when kniting
 tidy = TRUE
 #fig.width = 9
 )
+
+# clearning up
+rm(list=ls())
 ```
 
 ## Setups
@@ -34,9 +37,6 @@ tidy = TRUE
 ### Loading pacakges and custum functions
 
 ```{r}
-# clearning up
-rm(list=ls())
-
 # loading packages
 pacman::p_load(tidyverse, # tidy family and related pacakges below
                kableExtra, 
@@ -46,7 +46,8 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                pander,   # nice tables
                metafor,  # package for meta-analysis
                MCMCglmm,  # Bayeisan mixed model package
-               ggbeeswarm #
+               ggbeeswarm, # making bee-swarm plots possible
+               plotly     # interactive plots using ggplot2
                #mi,      # missing data analysis
                #betareg   # dependance of the above
 )
@@ -218,7 +219,7 @@ levels = c("small", "medium", "large")
 ```
 
 
-### Intercept model (meta-analytic model)
+### Meta-analytic model: testing Fahrenholz's rule
 
 First, we checked what random effects should be put into the main model to do this we fitted two random effects, `authors` and `observation`; the former term was added to account for non-independence of effect sizes orginating from the same papers (i.e., `authors`). 
 
@@ -253,7 +254,7 @@ ma_parafit <- rma.mv(yi = Zr,
                  test = "t",
                  subset = which(method == "TreeMap"),
                  data = dat)
-I2_parafit <- I2(ma_parafit)
+
 # meta-analysis with TreeMap
 ma_treemap <- rma.mv(yi = Zr, 
                  V = VZr, 
@@ -261,70 +262,76 @@ ma_treemap <- rma.mv(yi = Zr,
                  test = "t",
                  subset = which(method == "Parafit"),
                  data = dat)
-I2_treemap <- I2(ma_treemap)
+
 # meta-analysis with all the data combined
 ma_all <- rma.mv(yi = Zr, 
                  V = VZr, 
                  test = "t",
                  random = ~ 1 | authors, 
                  data = dat)
-I2_all <- I2(ma_all)
 ```
 
-**Supplementary Table X:**
+**Supplementary Table 1:**
 Overall effects (meta-analytic means), 95% confidence intervals (CIs), variance components (V) and heterogeneity, *I*^2^ (I2) from `metafor` model using the 3 datasets (`Parafit`, `TreeMap` and both combined, or `All`). Note that in these models, *I*^2^~[total]~ = *I*^2^~[authors]~ (see Nakagawa & Santos 2012; REF - probably Senior as well?), as we only have one random factor. 
 ```{r}
+# getting I2 for the models
+# could use map()
+i2_treemap <- I2(ma_treemap)
+i2_parafit <- I2(ma_parafit)
+i2_all <- I2(ma_all)
+# creating a table
 pander(tibble(
   Dataset = c("Parafit", "TreeMap", "All"),
   `Overall mean (Zr)` = c(ma_parafit$b, ma_treemap$b, ma_all$b),
   `Lower CI [0.025]` = c(ma_parafit$ci.lb, ma_treemap$ci.lb, ma_all$ci.lb),
   `Upper C  [0.975]` = c(ma_parafit$ci.ub, ma_treemap$ci.ub, ma_all$ci.ub),
   `V[authors]` = c(ma_parafit$sigma2, ma_treemap$sigma2, ma_all$sigma2),
-  `I2[total] %` = c(I2_parafit[1], I2_treemap[1], I2_all[1])), 
+  `I2[total] %` = c(i2_parafit[1], i2_treemap[1], i2_all[1])), 
   # split.table = Inf stops spliting - also text gets wrapped
   split.table = Inf, digits = 3)
 ```
 
 These models gave all consistant results including heterogeneity. Given these results, we proceeded with only analysing the whole dataset (`All`) from this on.    
 
-```{r,  fig.width=7, fig.height=2.5}
-#xxx
-effect_ma <- get_est(ma_all)
-#xxxxx
-fig_ma <- ggplot(data = effect_ma, aes(x = esr, y = "Overall mean")) +
+```{r,  fig.width=7, fig.height=2}
+# creating a table of results
+pred_ma <- get_pred(ma_all) 
+effect_ma <- get_est(ma_all) %>% left_join(pred_ma) 
+
+# creating a forest plot
+fig_ma <- ggplot(data = effect_ma, aes(x = tanh(estimate), y = "Overall mean")) +
   scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
-  geom_errorbarh(aes(xmin = lcir, xmax = ucir),  height = 0, show.legend = F, size = 1) +
+  geom_quasirandom(data = dat, aes(x= tanh(Zr), y = "Overall mean", size = 1/VZr), groupOnX = FALSE, alpha=0.2) + 
+  # precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+
   geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
   # creating dots and different size (bee-swarm and bubbles)
   geom_point(size=3, shape=21, fill = "black") +
-  geom_quasirandom(data = dat, aes(x= tanh(Zr), y = "Overall mean", size = 1/VZr), groupOnX = FALSE, alpha=0.2) + 
-  # it is difficult to mix italitc and r code in geom_text (annoate will be easier)
-  #geom_text(data = dat, aes( x = -1, y = "Overall mean", label = str_c("k = ", length(Zr)) ), size = 3, hjust = "left") +
-  #geom_text(data = dat, aes( x = -1, y = "Overall mean", label = "italic('k =')~233", ), size = 3, hjust = "left", parse = TRUE) +
   annotate('text', x = -1, y = "Overall mean", label=paste("italic(k)==", length(dat$Zr)), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (sample size)")) ) +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
   theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
-  # put a box around ledgend.....
-  
   theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) 
 
-#ggsave(plot = fig_ma, filename = "fig_1a.pdf", height = 2, width = 8)
-
+#ggsave(plot = fig_ma, filename = "fig_2a.pdf", height = 2, width = 8)
+# ggploty 0 does not work (Error in unique.default(x) : unimplemented type 'expression' in 'HashTableSetup')
 fig_ma
 ```
-**Figure 2a:** The effect .....
+
+**Figure 2a:** The effect XXXXXX
 
 ## Meta-regression
 
-We ran a univaraite meta-regression model for each of following moderators: 1) `symbiosis`, 2) `symbiont_tax_broad`, 3) `host_tax_symbiosis`, 4) `host_range_link_ratio`, 5) `host_range_taxonomic_breadth`, 6) `mode_of_transmission_broad`, and 7) `endo_or_ecto`. The results from these models are mentioned in the main text. In addtion to these, we ran three more univariate models: 1) , 2) and 3) .
+We ran a univaraite meta-regression model for each of following moderators: 1) `symbiosis`, 2) `host_tax_broad`, 3) `symbiont_tax_broad`, 4) `host_range_link_ratio`, 5) `host_range_taxonomic_breadth`, 6) `mode_of_transmission_broad`, and 7) `endo_or_ecto`. The results from these models are presented in the main text. 
 
-NOTE - making interaction terms
-NOTE - Reording - factors!!!
+In addtion to these, we ran three more univariate models: 1) `host_tax_symbiosis` (equivalent to the interactoin term between `symbiosis` and `host_tax_symbiosis`; `symbiosis*host_tax_symbiosis`), 2) `symbiont_symbiosis` (`symbiosis*symbiont_tax_broad`) and 3) `host_symbiont_tax` (`host_tax_symbiosis*symbiont_tax_broad`). There moderators are created below:
 
-#### Interactions between 
 ```{r}
 dat %<>% 
     # host_tax_broad*symbiosis (host_tax_symbiosis) 
@@ -340,52 +347,307 @@ dat %<>%
 
 ### Univaraite (Uni-predictor) analyses
 
-#### Testing - 
+#### Testing the effect of the type of symbiosis: parasitism vs. mutualism
 
 ```{r}
-sizes <- factor(sizes, levels = c("small", "medium", "large"))
-sizes
-#> [1] small  large  large  small  medium
-#> Levels: small medium large
+# meta-regression: mutiple intercepts
+mr_symbiosis1 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ symbiosis - 1, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+# meta-regression: contrast
+mr_symbiosis2 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ symbiosis, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+```
+
+**Supplementary Table 2:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiosis`. 
+```{r}
+# getting marginal R2
+r2_symbiosis1 <- R2(mr_symbiosis1)
+
+# getting estimates
+res_symbiosis1 <- get_est(mr_symbiosis1, mod = "symbiosis")
+res_symbiosis2 <- get_est(mr_symbiosis2, mod = "symbiosis")
+
+# creating a table
+pander(tibble(
+  `Fixed effect` = c(as.character(res_symbiosis1$name), cont_gen(res_symbiosis1$name)),
+  Estimate = c(res_symbiosis1$estimate, res_symbiosis2$estimate[2]),
+  `Lower CI [0.025]` = c(res_symbiosis1$lowerCL, res_symbiosis2$lowerCL[2]),
+  `Upper CI  [0.975]` = c(res_symbiosis1$upperCL, res_symbiosis2$upperCL[2]),
+  `V[authors]` = c(mr_symbiosis1$sigma2,  rep(NA, 2)),
+  `R2 %` = c(r2_symbiosis1[1], rep(NA, 2))), 
+  # split.table = Inf stops spliting - also text gets wrapped
+  split.table = Inf, digits = 3)
 ```
 
 
 
-```{r,  fig.width=7, fig.height=2.5}
-
-# eq <- substitute(italic(Sepal.Length) == a - b %*% italic(Petal.Length)~","~italic(R)^2~"="~r2~","~italic(P)~"="~p, d)
-# annotate('text', 7, 4, label=paste("italic(Sepal.Length)==", d$a, "~-~", d$b, "~x~", "~italic(Petal.Length)~';'~italic(r)^2==", d$r2, "~italic(P)==", d$p), parse=TRUE, hjust=1, size=3.5)
-
-#xxx
-effect_ma <- get_est(ma_all)
-fig_ma <- ggplot(data = effect_ma, aes(x = esr, y = "Overall mean")) +
+```{r, fig.width=7, fig.height=3}
+# adding sample size (k) for each category
+k_symbiosis <- dat %>% group_by(symbiosis) %>% count()
+# getting estimates and predicitons
+pred_symbiosis <- get_pred(mr_symbiosis1, mod = "symbiosis") 
+res_symbiosis1 <- left_join(res_symbiosis1, k_symbiosis, by =  c("name" = "symbiosis"))  %>% left_join(pred_symbiosis)
+#res_symbiosis1 
+# drawing a funnel plot - fig 2b
+fig_symbiosis <- ggplot(data = res_symbiosis1, aes(x = tanh(estimate), y = name)) +
   scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
-  geom_errorbarh(aes(xmin = lcir, xmax = ucir),  height = 0, show.legend = F, size = 1) +
+  geom_quasirandom(data = dat %>% filter(!is.na(symbiosis)), 
+                   aes(x= tanh(Zr), y = symbiosis, size = 1/VZr, colour = symbiosis), groupOnX = FALSE, alpha=0.2) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
   geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
   # creating dots and different size (bee-swarm and bubbles)
-  geom_point(size=3, shape=21, fill = "black") +
-  geom_quasirandom(data = dat, aes(x= tanh(Zr), y = "Overall mean", size = 1/VZr), groupOnX = FALSE, alpha=0.2) + 
-  # it is difficult to mix italitc and r code in geom_text (annoate will be easier)
-  #geom_text(data = dat, aes( x = -1, y = "Overall mean", label = str_c("k = ", length(Zr)) ), size = 3, hjust = "left") +
-  #geom_text(data = dat, aes( x = -1, y = "Overall mean", label = "italic('k =')~233", ), size = 3, hjust = "left", parse = TRUE) +
-  annotate('text', x = -1, y = "Overall mean", label=paste("italic(k)==", length(dat$Zr)), parse=TRUE, hjust = "left", size=3.5) +
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values = c("Mutualist" = "#E69F00", "Parasite" = "#56B4E9")) +
+  scale_fill_manual(values = c("Mutualist" = "#E69F00", "Parasite" = "#56B4E9")) +
+  annotate('text', x = -1, y = res_symbiosis1$name, label= paste("italic(k)==", res_symbiosis1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (sample size)")) ) +
+  guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
   theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
-  # put a box around ledgend.....
-  
-  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) 
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
 
-#ggsave(plot = fig_ma, filename = "fig_1a.pdf", height = 2, width = 8)
-
-fig_ma
+fig_symbiosis
 ```
+
+**Figure 2b:** The effect XXXXXX
+
 #### 
 
-#### Testing specialization: 
 
+#### Testing the effect of host taxa
+```{r}
+# reordering
+dat$host_tax_broad <- factor(dat$host_tax_broad, levels = c("Microbe", "Plant", "Invert", "Vert"))
+
+#sizes <- factor(sizes, levels = c("small", "medium", "large"))
+#sizes
+#> [1] small  large  large  small  medium
+#> Levels: small medium large
+# meta-regression: mutiple intercepts
+mr_host_tax_broad1 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ host_tax_broad - 1, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# meta-regression: contrast 1
+mr_host_tax_broad2 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ host_tax_broad, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# meta-regression: contrast 2
+mr_host_tax_broad3 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(host_tax_broad, ref = "Plant"), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# meta-regression: contrast 3
+mr_host_tax_broad4 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(host_tax_broad, ref = "Invert"), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+```
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
+```{r}
+# getting marginal R2
+r2_host_tax_broad1 <- R2(mr_host_tax_broad1)
+
+# getting estimates
+res_host_tax_broad1 <- get_est(mr_host_tax_broad1, mod = "host_tax_broad")
+res_host_tax_broad2 <- get_est(mr_host_tax_broad2, mod = "host_tax_broad")
+# the name bit does not work if relevel....
+res_host_tax_broad3 <- get_est(mr_host_tax_broad3, mod = "host_tax_broad")
+res_host_tax_broad4 <- get_est(mr_host_tax_broad4, mod = "host_tax_broad")
+
+# creating a table
+pander(tibble(
+  `Fixed effect` = c(as.character(res_host_tax_broad1$name), cont_gen(res_host_tax_broad1$name)),
+  Estimate = c(res_host_tax_broad1$estimate, res_host_tax_broad2$estimate[-1],  res_host_tax_broad3$estimate[-(1:2)], res_host_tax_broad4$estimate[-(1:3)]),
+  `Lower CI [0.025]` = c(res_host_tax_broad1$lowerCL, res_host_tax_broad2$lowerCL[-1], res_host_tax_broad3$lowerCL[-(1:2)], res_host_tax_broad4$lowerCL[-(1:3)]),
+  `Upper CI  [0.975]` = c(res_host_tax_broad1$upperCL, res_host_tax_broad2$upperCL[-1], res_host_tax_broad3$upperCL[-(1:2)], res_host_tax_broad4$upperCL[-(1:3)]),
+  `V[authors]` = c(mr_host_tax_broad1$sigma2,  rep(NA, 9)),
+  `R2 %` = c(r2_host_tax_broad1[1], rep(NA, 9))), 
+  # split.table = Inf stops spliting - also text gets wrapped
+  split.table = Inf, digits = 3)
+```
+
+```{r, fig.width=7, fig.height= 4.5}
+# adding sample size (k) for each category
+k_host_tax_broad <- dat %>% group_by(host_tax_broad) %>% count()
+# getting estimates and predicitons
+pred_host_tax_broad <- get_pred(mr_host_tax_broad1, mod = "host_tax_broad") 
+res_host_tax_broad1 <- left_join(res_host_tax_broad1, k_host_tax_broad, by =  c("name" = "host_tax_broad"))  %>% left_join(pred_host_tax_broad)
+#res_symbiosis1 
+# drawing a funnel plot - fig 2b
+fig_host_tax_broad <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(host_tax_broad)), 
+                   aes(x= tanh(Zr), y = host_tax_broad, size = 1/VZr, colour = host_tax_broad), groupOnX = FALSE, alpha=0.2) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values = c("Microbe" = "#000000",  "Plant" = "#E69F00",  "Invert"= "#56B4E9",  "Vert" = "#009E73")) +
+  scale_fill_manual(values = c("Microbe" = "#000000",  "Plant" = "#E69F00",  "Invert"= "#56B4E9",  "Vert" = "#009E73")) +
+  scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
+  annotate('text', x = -1, y = res_host_tax_broad1$name, label= paste("italic(k)==", res_host_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (sample size)")) ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+
+fig_host_tax_broad
+```
+
+**Figure 2c:** The effect XXXXXX
+
+#### Testing the effect of symbiont taxa
+
+```{r}
+# reordering
+dat$symbiont_tax_broad <- factor(dat$symbiont_tax_broad, levels = c("Microbe", "Plant", "Invert", "Vert"))
+
+#sizes <- factor(sizes, levels = c("small", "medium", "large"))
+#sizes
+#> [1] small  large  large  small  medium
+#> Levels: small medium large
+# meta-regression: mutiple intercepts
+mr_symbiont_tax_broad1 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ symbiont_tax_broad - 1, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# meta-regression: contrast 1
+mr_symbiont_tax_broad2 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ symbiont_tax_broad, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# meta-regression: contrast 2
+mr_symbiont_tax_broad3 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(symbiont_tax_broad, ref = "Plant"), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# meta-regression: contrast 3
+mr_symbiont_tax_broad4 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(symbiont_tax_broad, ref = "Invert"), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+```
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+```{r}
+# getting marginal R2
+r2_symbiont_tax_broad1 <- R2(mr_symbiont_tax_broad1)
+
+# getting estimates
+res_symbiont_tax_broad1 <- get_est(mr_symbiont_tax_broad1, mod = "symbiont_tax_broad")
+res_symbiont_tax_broad2 <- get_est(mr_symbiont_tax_broad2, mod = "symbiont_tax_broad")
+# the name bit does not work if relevel....
+res_symbiont_tax_broad3 <- get_est(mr_symbiont_tax_broad3, mod = "symbiont_tax_broad")
+res_symbiont_tax_broad4 <- get_est(mr_symbiont_tax_broad4, mod = "symbiont_tax_broad")
+
+# creating a table
+pander(tibble(
+  `Fixed effect` = c(as.character(res_symbiont_tax_broad1$name), cont_gen(res_symbiont_tax_broad1$name)),
+  Estimate = c(res_symbiont_tax_broad1$estimate, res_symbiont_tax_broad2$estimate[-1],  res_symbiont_tax_broad3$estimate[-(1:2)], res_symbiont_tax_broad4$estimate[-(1:3)]),
+  `Lower CI [0.025]` = c(res_symbiont_tax_broad1$lowerCL, res_symbiont_tax_broad2$lowerCL[-1], res_symbiont_tax_broad3$lowerCL[-(1:2)], res_symbiont_tax_broad4$lowerCL[-(1:3)]),
+  `Upper CI  [0.975]` = c(res_symbiont_tax_broad1$upperCL, res_symbiont_tax_broad2$upperCL[-1], res_symbiont_tax_broad3$upperCL[-(1:2)], res_symbiont_tax_broad4$upperCL[-(1:3)]),
+  `V[authors]` = c(mr_symbiont_tax_broad1$sigma2,  rep(NA, 9)),
+  `R2 %` = c(r2_symbiont_tax_broad1[1], rep(NA, 9))), 
+  # split.table = Inf stops spliting - also text gets wrapped
+  split.table = Inf, digits = 3)
+```
+
+```{r, fig.width=7, fig.height= 4.5}
+# adding sample size (k) for each category
+k_symbiont_tax_broad <- dat %>% group_by(symbiont_tax_broad) %>% count()
+# getting estimates and predicitons
+pred_symbiont_tax_broad <- get_pred(mr_symbiont_tax_broad1, mod = "symbiont_tax_broad") 
+res_symbiont_tax_broad1 <- left_join(res_symbiont_tax_broad1, k_symbiont_tax_broad, by =  c("name" = "symbiont_tax_broad"))  %>% left_join(pred_symbiont_tax_broad)
+#res_symbiosis1 
+# drawing a funnel plot - fig 2b
+fig_symbiont_tax_broad <- ggplot(data = res_symbiont_tax_broad1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(symbiont_tax_broad)), 
+                   aes(x= tanh(Zr), y = symbiont_tax_broad, size = 1/VZr, colour = symbiont_tax_broad), groupOnX = FALSE, alpha=0.2) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00" )) +
+  scale_fill_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
+  scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
+  annotate('text', x = -1, y = res_symbiont_tax_broad1$name, label= paste("italic(k)==", res_symbiont_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (sample size)")) ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+
+fig_symbiont_tax_broad
+```
+
+**Figure 2c:** The effect XXXXXX
+
+#### Testing specialization 1: host range
+
+#### Testing specialization 2: taxomic breadth
+
+#### Testing the effect of the model of transmission
+
+#### Testing the effect of the type of symbiosis: endosymbiosis vs. ectosymbiosis
 
 NOTE!!!
 * Do the REF REF REF 
@@ -423,6 +685,8 @@ https://stackoverflow.com/questions/50804464/out-of-sample-prediction-for-rma-ob
 ## Acknowledgement
 
 Much of coding materials have been borrowed from h
+
+## Refererences
 
 ## Information for this R session
 

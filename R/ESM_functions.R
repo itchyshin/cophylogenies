@@ -53,7 +53,7 @@ p_to_Zr <- function(data, pval, N) {
 #'
 #' @examples
 I2 <- function(model, method = c("Wolfgang", "Shinichi")){
-  warning("Make sure you have the observation (effec size) level random effect\n")
+  
   ## evaluate choices
   method <- match.arg(method)
   
@@ -89,7 +89,7 @@ I2 <- function(model, method = c("Wolfgang", "Shinichi")){
 
 # Functions for R2
 # make a version which provides both R types of R^2
-
+# Note that this only works for this set of analyses without 
 #' Title
 #'
 #' @param model 
@@ -99,7 +99,7 @@ I2 <- function(model, method = c("Wolfgang", "Shinichi")){
 #'
 #' @examples
 R2 <- function(model){
-  warning("Make sure you have the observation (effec size) level random effect as the last in the formula\n")
+  warning("Conditional R2 is not meaningful and the same as marginal R2\n")
   
   # fixed effect variance
   fix <- var(as.numeric(as.vector(model$b) %*% t(as.matrix(model$X))))
@@ -114,7 +114,6 @@ R2 <- function(model){
     (fix + sum(model$sigma2))
   
   R2s <- c(R2_marginal = R2m, R2_coditional = R2c)
-  
   return(R2s)
 }
 
@@ -139,11 +138,46 @@ get_est <- function (model, mod = " ") {
   lowerCL <- model$ci.lb
   upperCL <- model$ci.ub 
   
-  tibble(name = name, esZr = estimate, lciZr  = lowerCL, uclZr = upperCL) %>% 
-    mutate(esr = tanh(esZr), lcir = tanh(lciZr), ucir = tanh(uclZr)) -> table
-  return(table)
+  table <- tibble(name = name, estimate = estimate, lowerCL = lowerCL, upperCL = upperCL)
 }
 
+
+#' Title: the function to get prediction intervals (crediblity intervals)
+#'
+#' @param model: rma.mv object 
+#' @param mod: the name of a moderator 
+get_pred <- function (model, mod = " ") {
+  name <- as.factor(str_replace(row.names(model$beta), mod, ""))
+  len <- length(name)
+  
+  if(len != 1){
+  newdata <- matrix(NA, ncol = len, nrow = len)
+  for(i in 1:len) {
+    # getting the position of unique case from X (design matrix)
+    pos <- which(model$X[,i] == 1)[[1]]
+    newdata[, i] <- model$X[pos,]
+    }
+  pred <- predict.rma(model, newmods = newdata)
+  }
+  else {
+    pred <- predict.rma(model)
+    }
+  lowerPR <- pred$cr.lb
+  upperPR <- pred$cr.ub 
+  
+  table <- tibble(name = name, lowerPR = lowerPR, upperPR = upperPR)
+}
+
+#' Title: Contrast name geneator
+#'
+#' @param model: rma.mv object 
+#' @param mod: the name of a moderator 
+cont_gen <- function (name) {
+  combination <- combn(name,2)
+  name_dat <- t(combination)
+  names <- paste(name_dat[ ,1], name_dat[, 2], sep = "-")
+  return(names)
+}
 
 # making forest plots
 
