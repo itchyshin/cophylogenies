@@ -347,7 +347,7 @@ dat %<>%
 
 ### Univaraite (Uni-predictor) analyses
 
-#### Testing the effect of the type of symbiosis: parasitism vs. mutualism
+#### The type of symbiosis: parasitism vs. mutualism
 
 ```{r}
 # meta-regression: mutiple intercepts
@@ -430,7 +430,7 @@ fig_symbiosis
 #### 
 
 
-#### Testing the effect of host taxa
+#### The effect of host taxa
 ```{r}
 # reordering
 dat$host_tax_broad <- factor(dat$host_tax_broad, levels = c("Microbe", "Plant", "Invert", "Vert"))
@@ -508,7 +508,7 @@ res_host_tax_broad1 <- left_join(res_host_tax_broad1, k_host_tax_broad, by =  c(
 fig_host_tax_broad <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate), y = name)) +
   scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
   geom_quasirandom(data = dat %>% filter(!is.na(host_tax_broad)), 
-                   aes(x= tanh(Zr), y = host_tax_broad, size = 1/VZr, colour = host_tax_broad), groupOnX = FALSE, alpha=0.2) + 
+                   aes(x= tanh(Zr), y = host_tax_broad, size = 1/VZr, colour = host_tax_broad), groupOnX = FALSE, alpha=0.4) + 
   # 95 %precition interval (PI)
   geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
   # 95 %CI
@@ -517,8 +517,8 @@ fig_host_tax_broad <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate),
   # creating dots and different size (bee-swarm and bubbles)
   geom_point(aes(fill = name), size = 3, shape = 21) + #
   # setting colours
-  scale_color_manual(values = c("Microbe" = "#000000",  "Plant" = "#E69F00",  "Invert"= "#56B4E9",  "Vert" = "#009E73")) +
-  scale_fill_manual(values = c("Microbe" = "#000000",  "Plant" = "#E69F00",  "Invert"= "#56B4E9",  "Vert" = "#009E73")) +
+  scale_color_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
+  scale_fill_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
   scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
   annotate('text', x = -1, y = res_host_tax_broad1$name, label= paste("italic(k)==", res_host_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (sample size)")) ) +
@@ -535,7 +535,7 @@ fig_host_tax_broad
 
 **Figure 2c:** The effect XXXXXX
 
-#### Testing the effect of symbiont taxa
+#### The effect of symbiont taxa
 
 ```{r}
 # reordering
@@ -614,7 +614,7 @@ res_symbiont_tax_broad1 <- left_join(res_symbiont_tax_broad1, k_symbiont_tax_bro
 fig_symbiont_tax_broad <- ggplot(data = res_symbiont_tax_broad1, aes(x = tanh(estimate), y = name)) +
   scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
   geom_quasirandom(data = dat %>% filter(!is.na(symbiont_tax_broad)), 
-                   aes(x= tanh(Zr), y = symbiont_tax_broad, size = 1/VZr, colour = symbiont_tax_broad), groupOnX = FALSE, alpha=0.2) + 
+                   aes(x= tanh(Zr), y = symbiont_tax_broad, size = 1/VZr, colour = symbiont_tax_broad), groupOnX = FALSE, alpha=0.4) + 
   # 95 %precition interval (PI)
   geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
   # 95 %CI
@@ -645,9 +645,19 @@ fig_symbiont_tax_broad
 
 #### Testing specialization 2: taxomic breadth
 
-#### Testing the effect of the model of transmission
+#### The effect of the model of transmission
 
-#### Testing the effect of the type of symbiosis: endosymbiosis vs. ectosymbiosis
+#### The effect of the type of symbiosis: endosymbiosis vs. ectosymbiosis
+
+#### The combined effect of host taxa and symbiosis (parasitism vs. mutualism)
+
+
+#### The combined effect of symbiont taxa and symbiosis (parasitism vs. mutualism)
+
+
+#### The combined effect of host and symbiont taxa
+
+
 
 NOTE!!!
 * Do the REF REF REF 
