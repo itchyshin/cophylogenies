@@ -821,7 +821,7 @@ fig_endo_or_ecto <- ggplot(data = res_endo_or_ecto1, aes(x = tanh(estimate), y =
   # setting colours
   scale_color_manual(values = c("Endo/Ecto" = "#0072B2",  "Endo" = "#D55E00",  "Ecto"= "#CC79A7")) +
   scale_fill_manual(values = c("Endo/Ecto" = "#0072B2",  "Endo" = "#D55E00",  "Ecto"= "#CC79A7")) +
-  scale_y_discrete(labels = c("Endo/Ecto" = "Both",  "Endo" = "Horizontal",  "Ecto"= "Vertical")) +
+  scale_y_discrete(labels = c("Endo/Ecto" = "Both",  "Endo" = "Endosymbiosis",  "Ecto"= "Ectosymbiosis")) +
   annotate('text', x = -1, y = res_endo_or_ecto1$name, label= paste("italic(k)==", res_endo_or_ecto1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
@@ -966,7 +966,7 @@ fig_host_tax_symbiosis <- ggplot(data = res_host_tax_symbiosis1, aes(x = tanh(es
   # setting colours
   scale_color_manual(values =   c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertMutualist"= colour_ls[7],     "VertParasite"= colour_ls[8] )) +
   scale_fill_manual(values = c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertMutualist"= colour_ls[7],     "VertParasite"= colour_ls[8] )) +
-  scale_y_discrete(labels = c("MicrobeMutualist"= "Microbe-\nMutualist", "MicrobeParasite"= "Microbe-\nParasite",  "PlantMutualist" = "Plant-\nMutualist", "PlantParasite"="Plant-\nParasite", "InvertMutualist" = "Invertebrate-\nMutualist",   "InvertParasite"= "Invertebrate-\nMutualist", "VertMutualist"= "Vertebrate-\nMutualist",  "VertParasite"= "Vertebrate-\nParasite" )) +
+  scale_y_discrete(labels = c("MicrobeMutualist"= "Microbe-\nMutualist", "MicrobeParasite"= "Microbe-\nParasite",  "PlantMutualist" = "Plant-\nMutualist", "PlantParasite"="Plant-\nParasite", "InvertMutualist" = "Invertebrate-\nMutualist",   "InvertParasite"= "Invertebrate-\nParasite", "VertMutualist"= "Vertebrate-\nMutualist",  "VertParasite"= "Vertebrate-\nParasite" )) +
   annotate('text', x = -1, y = res_host_tax_symbiosis1$name, label= paste("italic(k)==", res_host_tax_symbiosis1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
@@ -1076,16 +1076,16 @@ pander(tibble(
 
 ```{r, fig.width=7, fig.height= 7}
 # adding sample size (k) for each category
-k_host_tax_broad <- dat %>% group_by(host_tax_broad) %>% count()
+k_symbiont_tax_symbiosis <- dat %>% group_by(symbiont_tax_symbiosis) %>% count()
 # getting estimates and predicitons
-pred_host_tax_broad <- get_pred(mr_host_tax_broad1, mod = "host_tax_broad") 
-res_host_tax_broad1 <- left_join(res_host_tax_broad1, k_host_tax_broad, by =  c("name" = "host_tax_broad"))  %>% left_join(pred_host_tax_broad)
+pred_symbiont_tax_symbiosis <- get_pred(mr_symbiont_tax_symbiosis1, mod = "symbiont_tax_symbiosis") 
+res_symbiont_tax_symbiosis1 <- left_join(res_symbiont_tax_symbiosis1, k_symbiont_tax_symbiosis, by =  c("name" = "symbiont_tax_symbiosis"))  %>% left_join(pred_symbiont_tax_symbiosis)
 #res_symbiosis1 
 # drawing a funnel plot - fig 2b
-fig_host_tax_broad <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate), y = name)) +
+fig_symbiont_tax_symbiosis <- ggplot(data = res_symbiont_tax_symbiosis1, aes(x = tanh(estimate), y = name)) +
   scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
-  geom_quasirandom(data = dat %>% filter(!is.na(host_tax_broad)), 
-                   aes(x= tanh(Zr), y = host_tax_broad, size = 1/VZr, colour = host_tax_broad), groupOnX = FALSE, alpha=0.4) + 
+  geom_quasirandom(data = dat %>% filter(!is.na(symbiont_tax_symbiosis)), 
+                   aes(x= tanh(Zr), y = symbiont_tax_symbiosis, size = 1/VZr, colour = symbiont_tax_symbiosis), groupOnX = FALSE, alpha=0.4) + 
   # 95 %precition interval (PI)
   geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
   # 95 %CI
@@ -1094,10 +1094,11 @@ fig_host_tax_broad <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate),
   # creating dots and different size (bee-swarm and bubbles)
   geom_point(aes(fill = name), size = 3, shape = 21) + #
   # setting colours
-  scale_color_manual(values = c("InvertMutualist" = colour_ls[1],   "InvertParasite"= colour_ls[2], "MicrobeMutualist"= colour_ls[3], "MicrobeParasite"= colour_ls[4],  "PlantMutualist"= colour_ls[5], "PlantParasite"= colour_ls[6], "VertMutualist"= colour_ls[7],     "VertParasite"= colour_ls[8] )) +
-  scale_fill_manual(values = c("InvertMutualist" = colour_ls[1],   "InvertParasite" = colour_ls[2], "MicrobeMutualist"= colour_ls[3], "MicrobeParasite"= colour_ls[4],  "PlantMutualist"= colour_ls[5], "PlantParasite"= colour_ls[6], "VertMutualist"= colour_ls[7],     "VertParasite"= colour_ls[8] )) +
-  scale_y_discrete(labels = c("InvertMutualist" = "Invertebrate- \nMutualist",   "InvertParasite"= "Invertebrate- \nMutualist", "MicrobeMutualist"= "Microbe- n\Mutualist", "MicrobeParasite"= "Microbe- n\Parasite",  "PlantMutualist" = "Plant- \nMutualist", "PlantParasite"="Plant- \nParasite", "VertMutualist"= "Vertebrate- \nMutualist",     "VertParasite"= "Vertebrate- \nParasite" )) +
-  annotate('text', x = -1, y = res_host_tax_broad1$name, label= paste("italic(k)==", res_host_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
+  # setting colours
+  scale_color_manual(values =   c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertParasite"= colour_ls[8] )) +
+  scale_fill_manual(values = c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertParasite"= colour_ls[8] )) +
+  scale_y_discrete(labels = c("MicrobeMutualist"= "Microbe-\nMutualist", "MicrobeParasite"= "Microbe-\nParasite",  "PlantMutualist" = "Plant-\nMutualist", "PlantParasite"="Plant-\nParasite", "InvertMutualist" = "Invertebrate-\nMutualist",   "InvertParasite"= "Invertebrate-\nParasite",  "VertParasite"= "Vertebrate-\nParasite" )) +
+  annotate('text', x = -1, y = res_symbiont_tax_symbiosis1$name, label= paste("italic(k)==", res_symbiont_tax_symbiosis1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
@@ -1107,7 +1108,7 @@ fig_host_tax_broad <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate),
   theme(legend.background = element_blank()) +
   theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
 
-fig_host_tax_broad
+fig_symbiont_tax_symbiosis
 ```
 
 
