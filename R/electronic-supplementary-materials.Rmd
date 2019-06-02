@@ -643,9 +643,15 @@ fig_symbiont_tax_broad
 
 #### Testing specialization 1: host range
 
+d
+
 #### Testing specialization 2: taxomic breadth
 
+e
+
 #### The effect of the model of transmission
+
+f
 
 #### The effect of the type of symbiosis: endosymbiosis vs. ectosymbiosis
 

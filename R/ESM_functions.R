@@ -127,7 +127,7 @@ R2 <- function(model){
 #TODO - we should get this to estimate N at this stage for all the levels
 
 
-#' Title: the function to get estimates
+#' Title: the function to get estimates from rma objects (metafor)
 #'
 #' @param model: rma.mv object 
 #' @param mod: the name of a moderator 
@@ -142,7 +142,7 @@ get_est <- function (model, mod = " ") {
 }
 
 
-#' Title: the function to get prediction intervals (crediblity intervals)
+#' Title: the function to get prediction intervals (crediblity intervals) from rma objects (metafor)
 #'
 #' @param model: rma.mv object 
 #' @param mod: the name of a moderator 
@@ -170,8 +170,7 @@ get_pred <- function (model, mod = " ") {
 
 #' Title: Contrast name geneator
 #'
-#' @param model: rma.mv object 
-#' @param mod: the name of a moderator 
+#' @param name: a vector of character strings
 cont_gen <- function (name) {
   combination <- combn(name,2)
   name_dat <- t(combination)
