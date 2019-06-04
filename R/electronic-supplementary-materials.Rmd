@@ -1114,7 +1114,7 @@ fig_symbiont_tax_symbiosis
 
 #### The combined effect of host and symbiont taxa
 
-NOTE -- host_symbiont_tax
+NOTE -- host_symbiont_tax - 11 varaibles and 55 combinations!!!!
 
 NOTE!!!
 * Do the REF REF REF 
