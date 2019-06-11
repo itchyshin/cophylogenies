@@ -330,7 +330,7 @@ fig_ma
 
 We ran a univaraite meta-regression model for each of following moderators: 1) `symbiosis`, 2) `host_tax_broad`, 3) `symbiont_tax_broad`, 4) `host_range_link_ratio`, 5) `host_range_taxonomic_breadth`, 6) `mode_of_transmission_broad`, and 7) `endo_or_ecto`. The results from these models are presented in the main text. 
 
-In addtion to these, we ran three more univariate models: 1) `host_tax_symbiosis` (equivalent to the interactoin term between `symbiosis` and `host_tax_symbiosis`; `symbiosis*host_tax_symbiosis`), 2) `symbiont_tax_symbiosis` (`symbiosis*symbiont_tax_broad`) and 3) `host_symbiont_tax` (`host_tax_symbiosis*symbiont_tax_broad`). There moderators are created below:
+In addtion to these, we ran three more univariate models: 1) `host_tax_symbiosis` (equivalent to the interactoin term between `symbiosis` and `host_tax_symbiosis`; `symbiosis*host_tax_symbiosis`), 2) `symbiont_tax_symbiosis` (`symbiosis*symbiont_tax_broad`),  3) `host_symbiont_tax` (`host_tax_symbiosis*symbiont_tax_broad`) and . There moderators are created below:
 
 ```{r}
 dat %<>% 
@@ -645,6 +645,14 @@ fig_symbiont_tax_broad
 #### Testing specialization 1: host range
 
 e
+
+#### 
+
+Here are links for how to do confidence regions for rma.mv regression lines
+
+https://www.rdocumentation.org/packages/metafor/versions/1.9-9/topics/predict.rma
+
+https://stackoverflow.com/questions/50804464/out-of-sample-prediction-for-rma-object-in-metafor
 
 #### Testing specialization 2: taxomic breadth
 
@@ -1116,6 +1124,135 @@ fig_symbiont_tax_symbiosis
 
 NOTE -- host_symbiont_tax - 11 varaibles and 55 combinations!!!!
 
+```{r}
+# reordering
+dat$host_symbiont_tax <- factor(dat$host_symbiont_tax, 
+                                     levels = c("InvertInvert", "InvertMicrobe",  "InvertPlant", "MicrobeInvert", "MicrobeMicrobe", "MicrobePlant","PlantInvert",    "PlantMicrobe", "VertInvert", "VertMicrobe", "VertVert"))
+
+# meta-regression: multiple intercepts
+mr_host_symbiont_tax1 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ host_symbiont_tax - 1, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# meta-regression: contrast 1
+mr_symbiont_tax_symbiosis2 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ symbiont_tax_symbiosis, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# meta-regression: contrast 2
+mr_symbiont_tax_symbiosis3 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(symbiont_tax_symbiosis, ref = "MicrobeParasite"), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# meta-regression: contrast 3
+mr_symbiont_tax_symbiosis4 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(symbiont_tax_symbiosis, ref = "PlantMutualist"), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+# meta-regression: contrast 4
+mr_symbiont_tax_symbiosis5 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(symbiont_tax_symbiosis, ref = "PlantParasite"), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# meta-regression: contrast 5
+mr_symbiont_tax_symbiosis6 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(symbiont_tax_symbiosis, ref = "InvertParasite"), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+# meta-regression: contrast 5
+mr_symbiont_tax_symbiosis7 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(symbiont_tax_symbiosis, ref = "VertParasite"), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+```
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
+```{r}
+# getting marginal R2
+r2_symbiont_tax_symbiosis1 <- R2(mr_symbiont_tax_symbiosis1)
+
+# getting estimates
+res_symbiont_tax_symbiosis1 <- get_est(mr_symbiont_tax_symbiosis1, mod = "symbiont_tax_symbiosis")
+res_symbiont_tax_symbiosis2 <- get_est(mr_symbiont_tax_symbiosis2, mod = "symbiont_tax_symbiosis")
+# the name bit does not work if relevel....
+res_symbiont_tax_symbiosis3 <- get_est(mr_symbiont_tax_symbiosis3, mod = "symbiont_tax_symbiosis")
+res_symbiont_tax_symbiosis4 <- get_est(mr_symbiont_tax_symbiosis4, mod = "symbiont_tax_symbiosis")
+res_symbiont_tax_symbiosis5 <- get_est(mr_symbiont_tax_symbiosis5, mod = "symbiont_tax_symbiosis")
+res_symbiont_tax_symbiosis6 <- get_est(mr_symbiont_tax_symbiosis6, mod = "symbiont_tax_symbiosis")
+res_symbiont_tax_symbiosis7 <- get_est(mr_symbiont_tax_symbiosis7, mod = "symbiont_tax_symbiosis")
+
+
+# creating a table
+pander(tibble(
+  `Fixed effect` = c(as.character(res_symbiont_tax_symbiosis1$name), cont_gen(res_symbiont_tax_symbiosis1$name)),
+  Estimate = c(res_symbiont_tax_symbiosis1$estimate, res_symbiont_tax_symbiosis2$estimate[-1],  res_symbiont_tax_symbiosis3$estimate[-(1:2)], res_symbiont_tax_symbiosis4$estimate[-(1:3)], res_symbiont_tax_symbiosis5$estimate[-(1:4)], res_symbiont_tax_symbiosis6$estimate[-(1:5)],  res_symbiont_tax_symbiosis7$estimate[-(1:6)]),
+  `Lower CI [0.025]` = c(res_symbiont_tax_symbiosis1$lowerCL, res_symbiont_tax_symbiosis2$lowerCL[-1], res_symbiont_tax_symbiosis3$lowerCL[-(1:2)], res_symbiont_tax_symbiosis4$lowerCL[-(1:3)],res_symbiont_tax_symbiosis1$lowerCL[-(1:4)], res_symbiont_tax_symbiosis2$lowerCL[-(1:5)], res_symbiont_tax_symbiosis3$lowerCL[-(1:6)]),
+  `Upper CI  [0.975]` = c(res_symbiont_tax_symbiosis1$upperCL, res_symbiont_tax_symbiosis2$upperCL[-1], res_symbiont_tax_symbiosis3$upperCL[-(1:2)], res_symbiont_tax_symbiosis4$upperCL[-(1:3)],res_symbiont_tax_symbiosis1$upperCL[-(1:4)], res_symbiont_tax_symbiosis2$upperCL[-(1:5)], res_symbiont_tax_symbiosis3$upperCL[-(1:6)]),
+  `V[authors]` = c(mr_host_tax_symbiosis1$sigma2,  rep(NA, (7 + choose(7,2))- 1)),
+  `R2 %` = c(r2_host_tax_symbiosis1[1], rep(NA, (7 + choose(7,2))- 1))), 
+  # split.table = Inf stops spliting - also text gets wrapped
+  split.table = Inf, digits = 3)
+```
+
+```{r, fig.width=7, fig.height= 7}
+# adding sample size (k) for each category
+k_symbiont_tax_symbiosis <- dat %>% group_by(symbiont_tax_symbiosis) %>% count()
+# getting estimates and predicitons
+pred_symbiont_tax_symbiosis <- get_pred(mr_symbiont_tax_symbiosis1, mod = "symbiont_tax_symbiosis") 
+res_symbiont_tax_symbiosis1 <- left_join(res_symbiont_tax_symbiosis1, k_symbiont_tax_symbiosis, by =  c("name" = "symbiont_tax_symbiosis"))  %>% left_join(pred_symbiont_tax_symbiosis)
+#res_symbiosis1 
+# drawing a funnel plot - fig 2b
+fig_symbiont_tax_symbiosis <- ggplot(data = res_symbiont_tax_symbiosis1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(symbiont_tax_symbiosis)), 
+                   aes(x= tanh(Zr), y = symbiont_tax_symbiosis, size = 1/VZr, colour = symbiont_tax_symbiosis), groupOnX = FALSE, alpha=0.4) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  # setting colours
+  scale_color_manual(values =   c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertParasite"= colour_ls[8] )) +
+  scale_fill_manual(values = c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertParasite"= colour_ls[8] )) +
+  scale_y_discrete(labels = c("MicrobeMutualist"= "Microbe-\nMutualist", "MicrobeParasite"= "Microbe-\nParasite",  "PlantMutualist" = "Plant-\nMutualist", "PlantParasite"="Plant-\nParasite", "InvertMutualist" = "Invertebrate-\nMutualist",   "InvertParasite"= "Invertebrate-\nParasite",  "VertParasite"= "Vertebrate-\nParasite" )) +
+  annotate('text', x = -1, y = res_symbiont_tax_symbiosis1$name, label= paste("italic(k)==", res_symbiont_tax_symbiosis1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+
+fig_symbiont_tax_symbiosis
+```
+
+
+
 NOTE!!!
 * Do the REF REF REF 
 * Justification of the use of combined datasets.... - done
@@ -1125,13 +1262,7 @@ NOTE!!!
 
 
 
-#### 
 
-Here are links for how to do confidence regions for rma.mv regression lines
-
-https://www.rdocumentation.org/packages/metafor/versions/1.9-9/topics/predict.rma
-
-https://stackoverflow.com/questions/50804464/out-of-sample-prediction-for-rma-object-in-metafor
 
 * one-by-one analyses here...
 
