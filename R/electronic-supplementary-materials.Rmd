@@ -1262,8 +1262,46 @@ tibble(
   scroll_box(width = "100%", height = "300px")
 ```
 
-```{r, fig.width=7, fig.height= 7}
+```{r, fig.width=7, fig.height= 11}
+# colour list
+#colour_ls <- c("#000000", "#E69F00", "#56B4E9", "#009E73",  "#F0E422",  "#0072B2",  "#D55E00", "#CC79A7", "#00008B", "#8B0A50", "#54FF9F", "#999999")
 
+# adding sample size (k) for each category
+k_host_symbiont_tax <- dat %>% group_by(host_symbiont_tax) %>% count()
+# getting estimates and predicitons
+pred_host_symbiont_tax <- get_pred(mr_host_symbiont_tax1, mod = "host_symbiont_tax") 
+res_host_tax_symbiosis1 <- left_join(res_host_symbiont_tax1, k_host_symbiont_tax, by =  c("name" = "host_symbiont_tax"))  %>% left_join(pred_host_symbiont_tax)
+#res_symbiosis1 
+# drawing a funnel plot - fig 2b
+fig_host_tax_symbiosis <- ggplot(data = res_host_symbiont_tax1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(host_tax_symbiosis)), 
+                   aes(x= tanh(Zr), y = host_tax_symbiosis, size = ((1/VZr) + 3), colour = host_symbiont_tax), groupOnX = FALSE, alpha=0.4) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values =   c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertMutualist"= colour_ls[7],     "VertParasite"= colour_ls[8] )) +
+  scale_fill_manual(values = c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertMutualist"= colour_ls[7],     "VertParasite"= colour_ls[8] )) +
+  scale_y_discrete(labels = c("MicrobeMutualist"= "Microbe-\nMutualist", "MicrobeParasite"= "Microbe-\nParasite",  "PlantMutualist" = "Plant-\nMutualist", "PlantParasite"="Plant-\nParasite", "InvertMutualist" = "Invertebrate-\nMutualist",   "InvertParasite"= "Invertebrate-\nParasite", "VertMutualist"= "Vertebrate-\nMutualist",  "VertParasite"= "Vertebrate-\nParasite" )) +
+  annotate('text', x = -1, y = res_host_symbiont_tax1$name, label= paste("italic(k)==", res_host_symbiont_tax1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+
+"MicrobeInvert"  "MicrobeMicrobe" "MicrobePlant"   "PlantInvert"    "PlantMicrobe"   "InvertInvert"  
+ [7] "InvertMicrobe"  "InvertPlant"    "VertInvert"     "VertMicrobe"    "VertVert" 
+
+fig_host_symbiont_tax
 ```
 
 
