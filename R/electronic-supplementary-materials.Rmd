@@ -1134,83 +1134,8 @@ mr_host_symbiont_tax1 <- rma.mv(yi = Zr,
                        random = ~ 1 | authors, 
                        data = dat)
 
-# # meta-regression: contrast 1
-# mr_host_symbiont_tax2 <- rma.mv(yi = Zr, 
-#                        V = VZr, 
-#                        mods = ~ host_symbiont_tax, 
-#                        test = "t",
-#                        random = ~ 1 | authors, 
-#                        data = dat)
-# 
-# # meta-regression: contrast 2
-# mr_host_symbiont_tax3 <- rma.mv(yi = Zr, 
-#                        V = VZr, 
-#                        mods = ~ relevel(host_symbiont_tax, ref = "MicrobeMicrobe"), 
-#                        test = "t",
-#                        random = ~ 1 | authors, 
-#                        data = dat)
-# 
-# # meta-regression: contrast 3
-# mr_host_symbiont_tax4 <- rma.mv(yi = Zr, 
-#                        V = VZr, 
-#                        mods = ~ relevel(host_symbiont_tax, ref = "MicrobePlant"), 
-#                        test = "t",
-#                        random = ~ 1 | authors, 
-#                        data = dat)
-# # meta-regression: contrast 4
-# mr_host_symbiont_tax5 <- rma.mv(yi = Zr, 
-#                        V = VZr, 
-#                        mods = ~ relevel(host_symbiont_tax, ref = "PlantInvert"), 
-#                        test = "t",
-#                        random = ~ 1 | authors, 
-#                        data = dat)
-# 
-# # meta-regression: contrast 5
-# mr_host_symbiont_tax6 <- rma.mv(yi = Zr, 
-#                        V = VZr, 
-#                        mods = ~ relevel(host_symbiont_tax, ref = "PlantMicrobe"), 
-#                        test = "t",
-#                        random = ~ 1 | authors, 
-#                        data = dat)
-# # meta-regression: contrast 6
-# mr_host_symbiont_tax7 <- rma.mv(yi = Zr, 
-#                        V = VZr, 
-#                        mods = ~ relevel(host_symbiont_tax, ref = "InvertInvert"), 
-#                        test = "t",
-#                        random = ~ 1 | authors, 
-#                        data = dat)
-# # meta-regression: contrast 7
-# mr_host_symbiont_tax8 <- rma.mv(yi = Zr, 
-#                        V = VZr, 
-#                        mods = ~ relevel(host_symbiont_tax, ref = "InvertMicrobe"), 
-#                        test = "t",
-#                        random = ~ 1 | authors, 
-#                        data = dat)
-# 
-# # meta-regression: contrast 8
-# mr_host_symbiont_tax9 <- rma.mv(yi = Zr, 
-#                        V = VZr, 
-#                        mods = ~ relevel(host_symbiont_tax, ref = "InvertPlant"), 
-#                        test = "t",
-#                        random = ~ 1 | authors, 
-#                        data = dat)
-# # meta-regression: contrast 9
-# mr_host_symbiont_tax10 <- rma.mv(yi = Zr, 
-#                        V = VZr, 
-#                        mods = ~ relevel(host_symbiont_tax, ref = "VertInvert"), 
-#                        test = "t",
-#                        random = ~ 1 | authors, 
-#                        data = dat)
-# 
-# # meta-regression: contrast 10
-# mr_host_symbiont_tax11 <- rma.mv(yi = Zr, 
-#                        V = VZr, 
-#                        mods = ~ relevel(host_symbiont_tax, ref = "VertMicrobe"), 
-#                        test = "t",
-#                        random = ~ 1 | authors, 
-#                        data = dat)
-
-# we could make it shorter
+# # meta-regression: contrasts x 10
+# getting the level names out
 level_names <- levels(dat$host_symbiont_tax)
 
 # helper function to run metafor meta-regression
@@ -1262,7 +1187,7 @@ tibble(
   scroll_box(width = "100%", height = "300px")
 ```
 
-```{r, fig.width=7, fig.height= 11}
+```{r, fig.width=7, fig.height= 9}
 # colour list
 #colour_ls <- c("#000000", "#E69F00", "#56B4E9", "#009E73",  "#F0E422",  "#0072B2",  "#D55E00", "#CC79A7", "#00008B", "#8B0A50", "#54FF9F", "#999999")
 
@@ -1270,10 +1195,10 @@ tibble(
 k_host_symbiont_tax <- dat %>% group_by(host_symbiont_tax) %>% count()
 # getting estimates and predicitons
 pred_host_symbiont_tax <- get_pred(mr_host_symbiont_tax1, mod = "host_symbiont_tax") 
-res_host_tax_symbiosis1 <- left_join(res_host_symbiont_tax1, k_host_symbiont_tax, by =  c("name" = "host_symbiont_tax"))  %>% left_join(pred_host_symbiont_tax)
+res_host_symbiont_tax1 <- left_join(res_host_symbiont_tax1, k_host_symbiont_tax, by =  c("name" = "host_symbiont_tax"))  %>% left_join(pred_host_symbiont_tax)
 #res_symbiosis1 
 # drawing a funnel plot - fig 2b
-fig_host_tax_symbiosis <- ggplot(data = res_host_symbiont_tax1, aes(x = tanh(estimate), y = name)) +
+fig_host_symbiont_tax <- ggplot(data = res_host_symbiont_tax1, aes(x = tanh(estimate), y = name)) +
   scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
   geom_quasirandom(data = dat %>% filter(!is.na(host_symbiont_tax)), 
                    aes(x= tanh(Zr), y = host_symbiont_tax, size = ((1/VZr) + 3), colour = host_symbiont_tax), groupOnX = FALSE, alpha=0.4) + 
@@ -1285,9 +1210,9 @@ fig_host_tax_symbiosis <- ggplot(data = res_host_symbiont_tax1, aes(x = tanh(est
   # creating dots and different size (bee-swarm and bubbles)
   geom_point(aes(fill = name), size = 3, shape = 21) + #
   # setting colours
-  scale_color_manual(values =   c(= colour_ls[1], = colour_ls[2],  = colour_ls[3], "PlantParasite"= colour_ls[4],  = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertMutualist"= colour_ls[7],     "VertParasite"= colour_ls[8] )) +
-  scale_fill_manual(values = c()) +
-  scale_y_discrete(labels = c("MicrobeMutualist"= "Microbe-\nMutualist", "MicrobeParasite"= "Microbe-\nParasite",  "PlantMutualist" = "Plant-\nMutualist", "PlantParasite"="Plant-\nParasite", "InvertMutualist" = "Invertebrate-\nMutualist",   "InvertParasite"= "Invertebrate-\nParasite", "VertMutualist"= "Vertebrate-\nMutualist",  "VertParasite"= "Vertebrate-\nParasite" )) +
+  scale_color_manual(values =  c("MicrobeInvert" = colour_ls[1],  "MicrobeMicrobe"= colour_ls[2], "MicrobePlant" = colour_ls[3], "PlantInvert" = colour_ls[4],"PlantMicrobe" = colour_ls[5], "InvertInvert"  = colour_ls[6],  "InvertMicrobe" = colour_ls[7], "InvertPlant" = colour_ls[8],"VertInvert"  = colour_ls[9], "VertMicrobe"= colour_ls[10],"VertVert"  = colour_ls[11])) +
+  scale_fill_manual(values = c("MicrobeInvert" = colour_ls[1],  "MicrobeMicrobe"= colour_ls[2], "MicrobePlant" = colour_ls[3], "PlantInvert" = colour_ls[4],"PlantMicrobe" = colour_ls[5], "InvertInvert"  = colour_ls[6],  "InvertMicrobe" = colour_ls[7], "InvertPlant" = colour_ls[8],"VertInvert"  = colour_ls[9], "VertMicrobe"= colour_ls[10],"VertVert"  = colour_ls[11])) +
+  scale_y_discrete(labels = c("MicrobeInvert" = "Microbe-\nInvertebrate",  "MicrobeMicrobe"= "Microbe-\nMicrobe", "MicrobePlant" = "Microbe-\nPlant", "PlantInvert" = "Plant-\nInvertebrate","PlantMicrobe" = "Plant-\nMicrobe", "InvertInvert"  = "Invertebrate\nInvertebrate",  "InvertMicrobe" = "Invertebrate-\nMicrobe", "InvertPlant" = "Invertebrate-\nPlant","VertInvert"  = "Vertebrate-\nInvertebrate", "VertMicrobe"= "Vertebrate-\nMicrobe", "VertVert"  = "Vertebrate-\nVertebrate")) +
   annotate('text', x = -1, y = res_host_symbiont_tax1$name, label= paste("italic(k)==", res_host_symbiont_tax1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
@@ -1297,9 +1222,6 @@ fig_host_tax_symbiosis <- ggplot(data = res_host_symbiont_tax1, aes(x = tanh(est
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
   theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
-
-"MicrobeInvert"  "MicrobeMicrobe" "MicrobePlant"   "PlantInvert"    "PlantMicrobe"   "InvertInvert"  
- [7] "InvertMicrobe"  "InvertPlant"    "VertInvert"     "VertMicrobe"    "VertVert" 
 
 fig_host_symbiont_tax
 ```
