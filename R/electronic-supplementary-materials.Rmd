@@ -330,7 +330,7 @@ fig_ma
 
 We ran a univaraite meta-regression model for each of following moderators: 1) `symbiosis`, 2) `host_tax_broad`, 3) `symbiont_tax_broad`, 4) `host_range_link_ratio`, 5) `host_range_taxonomic_breadth`, 6) `mode_of_transmission_broad`, and 7) `endo_or_ecto`. The results from these models are presented in the main text. 
 
-In addtion to these, we ran three more univariate models: 1) `host_tax_symbiosis` (equivalent to the interactoin term between `symbiosis` and `host_tax_symbiosis`; `symbiosis*host_tax_symbiosis`), 2) `symbiont_tax_symbiosis` (`symbiosis*symbiont_tax_broad`),  3) `host_symbiont_tax` (`host_tax_symbiosis*symbiont_tax_broad`) and . There moderators are created below:
+In addtion to these, we ran three more univariate models: 1) `host_tax_symbiosis` (equivalent to the interactoin term between `symbiosis` and `host_tax_symbiosis`; `symbiosis*host_tax_symbiosis`), 2) `symbiont_tax_symbiosis` (`symbiosis*symbiont_tax_broad`),  3) `host_symbiont_tax` (`host_tax_symbiosis*symbiont_tax_broad`) and 4) `symbiosis_transmission` (`symbiosis*mode_of_transmission_broad`). There moderators are created below:
 
 ```{r}
 dat %<>% 
@@ -341,7 +341,9 @@ dat %<>%
     # symbiont_tax_broad*symbiosis (symbiont_tax_symbiosis)     
          symbiont_tax_symbiosis = factor(str_c(symbiont_tax_broad, symbiosis)),
     # host_tax_broad*symbiont_tax_broad (host_symbiont_tax)     
-         host_symbiont_tax  = factor(str_c(host_tax_broad, symbiont_tax_broad))) 
+         host_symbiont_tax  = factor(str_c(host_tax_broad, symbiont_tax_broad)),
+    # symbiosis*mode_of_transmission_broad (symbiosis_transmission)
+    symbiosis_transmission  = factor(str_c(symbiosis, mode_of_transmission_broad))) 
 
 ```
 
@@ -383,7 +385,7 @@ tibble(
   `Lower CI [0.025]` = c(res_symbiosis1$lowerCL, res_symbiosis2$lowerCL[2]),
   `Upper CI  [0.975]` = c(res_symbiosis1$upperCL, res_symbiosis2$upperCL[2]),
   `V[authors]` = c(mr_symbiosis1$sigma2,  rep(NA, 2)),
-  `R2 %` = c(r2_symbiosis1[1], rep(NA, 2))) %>% kable("html") %>%
+  `R2` = c(r2_symbiosis1[1], rep(NA, 2))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 ```
 
@@ -492,7 +494,7 @@ tibble(
   `Lower CI [0.025]` = c(res_host_tax_broad1$lowerCL, res_host_tax_broad2$lowerCL[-1], res_host_tax_broad3$lowerCL[-(1:2)], res_host_tax_broad4$lowerCL[-(1:3)]),
   `Upper CI  [0.975]` = c(res_host_tax_broad1$upperCL, res_host_tax_broad2$upperCL[-1], res_host_tax_broad3$upperCL[-(1:2)], res_host_tax_broad4$upperCL[-(1:3)]),
   `V[authors]` = c(mr_host_tax_broad1$sigma2,  rep(NA, 9)),
-  `R2 %` = c(r2_host_tax_broad1[1], rep(NA, 9))) %>% kable("html") %>%
+  `R2` = c(r2_host_tax_broad1[1], rep(NA, 9))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
@@ -587,7 +589,6 @@ r2_symbiont_tax_broad1 <- R2(mr_symbiont_tax_broad1)
 # getting estimates
 res_symbiont_tax_broad1 <- get_est(mr_symbiont_tax_broad1, mod = "symbiont_tax_broad")
 res_symbiont_tax_broad2 <- get_est(mr_symbiont_tax_broad2, mod = "symbiont_tax_broad")
-# the name bit does not work if relevel....
 res_symbiont_tax_broad3 <- get_est(mr_symbiont_tax_broad3, mod = "symbiont_tax_broad")
 res_symbiont_tax_broad4 <- get_est(mr_symbiont_tax_broad4, mod = "symbiont_tax_broad")
 
@@ -598,7 +599,7 @@ tibble(
   `Lower CI [0.025]` = c(res_symbiont_tax_broad1$lowerCL, res_symbiont_tax_broad2$lowerCL[-1], res_symbiont_tax_broad3$lowerCL[-(1:2)], res_symbiont_tax_broad4$lowerCL[-(1:3)]),
   `Upper CI  [0.975]` = c(res_symbiont_tax_broad1$upperCL, res_symbiont_tax_broad2$upperCL[-1], res_symbiont_tax_broad3$upperCL[-(1:2)], res_symbiont_tax_broad4$upperCL[-(1:3)]),
   `V[authors]` = c(mr_symbiont_tax_broad1$sigma2,  rep(NA, 9)),
-  `R2 %` = c(r2_symbiont_tax_broad1[1], rep(NA, 9))) %>% kable("html") %>%
+  `R2` = c(r2_symbiont_tax_broad1[1], rep(NA, 9))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
@@ -695,7 +696,6 @@ r2_mode_of_transmission_broad1 <- R2(mr_mode_of_transmission_broad1)
 # getting estimates
 res_mode_of_transmission_broad1 <- get_est(mr_mode_of_transmission_broad1, mod = "mode_of_transmission_broad")
 res_mode_of_transmission_broad2 <- get_est(mr_mode_of_transmission_broad2, mod = "mode_of_transmission_broad")
-# the name bit does not work if relevel....
 res_mode_of_transmission_broad3 <- get_est(mr_mode_of_transmission_broad3, mod = "mode_of_transmission_broad")
 
 # creating a table
@@ -705,7 +705,7 @@ tibble(
   `Lower CI [0.025]` = c(res_mode_of_transmission_broad1$lowerCL, res_mode_of_transmission_broad2$lowerCL[-1], res_mode_of_transmission_broad3$lowerCL[-(1:2)]),
   `Upper CI  [0.975]` = c(res_mode_of_transmission_broad1$upperCL, res_mode_of_transmission_broad2$upperCL[-1], res_mode_of_transmission_broad3$upperCL[-(1:2)]),
   `V[authors]` = c(mr_mode_of_transmission_broad1$sigma2,  rep(NA, 5)),
-  `R2 %` = c(r2_mode_of_transmission_broad1[1], rep(NA, 5))) %>% kable("html") %>%
+  `R2` = c(r2_mode_of_transmission_broad1[1], rep(NA, 5))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 ```
 
@@ -790,7 +790,6 @@ r2_endo_or_ecto1 <- R2(mr_endo_or_ecto1)
 # getting estimates
 res_endo_or_ecto1 <- get_est(mr_endo_or_ecto1, mod = "endo_or_ecto")
 res_endo_or_ecto2 <- get_est(mr_endo_or_ecto2, mod = "endo_or_ecto")
-# the name bit does not work if relevel....
 res_endo_or_ecto3 <- get_est(mr_endo_or_ecto3, mod = "endo_or_ecto")
 
 # creating a table
@@ -800,11 +799,11 @@ tibble(
   `Lower CI [0.025]` = c(res_endo_or_ecto1$lowerCL, res_endo_or_ecto2$lowerCL[-1], res_endo_or_ecto3$lowerCL[-(1:2)]),
   `Upper CI  [0.975]` = c(res_endo_or_ecto1$upperCL, res_endo_or_ecto2$upperCL[-1], res_endo_or_ecto3$upperCL[-(1:2)]),
   `V[authors]` = c(mr_endo_or_ecto1$sigma2,  rep(NA, 5)),
-  `R2 %` = c(r2_endo_or_ecto1[1], rep(NA, 5))) %>% kable("html") %>%
+  `R2` = c(r2_endo_or_ecto1[1], rep(NA, 5))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 ```
 
-```{r, fig.width=7, fig.height= 3.5}
+```{r, fig.width=7, fig.height= 4}
 # adding sample size (k) for each category
 k_endo_or_ecto <- dat %>% group_by(endo_or_ecto) %>% count()
 # getting estimates and predicitons
@@ -850,10 +849,6 @@ fig_endo_or_ecto
 dat$host_tax_symbiosis <- factor(dat$host_tax_symbiosis, 
                                  levels = c("MicrobeMutualist", "MicrobeParasite",  "PlantMutualist", "PlantParasite", "InvertMutualist",  "InvertParasite",  "VertMutualist", "VertParasite"))
 
-#sizes <- factor(sizes, levels = c("small", "medium", "large"))
-#sizes
-#> [1] small  large  large  small  medium
-#> Levels: small medium large
 # meta-regression: mutiple intercepts
 mr_host_tax_symbiosis1 <- rma.mv(yi = Zr, 
                        V = VZr, 
@@ -862,60 +857,23 @@ mr_host_tax_symbiosis1 <- rma.mv(yi = Zr,
                        random = ~ 1 | authors, 
                        data = dat)
 
-# meta-regression: contrast 1
-mr_host_tax_symbiosis2 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ host_tax_symbiosis, 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
+# # meta-regression: contrasts x 10
+# getting the level names out
+level_names <- levels(dat$host_tax_symbiosis)
 
-# meta-regression: contrast 2
-mr_host_tax_symbiosis3 <- rma.mv(yi = Zr, 
+# helper function to run metafor meta-regression
+run_rma <- function(name) {
+  rma.mv(yi = Zr, 
                        V = VZr, 
-                       mods = ~ relevel(host_tax_symbiosis, ref = "MicrobeParasite"), 
+                       mods = ~ relevel(host_tax_symbiosis, ref = name), 
                        test = "t",
                        random = ~ 1 | authors, 
                        data = dat)
+}
 
-# meta-regression: contrast 3
-mr_host_tax_symbiosis4 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ relevel(host_tax_symbiosis, ref = "PlantMutualist"), 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
-# meta-regression: contrast 4
-mr_host_tax_symbiosis5 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ relevel(host_tax_symbiosis, ref = "PlantParasite"), 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
+# results of meta-regression including all contrast results; taking the last level out ([-length(level_names)])
+mr_host_tax_symbiosis <- map(level_names[-length(level_names)], run_rma)
 
-# meta-regression: contrast 5
-mr_host_tax_symbiosis6 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ relevel(host_tax_symbiosis, ref = "InvertMutualist"), 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
-
-# meta-regression: contrast 6
-mr_host_tax_symbiosis7 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ relevel(host_tax_symbiosis, ref = "InvertParasite"), 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
-
-# meta-regression: contrast 7
-mr_host_tax_symbiosis8 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ relevel(host_tax_symbiosis, ref = "VertMutualist"), 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
 ```
 
 **Supplementary Table 3:**
@@ -926,22 +884,24 @@ r2_host_tax_symbiosis1 <- R2(mr_host_tax_symbiosis1)
 
 # getting estimates
 res_host_tax_symbiosis1 <- get_est(mr_host_tax_symbiosis1, mod = "host_tax_symbiosis")
-res_host_tax_symbiosis2 <- get_est(mr_host_tax_symbiosis2, mod = "host_tax_symbiosis")
-# the name bit does not work if relevel....
-res_host_tax_symbiosis3 <- get_est(mr_host_tax_symbiosis3, mod = "host_tax_symbiosis")
-res_host_tax_symbiosis4 <- get_est(mr_host_tax_symbiosis4, mod = "host_tax_symbiosis")
-res_host_tax_symbiosis5 <- get_est(mr_host_tax_symbiosis5, mod = "host_tax_symbiosis")
-res_host_tax_symbiosis6 <- get_est(mr_host_tax_symbiosis6, mod = "host_tax_symbiosis")
-res_host_tax_symbiosis7 <- get_est(mr_host_tax_symbiosis7, mod = "host_tax_symbiosis")
-res_host_tax_symbiosis8 <- get_est(mr_host_tax_symbiosis8, mod = "host_tax_symbiosis")
+res_host_tax_symbiosis <- map(mr_host_tax_symbiosis, ~ get_est(.x, mod = "host_tax_symbiosis"))
+
+# a list of the numbers to take out unnecessary contrasts
+contra_list <- Map(seq, from=1, to=1:7)
+
+# you need to flatten twice: first to make it a list and make it a vector
+estiamtes <- map2(res_host_tax_symbiosis, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
+lowerCLs <- map2(res_host_tax_symbiosis, contra_list, ~.x[-(.y),"lowerCL"]) %>% flatten() %>% flatten_dbl()
+upperCLs <- map2(res_host_tax_symbiosis, contra_list, ~.x[-(.y),"upperCL"]) %>% flatten() %>% flatten_dbl()
+
 # creating a table
 tibble(
   `Fixed effect` = c(as.character(res_host_tax_symbiosis1$name), cont_gen(res_host_tax_symbiosis1$name)),
-  Estimate = c(res_host_tax_symbiosis1$estimate, res_host_tax_symbiosis2$estimate[-1],  res_host_tax_symbiosis3$estimate[-(1:2)], res_host_tax_symbiosis4$estimate[-(1:3)], res_host_tax_symbiosis5$estimate[-(1:4)], res_host_tax_symbiosis6$estimate[-(1:5)],  res_host_tax_symbiosis7$estimate[-(1:6)], res_host_tax_symbiosis8$estimate[-(1:7)]),
-  `Lower CI [0.025]` = c(res_host_tax_symbiosis1$lowerCL, res_host_tax_symbiosis2$lowerCL[-1], res_host_tax_symbiosis3$lowerCL[-(1:2)], res_host_tax_symbiosis4$lowerCL[-(1:3)],res_host_tax_symbiosis1$lowerCL[-(1:4)], res_host_tax_symbiosis2$lowerCL[-(1:5)], res_host_tax_symbiosis3$lowerCL[-(1:6)], res_host_tax_symbiosis4$lowerCL[-(1:7)]),
-  `Upper CI  [0.975]` = c(res_host_tax_symbiosis1$upperCL, res_host_tax_symbiosis2$upperCL[-1], res_host_tax_symbiosis3$upperCL[-(1:2)], res_host_tax_symbiosis4$upperCL[-(1:3)],res_host_tax_symbiosis1$upperCL[-(1:4)], res_host_tax_symbiosis2$upperCL[-(1:5)], res_host_tax_symbiosis3$upperCL[-(1:6)], res_host_tax_symbiosis4$upperCL[-(1:7)]),
+  Estimate = c(res_host_tax_symbiosis1$estimate, estiamtes),
+  `Lower CI [0.025]` = c(res_host_tax_symbiosis1$lowerCL,lowerCLs),
+  `Upper CI  [0.975]` = c(res_host_tax_symbiosis1$upperCL,lowerCLs),
   `V[authors]` = c(mr_host_tax_symbiosis1$sigma2,  rep(NA, (8 + choose(8,2))- 1)),
-  `R2 %` = c(r2_host_tax_symbiosis1[1], rep(NA, (8 + choose(8,2))- 1))) %>% kable("html") %>%
+  `R2 %` = c(r2_host_tax_symbiosis1[1], rep(NA, (8 + choose(8, 2))- 1))) %>% kable("html") %>%
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
@@ -1002,51 +962,22 @@ mr_symbiont_tax_symbiosis1 <- rma.mv(yi = Zr,
                        random = ~ 1 | authors, 
                        data = dat)
 
-# meta-regression: contrast 1
-mr_symbiont_tax_symbiosis2 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ symbiont_tax_symbiosis, 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
+# # meta-regression: contrasts x 10
+# getting the level names out
+level_names <- levels(dat$symbiont_tax_symbiosis)
 
-# meta-regression: contrast 2
-mr_symbiont_tax_symbiosis3 <- rma.mv(yi = Zr, 
+# helper function to run metafor meta-regression
+run_rma <- function(name) {
+  rma.mv(yi = Zr, 
                        V = VZr, 
-                       mods = ~ relevel(symbiont_tax_symbiosis, ref = "MicrobeParasite"), 
+                       mods = ~ relevel(symbiont_tax_symbiosis, ref = name), 
                        test = "t",
                        random = ~ 1 | authors, 
                        data = dat)
+}
 
-# meta-regression: contrast 3
-mr_symbiont_tax_symbiosis4 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ relevel(symbiont_tax_symbiosis, ref = "PlantMutualist"), 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
-# meta-regression: contrast 4
-mr_symbiont_tax_symbiosis5 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ relevel(symbiont_tax_symbiosis, ref = "PlantParasite"), 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
-
-# meta-regression: contrast 5
-mr_symbiont_tax_symbiosis6 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ relevel(symbiont_tax_symbiosis, ref = "InvertParasite"), 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
-# meta-regression: contrast 6
-mr_symbiont_tax_symbiosis7 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ relevel(symbiont_tax_symbiosis, ref = "VertParasite"), 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
+# results of meta-regression including all contrast results; taking the last level out ([-length(level_names)])
+mr_symbiont_tax_symbiosis <- map(level_names[-length(level_names)], run_rma)
 
 ```
 
@@ -1058,23 +989,24 @@ r2_symbiont_tax_symbiosis1 <- R2(mr_symbiont_tax_symbiosis1)
 
 # getting estimates
 res_symbiont_tax_symbiosis1 <- get_est(mr_symbiont_tax_symbiosis1, mod = "symbiont_tax_symbiosis")
-res_symbiont_tax_symbiosis2 <- get_est(mr_symbiont_tax_symbiosis2, mod = "symbiont_tax_symbiosis")
-# the name bit does not work if relevel....
-res_symbiont_tax_symbiosis3 <- get_est(mr_symbiont_tax_symbiosis3, mod = "symbiont_tax_symbiosis")
-res_symbiont_tax_symbiosis4 <- get_est(mr_symbiont_tax_symbiosis4, mod = "symbiont_tax_symbiosis")
-res_symbiont_tax_symbiosis5 <- get_est(mr_symbiont_tax_symbiosis5, mod = "symbiont_tax_symbiosis")
-res_symbiont_tax_symbiosis6 <- get_est(mr_symbiont_tax_symbiosis6, mod = "symbiont_tax_symbiosis")
-res_symbiont_tax_symbiosis7 <- get_est(mr_symbiont_tax_symbiosis7, mod = "symbiont_tax_symbiosis")
+res_symbiont_tax_symbiosis <- map(mr_symbiont_tax_symbiosis, ~ get_est(.x, mod = "symbiont_tax_symbiosis"))
 
+# a list of the numbers to take out unnecessary contrasts
+contra_list <- Map(seq, from=1, to=1:6)
+
+# you need to flatten twice: first to make it a list and make it a vector
+estiamtes <- map2(res_symbiont_tax_symbiosis, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
+lowerCLs <- map2(res_symbiont_tax_symbiosis, contra_list, ~.x[-(.y),"lowerCL"]) %>% flatten() %>% flatten_dbl()
+upperCLs <- map2(res_symbiont_tax_symbiosis, contra_list, ~.x[-(.y),"upperCL"]) %>% flatten() %>% flatten_dbl()
 
 # creating a table
 tibble(
   `Fixed effect` = c(as.character(res_symbiont_tax_symbiosis1$name), cont_gen(res_symbiont_tax_symbiosis1$name)),
-  Estimate = c(res_symbiont_tax_symbiosis1$estimate, res_symbiont_tax_symbiosis2$estimate[-1],  res_symbiont_tax_symbiosis3$estimate[-(1:2)], res_symbiont_tax_symbiosis4$estimate[-(1:3)], res_symbiont_tax_symbiosis5$estimate[-(1:4)], res_symbiont_tax_symbiosis6$estimate[-(1:5)],  res_symbiont_tax_symbiosis7$estimate[-(1:6)]),
-  `Lower CI [0.025]` = c(res_symbiont_tax_symbiosis1$lowerCL, res_symbiont_tax_symbiosis2$lowerCL[-1], res_symbiont_tax_symbiosis3$lowerCL[-(1:2)], res_symbiont_tax_symbiosis4$lowerCL[-(1:3)],res_symbiont_tax_symbiosis1$lowerCL[-(1:4)], res_symbiont_tax_symbiosis2$lowerCL[-(1:5)], res_symbiont_tax_symbiosis3$lowerCL[-(1:6)]),
-  `Upper CI  [0.975]` = c(res_symbiont_tax_symbiosis1$upperCL, res_symbiont_tax_symbiosis2$upperCL[-1], res_symbiont_tax_symbiosis3$upperCL[-(1:2)], res_symbiont_tax_symbiosis4$upperCL[-(1:3)],res_symbiont_tax_symbiosis1$upperCL[-(1:4)], res_symbiont_tax_symbiosis2$upperCL[-(1:5)], res_symbiont_tax_symbiosis3$upperCL[-(1:6)]),
-  `V[authors]` = c(mr_host_tax_symbiosis1$sigma2,  rep(NA, (7 + choose(7,2))- 1)),
-  `R2 %` = c(r2_host_tax_symbiosis1[1], rep(NA, (7 + choose(7,2))- 1))) %>% kable("html") %>%
+  Estimate = c(res_symbiont_tax_symbiosis1$estimate, estiamtes),
+  `Lower CI [0.025]` = c(res_symbiont_tax_symbiosis1$lowerCL,lowerCLs),
+  `Upper CI  [0.975]` = c(res_symbiont_tax_symbiosis1$upperCL,lowerCLs),
+  `V[authors]` = c(mr_symbiont_tax_symbiosis1$sigma2,  rep(NA, (7 + choose(7,2))- 1)),
+  `R2 %` = c(r2_symbiont_tax_symbiosis1[1], rep(NA, (7 + choose(7, 2))- 1))) %>% kable("html") %>%
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
@@ -1161,13 +1093,11 @@ r2_host_symbiont_tax1 <- R2(mr_host_symbiont_tax1)
 
 # getting estimates
 res_host_symbiont_tax1 <- get_est(mr_host_symbiont_tax1, mod = "host_symbiont_tax")
-
 res_host_symbiont_tax <- map(mr_host_symbiont_tax, ~ get_est(.x, mod = "host_symbiont_tax"))
 
 # a list of the numbers to take out unnecessary contrasts
 contra_list <- Map(seq, from=1, to=1:10)
 
-# somehone map_dbl cannot be used
 # you need to flatten twice: first to make it a list and make it a vector
 estiamtes <- map2(res_host_symbiont_tax, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
 
@@ -1187,7 +1117,7 @@ tibble(
   scroll_box(width = "100%", height = "300px")
 ```
 
-```{r, fig.width=7, fig.height= 9}
+```{r, fig.width=7, fig.height= 10}
 # colour list
 #colour_ls <- c("#000000", "#E69F00", "#56B4E9", "#009E73",  "#F0E422",  "#0072B2",  "#D55E00", "#CC79A7", "#00008B", "#8B0A50", "#54FF9F", "#999999")
 
@@ -1226,7 +1156,106 @@ fig_host_symbiont_tax <- ggplot(data = res_host_symbiont_tax1, aes(x = tanh(esti
 fig_host_symbiont_tax
 ```
 
+#### The combined effect of symbiosis and mode of transmission
 
+```{r}
+dat$symbiosis_transmission <- factor(dat$symbiosis_transmission,
+                                 levels = c("Mutualistboth", "Mutualisthorizontal","Mutualistvertical", "Parasiteboth", "Parasitehorizontal"),
+                                labels = c("MutualistBoth", "MutualistHorizontal","MutualistVertical", "ParasiteBoth", "ParasiteHorizontal"))
+
+# meta-regression: mutiple intercepts
+mr_symbiosis_transmission1 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ symbiosis_transmission - 1, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# # meta-regression: contrasts x 10
+# getting the level names out
+level_names <- levels(dat$symbiosis_transmission)
+
+# helper function to run metafor meta-regression
+run_rma <- function(name) {
+  rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(symbiosis_transmission, ref = name), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+}
+
+# results of meta-regression including all contrast results; taking the last level out ([-length(level_names)])
+mr_symbiosis_transmission <- map(level_names[-length(level_names)], run_rma)
+
+```
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
+```{r}
+# getting marginal R2
+r2_symbiosis_transmission1 <- R2(mr_symbiosis_transmission1)
+
+# getting estimates
+res_symbiosis_transmission1 <- get_est(mr_symbiosis_transmission1, mod = "symbiosis_transmission")
+res_symbiosis_transmission <- map(mr_symbiosis_transmission, ~ get_est(.x, mod = "symbiosis_transmission"))
+
+# a list of the numbers to take out unnecessary contrasts
+contra_list <- Map(seq, from=1, to=1:4)
+
+# you need to flatten twice: first to make it a list and make it a vector
+estiamtes <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
+lowerCLs <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"lowerCL"]) %>% flatten() %>% flatten_dbl()
+upperCLs <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"upperCL"]) %>% flatten() %>% flatten_dbl()
+
+# creating a table
+tibble(
+  `Fixed effect` = c(as.character(res_symbiosis_transmission1$name), cont_gen(res_symbiosis_transmission1$name)),
+  Estimate = c(res_symbiosis_transmission1$estimate, estiamtes),
+  `Lower CI [0.025]` = c(res_symbiosis_transmission1$lowerCL,lowerCLs),
+  `Upper CI  [0.975]` = c(res_symbiosis_transmission1$upperCL,lowerCLs),
+  `V[authors]` = c(mr_symbiosis_transmission1$sigma2,  rep(NA, (5 + choose(5,2))- 1)),
+  `R2 %` = c(r2_symbiosis_transmission1[1], rep(NA, (5 + choose(5, 2))- 1))) %>% kable("html") %>%
+  kable_styling("striped", position = "left") %>%
+  scroll_box(width = "100%", height = "300px")
+```
+
+```{r, fig.width=7, fig.height= 5}
+
+# adding sample size (k) for each category
+k_symbiosis_transmission <- dat %>% group_by(symbiosis_transmission) %>% count()
+# getting estimates and predicitons
+pred_symbiosis_transmission <- get_pred(mr_symbiosis_transmission1, mod = "symbiosis_transmission") 
+res_symbiosis_transmission1 <- left_join(res_symbiosis_transmission1, k_symbiosis_transmission, by =  c("name" = "symbiosis_transmission"))  %>% left_join(pred_symbiosis_transmission)
+#res_symbiosis1 
+# drawing a funnel plot - fig 2b
+fig_symbiosis_transmission <- ggplot(data = res_symbiosis_transmission1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(symbiosis_transmission)), 
+                   aes(x= tanh(Zr), y = symbiosis_transmission, size = ((1/VZr) + 3), colour = symbiosis_transmission), groupOnX = FALSE, alpha=0.4) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values =   c("MutualistBoth"= colour_ls[1], "MutualistHorizontal"= colour_ls[2], "MutualistVertical" = colour_ls[3],"ParasiteBoth"= colour_ls[4], "ParasiteHorizontal" = colour_ls[5])) +
+  scale_fill_manual(values = c("MutualistBoth"= colour_ls[1], "MutualistHorizontal"= colour_ls[2], "MutualistVertical" = colour_ls[3],"ParasiteBoth"= colour_ls[4], "ParasiteHorizontal" = colour_ls[5])) +
+  scale_y_discrete(labels = c("MutualistBoth" = "Mutualist-\nBoth", "MutualistHorizontal" = "Mutualist-\nHorizontal","MutualistVertical" = "Mutualist-\nVertical", "ParasiteBoth" = "Parasite-\nBoth", "ParasiteHorizontal" = "Parasite-\nHorizontal")) +
+  annotate('text', x = -1, y = res_symbiosis_transmission1$name, label= paste("italic(k)==", res_symbiosis_transmission1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+
+fig_symbiosis_transmission
+```
 
 NOTE!!!
 * Do the REF REF REF 
