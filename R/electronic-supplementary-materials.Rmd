@@ -193,7 +193,7 @@ dat %>% summarise_all(~sum(is.na(.))) %>% # map(~sum(is.na(.)) # this is an alte
   rename("Number of missing data (n)" = "V1") %>% 
   #pander(split.cell = 40, split.table = Inf)
   kable() %>% kable_styling("striped", position = "left") %>%
-  scroll_box(width = "50%", height = "250px")
+  scroll_box(width = "60%", height = "250px")
 
 # an alternative method using the mi package
 #missing_data_tbl <- missing_data.frame(as.data.frame(data))
@@ -287,7 +287,7 @@ tibble(
   `Lower CI [0.025]` = c(ma_parafit$ci.lb, ma_treemap$ci.lb, ma_all$ci.lb),
   `Upper C  [0.975]` = c(ma_parafit$ci.ub, ma_treemap$ci.ub, ma_all$ci.ub),
   `V[authors]` = c(ma_parafit$sigma2, ma_treemap$sigma2, ma_all$sigma2),
-  `I2[total] %` = c(i2_parafit[1], i2_treemap[1], i2_all[1]))%>% kable("html") %>%
+  `I2[total]` = c(i2_parafit[1], i2_treemap[1], i2_all[1]))%>% kable("html",  digits = 3) %>%
   kable_styling("striped", position = "left")
 ```
 
@@ -901,7 +901,7 @@ tibble(
   `Lower CI [0.025]` = c(res_host_tax_symbiosis1$lowerCL,lowerCLs),
   `Upper CI  [0.975]` = c(res_host_tax_symbiosis1$upperCL,lowerCLs),
   `V[authors]` = c(mr_host_tax_symbiosis1$sigma2,  rep(NA, (8 + choose(8,2))- 1)),
-  `R2 %` = c(r2_host_tax_symbiosis1[1], rep(NA, (8 + choose(8, 2))- 1))) %>% kable("html") %>%
+  `R2` = c(r2_host_tax_symbiosis1[1], rep(NA, (8 + choose(8, 2))- 1))) %>% kable("html",  digits = 3) %>%
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
@@ -1006,7 +1006,7 @@ tibble(
   `Lower CI [0.025]` = c(res_symbiont_tax_symbiosis1$lowerCL,lowerCLs),
   `Upper CI  [0.975]` = c(res_symbiont_tax_symbiosis1$upperCL,lowerCLs),
   `V[authors]` = c(mr_symbiont_tax_symbiosis1$sigma2,  rep(NA, (7 + choose(7,2))- 1)),
-  `R2 %` = c(r2_symbiont_tax_symbiosis1[1], rep(NA, (7 + choose(7, 2))- 1))) %>% kable("html") %>%
+  `R2` = c(r2_symbiont_tax_symbiosis1[1], rep(NA, (7 + choose(7, 2))- 1))) %>% kable("html",  digits = 3) %>%
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
@@ -1112,7 +1112,7 @@ tibble(
   `Lower CI [0.025]` = c(res_host_symbiont_tax1$lowerCL,lowerCLs),
   `Upper CI  [0.975]` = c(res_host_symbiont_tax1$upperCL,lowerCLs),
   `V[authors]` = c(mr_host_tax_symbiosis1$sigma2,  rep(NA, (11 + choose(11,2))- 1)),
-  `R2 %` = c(r2_host_symbiont_tax1[1], rep(NA, (11 + choose(11, 2))- 1))) %>% kable("html") %>%
+  `R2` = c(r2_host_symbiont_tax1[1], rep(NA, (11 + choose(11, 2))- 1))) %>% kable("html",  digits = 3) %>%
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
@@ -1215,7 +1215,7 @@ tibble(
   `Lower CI [0.025]` = c(res_symbiosis_transmission1$lowerCL,lowerCLs),
   `Upper CI  [0.975]` = c(res_symbiosis_transmission1$upperCL,lowerCLs),
   `V[authors]` = c(mr_symbiosis_transmission1$sigma2,  rep(NA, (5 + choose(5,2))- 1)),
-  `R2 %` = c(r2_symbiosis_transmission1[1], rep(NA, (5 + choose(5, 2))- 1))) %>% kable("html") %>%
+  `R2` = c(r2_symbiosis_transmission1[1], rep(NA, (5 + choose(5, 2))- 1))) %>% kable("html",  digits = 3) %>%
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
