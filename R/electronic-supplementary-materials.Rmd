@@ -644,7 +644,60 @@ fig_symbiont_tax_broad
 
 #### Testing specialization 1: host range
 
-e
+```{r}
+# meta-regression
+mr_host_range_link_ratio <- rma.mv(yi = Zr, V = VZr, mods = ~ log(host_range_link_ratio), random = ~ 1 | authors, data = dat)
+
+```
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+```{r}
+# getting marginal R2
+r2_host_range_link_ratio <- R2(mr_host_range_link_ratio)
+
+# getting estimates: name does not work for slopes
+res_range_link_ratio <- get_est(mr_host_range_link_ratio, mod = "log(host_range_link_ratio)")
+
+# creating a table
+tibble(
+  `Fixed effect` = c("Intercept", "log(host_range_link_ratio)"),
+  Estimate = c(res_range_link_ratio$estimate),
+  `Lower CI [0.025]` = c(res_range_link_ratio$lowerCL),
+  `Upper CI  [0.975]` = c(res_range_link_ratio$upperCL),
+  `V[authors]` = c(mr_host_range_link_ratio$sigma2, NA),
+  `R2` = c(r2_host_range_link_ratio[1], NA)) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left")
+```
+
+```{r, fig.width=7, fig.height= 4}
+fig_host_range_link_ratio <- ggplot(dat, aes(x = host_range_link_ratio, y = Zr, size = (1/VZr) + 3)) +
+    geom_point(shape = 21) +
+    geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], 
+                alpha = 0.7, linetype = "dotted", size = 1.5) +
+    labs(x = "ln(range link ratio)", y = expression(paste(italic(Zr), " (effect size)")))
+
+###
+  scale_color_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00" )) +
+  scale_fill_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
+  scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
+  annotate('text', x = -1, y = res_symbiont_tax_broad1$name, label= paste("italic(k)==", res_symbiont_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+
+fig_host_range_link_ratio
+```
+
+
+#### Testing specialization 2: taxomic breadth
+
+f
 
 #### 
 
@@ -654,9 +707,6 @@ https://www.rdocumentation.org/packages/metafor/versions/1.9-9/topics/predict.rm
 
 https://stackoverflow.com/questions/50804464/out-of-sample-prediction-for-rma-object-in-metafor
 
-#### Testing specialization 2: taxomic breadth
-
-f
 
 #### The effect of the model of transmission
 
