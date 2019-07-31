@@ -80,7 +80,7 @@ Below is the dataset used for our meta-analysis follwed by explanations of 24 va
 # read the difference between factr() and as.factor() <https://stackoverflow.com/questions/39279238/why-use-as-factor-instead-of-just-factor>
 # full_data <- read.csv("../data/2019-04-04-source-data-dat.csv", na = "NA", fileEncoding="UTF-8") %>%
 #  mutate_if(is.character, as.factor)
-full_data <- read_csv("../data/2019-04-04-source-data-dat.csv", na = "NA") %>% 
+full_data <- read_csv("../data/2019-23-07-source-data-dat.csv", na = "NA") %>% 
    mutate_if(is.character, as.factor)
 
 # making a scrollable table
@@ -671,27 +671,42 @@ tibble(
 ```
 
 ```{r, fig.width=7, fig.height= 4}
-fig_host_range_link_ratio <- ggplot(dat, aes(x = host_range_link_ratio, y = Zr, size = (1/VZr) + 3)) +
-    geom_point(shape = 21) +
-    geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], 
-                alpha = 0.7, linetype = "dotted", size = 1.5) +
-    labs(x = "ln(range link ratio)", y = expression(paste(italic(Zr), " (effect size)")))
+# getting CI for regression line
+#Here are links for how to do confidence regions for rma.mv regression lines
+#https://www.rdocumentation.org/packages/metafor/versions/1.9-9/topics/predict.rma
+#https://stackoverflow.com/questions/50804464/out-of-sample-prediction-for-rma-object-in-metafor
+# 
 
-###
-  scale_color_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00" )) +
-  scale_fill_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
-  scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
-  annotate('text', x = -1, y = res_symbiont_tax_broad1$name, label= paste("italic(k)==", res_symbiont_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+newmods <- seq(-0.3, 2.2, by = 0.1)
+pred_host_range_link_ratio <-predict.rma(mr_host_range_link_ratio, newmods = newmods) 
+ribbon_dat <- tibble(newmods = newmods, ymin = pred_host_range_link_ratio$ci.lb, ymax = pred_host_range_link_ratio$ci.ub)
+
+
+pred_host_range_link_ratio <-predict.rma(mr_host_range_link_ratio) 
+
+
+
+# "Invert"= "#0072B2",  "Vert" = "#D55E00"
+
+# plotting
+dat %>% 
+  filter(!is.na(host_range_link_ratio)) ->dat_temp
+fig_host_range_link_ratio <-  # getting ride of NA values
+  ggplot(data = dat_temp, aes(x = log(host_range_link_ratio), y = Zr, size = (1/VZr) + 3, )) +
+  geom_point(shape = 21, fill = "grey90") +
+  geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dotted", size = 1) +
+  labs(x = "ln(range link ratio)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
   guides(fill = "none", colour = "none") +
+  geom_ribbon(data = ribbon_dat, aes(ymin = ymin, ymax = ymax, x = newmods), fill = "#0072B2")  +
+  # themses
   theme_bw() +
-  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.position= c(1, 1), legend.justification = c(1, 1)) +
   theme(legend.direction="horizontal") +
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
   theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
 
-fig_host_range_link_ratio
+fig_host_range_link_ratio2 #<- fig_host_range_link_ratio + geom_ribbon(data = ribbon_dat, aes(ymin = ymin, ymax = ymax, x = newmods),fill = "#0072B2")
 ```
 
 
@@ -700,102 +715,6 @@ fig_host_range_link_ratio
 f
 
 #### 
-
-Here are links for how to do confidence regions for rma.mv regression lines
-
-https://www.rdocumentation.org/packages/metafor/versions/1.9-9/topics/predict.rma
-
-https://stackoverflow.com/questions/50804464/out-of-sample-prediction-for-rma-object-in-metafor
-
-
-#### The effect of the model of transmission
-
-```{r}
-# meta-regression: mutiple intercepts
-mr_mode_of_transmission_broad1 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ mode_of_transmission_broad - 1, 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
-
-# meta-regression: contrast 1
-mr_mode_of_transmission_broad2 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ mode_of_transmission_broad, 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
-
-# meta-regression: contrast 2
-mr_mode_of_transmission_broad3 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ relevel(mode_of_transmission_broad, ref = "vertical"), 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
-
-```
-
-**Supplementary Table 3:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `mode_of_transmission_broad`. 
-```{r}
-# getting marginal R2
-r2_mode_of_transmission_broad1 <- R2(mr_mode_of_transmission_broad1)
-
-# getting estimates
-res_mode_of_transmission_broad1 <- get_est(mr_mode_of_transmission_broad1, mod = "mode_of_transmission_broad")
-res_mode_of_transmission_broad2 <- get_est(mr_mode_of_transmission_broad2, mod = "mode_of_transmission_broad")
-res_mode_of_transmission_broad3 <- get_est(mr_mode_of_transmission_broad3, mod = "mode_of_transmission_broad")
-
-# creating a table
-tibble(
-  `Fixed effect` = c(as.character(res_mode_of_transmission_broad1$name), cont_gen(res_mode_of_transmission_broad1$name)),
-  Estimate = c(res_mode_of_transmission_broad1$estimate, res_mode_of_transmission_broad2$estimate[-1],  res_mode_of_transmission_broad3$estimate[-(1:2)]),
-  `Lower CI [0.025]` = c(res_mode_of_transmission_broad1$lowerCL, res_mode_of_transmission_broad2$lowerCL[-1], res_mode_of_transmission_broad3$lowerCL[-(1:2)]),
-  `Upper CI  [0.975]` = c(res_mode_of_transmission_broad1$upperCL, res_mode_of_transmission_broad2$upperCL[-1], res_mode_of_transmission_broad3$upperCL[-(1:2)]),
-  `V[authors]` = c(mr_mode_of_transmission_broad1$sigma2,  rep(NA, 5)),
-  `R2` = c(r2_mode_of_transmission_broad1[1], rep(NA, 5))) %>% kable("html", digits = 3) %>%
-  kable_styling("striped", position = "left") 
-```
-
-```{r, fig.width=7, fig.height= 3.5}
-# adding sample size (k) for each category
-k_mode_of_transmission_broad <- dat %>% group_by(mode_of_transmission_broad) %>% count()
-# getting estimates and predicitons
-pred_mode_of_transmission_broad <- get_pred(mr_mode_of_transmission_broad1, mod = "mode_of_transmission_broad") 
-res_mode_of_transmission_broad1 <- left_join(res_mode_of_transmission_broad1, k_mode_of_transmission_broad, by =  c("name" = "mode_of_transmission_broad"))  %>% left_join(pred_mode_of_transmission_broad)
-#res_symbiosis1 
-# drawing a funnel plot - fig 2b
-fig_mode_of_transmission_broad <- ggplot(data = res_mode_of_transmission_broad1, aes(x = tanh(estimate), y = name)) +
-  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
-  geom_quasirandom(data = dat %>% filter(!is.na(mode_of_transmission_broad)), 
-                   aes(x= tanh(Zr), y = mode_of_transmission_broad, size = ((1/VZr) + 3), colour = mode_of_transmission_broad), groupOnX = FALSE, alpha=0.4) + 
-  # 95 %precition interval (PI)
-  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
-  # 95 %CI
-  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
-  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
-  # creating dots and different size (bee-swarm and bubbles)
-  geom_point(aes(fill = name), size = 3, shape = 21) + #
-  # setting colours
-  scale_color_manual(values = c("both" = "#0072B2",  "horizontal" = "#D55E00",  "vertical"= "#CC79A7")) +
-  scale_fill_manual(values = c("both" = "#0072B2",  "horizontal" = "#D55E00",  "vertical"= "#CC79A7")) +
-  scale_y_discrete(labels = c("both" = "Both",  "horizontal" = "Horizontal",  "vertical"= "Vertical")) +
-  annotate('text', x = -1, y = res_mode_of_transmission_broad1$name, label= paste("italic(k)==", res_mode_of_transmission_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
-  guides(fill = "none", colour = "none") +
-  theme_bw() +
-  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
-  theme(legend.direction = "horizontal") +
-  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
-  theme(legend.background = element_blank()) +
-  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
-
-fig_mode_of_transmission_broad
-```
-
-**Figure 2g:** The effect XXXXXX
 
 
 #### The effect of the type of symbiosis: endosymbiosis vs. ectosymbiosis
@@ -892,6 +811,213 @@ fig_endo_or_ecto
 **Figure 2g:** The effect XXXXXX
 
 
+#### The effect of the model of transmission
+
+```{r}
+# meta-regression: mutiple intercepts
+mr_mode_of_transmission_broad1 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ mode_of_transmission_broad - 1, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# meta-regression: contrast 1
+mr_mode_of_transmission_broad2 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ mode_of_transmission_broad, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# meta-regression: contrast 2
+mr_mode_of_transmission_broad3 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(mode_of_transmission_broad, ref = "vertical"), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+```
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `mode_of_transmission_broad`. 
+```{r}
+# getting marginal R2
+r2_mode_of_transmission_broad1 <- R2(mr_mode_of_transmission_broad1)
+
+# getting estimates
+res_mode_of_transmission_broad1 <- get_est(mr_mode_of_transmission_broad1, mod = "mode_of_transmission_broad")
+res_mode_of_transmission_broad2 <- get_est(mr_mode_of_transmission_broad2, mod = "mode_of_transmission_broad")
+res_mode_of_transmission_broad3 <- get_est(mr_mode_of_transmission_broad3, mod = "mode_of_transmission_broad")
+
+# creating a table
+tibble(
+  `Fixed effect` = c(as.character(res_mode_of_transmission_broad1$name), cont_gen(res_mode_of_transmission_broad1$name)),
+  Estimate = c(res_mode_of_transmission_broad1$estimate, res_mode_of_transmission_broad2$estimate[-1],  res_mode_of_transmission_broad3$estimate[-(1:2)]),
+  `Lower CI [0.025]` = c(res_mode_of_transmission_broad1$lowerCL, res_mode_of_transmission_broad2$lowerCL[-1], res_mode_of_transmission_broad3$lowerCL[-(1:2)]),
+  `Upper CI  [0.975]` = c(res_mode_of_transmission_broad1$upperCL, res_mode_of_transmission_broad2$upperCL[-1], res_mode_of_transmission_broad3$upperCL[-(1:2)]),
+  `V[authors]` = c(mr_mode_of_transmission_broad1$sigma2,  rep(NA, 5)),
+  `R2` = c(r2_mode_of_transmission_broad1[1], rep(NA, 5))) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left") 
+```
+
+```{r, fig.width=7, fig.height= 3.5}
+# adding sample size (k) for each category
+k_mode_of_transmission_broad <- dat %>% group_by(mode_of_transmission_broad) %>% count()
+# getting estimates and predicitons
+pred_mode_of_transmission_broad <- get_pred(mr_mode_of_transmission_broad1, mod = "mode_of_transmission_broad") 
+res_mode_of_transmission_broad1 <- left_join(res_mode_of_transmission_broad1, k_mode_of_transmission_broad, by =  c("name" = "mode_of_transmission_broad"))  %>% left_join(pred_mode_of_transmission_broad)
+#res_symbiosis1 
+# drawing a funnel plot - fig 2b
+fig_mode_of_transmission_broad <- ggplot(data = res_mode_of_transmission_broad1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(mode_of_transmission_broad)), 
+                   aes(x= tanh(Zr), y = mode_of_transmission_broad, size = ((1/VZr) + 3), colour = mode_of_transmission_broad), groupOnX = FALSE, alpha=0.4) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values = c("both" = "#0072B2",  "horizontal" = "#D55E00",  "vertical"= "#CC79A7")) +
+  scale_fill_manual(values = c("both" = "#0072B2",  "horizontal" = "#D55E00",  "vertical"= "#CC79A7")) +
+  scale_y_discrete(labels = c("both" = "Both",  "horizontal" = "Horizontal",  "vertical"= "Vertical")) +
+  annotate('text', x = -1, y = res_mode_of_transmission_broad1$name, label= paste("italic(k)==", res_mode_of_transmission_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction = "horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+
+fig_mode_of_transmission_broad
+```
+
+**Figure 2g:** The effect XXXXXX
+
+
+#### The combined effect of symbiosis and mode of transmission
+
+```{r}
+# reordering
+dat$symbiosis_transmission <- factor(dat$symbiosis_transmission,
+                                 levels = c("Mutualistboth", "Mutualisthorizontal","Mutualistvertical", "Parasiteboth", "Parasitehorizontal"),
+                                labels = c("MutualistBoth", "MutualistHorizontal","MutualistVertical", "ParasiteBoth", "ParasiteHorizontal"))
+
+# meta-regression: mutiple intercepts
+mr_symbiosis_transmission1 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ symbiosis_transmission - 1, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+# # meta-regression: contrasts x 10
+# getting the level names out
+level_names <- levels(dat$symbiosis_transmission)
+
+# helper function to run metafor meta-regression
+run_rma <- function(name) {
+  rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(symbiosis_transmission, ref = name), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+}
+
+# results of meta-regression including all contrast results; taking the last level out ([-length(level_names)])
+mr_symbiosis_transmission <- map(level_names[-length(level_names)], run_rma)
+
+```
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
+```{r}
+# getting marginal R2
+r2_symbiosis_transmission1 <- R2(mr_symbiosis_transmission1)
+
+# getting estimates
+res_symbiosis_transmission1 <- get_est(mr_symbiosis_transmission1, mod = "symbiosis_transmission")
+res_symbiosis_transmission <- map(mr_symbiosis_transmission, ~ get_est(.x, mod = "symbiosis_transmission"))
+
+# a list of the numbers to take out unnecessary contrasts
+contra_list <- Map(seq, from=1, to=1:4)
+
+# you need to flatten twice: first to make it a list and make it a vector
+estiamtes <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
+lowerCLs <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"lowerCL"]) %>% flatten() %>% flatten_dbl()
+upperCLs <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"upperCL"]) %>% flatten() %>% flatten_dbl()
+
+# creating a table
+tibble(
+  `Fixed effect` = c(as.character(res_symbiosis_transmission1$name), cont_gen(res_symbiosis_transmission1$name)),
+  Estimate = c(res_symbiosis_transmission1$estimate, estiamtes),
+  `Lower CI [0.025]` = c(res_symbiosis_transmission1$lowerCL,lowerCLs),
+  `Upper CI  [0.975]` = c(res_symbiosis_transmission1$upperCL,lowerCLs),
+  `V[authors]` = c(mr_symbiosis_transmission1$sigma2,  rep(NA, (5 + choose(5,2))- 1)),
+  `R2` = c(r2_symbiosis_transmission1[1], rep(NA, (5 + choose(5, 2))- 1))) %>% kable("html",  digits = 3) %>%
+  kable_styling("striped", position = "left") %>%
+  scroll_box(width = "100%", height = "300px")
+```
+
+```{r, fig.width=7, fig.height= 5}
+# colour list
+colour_ls <- c("#000000", "#E69F00", "#56B4E9", "#009E73",  "#F0E422",  "#0072B2",  "#D55E00", "#CC79A7", "#00008B", "#8B0A50", "#54FF9F", "#999999")
+
+# adding sample size (k) for each category
+k_symbiosis_transmission <- dat %>% group_by(symbiosis_transmission) %>% count()
+# getting estimates and predicitons
+pred_symbiosis_transmission <- get_pred(mr_symbiosis_transmission1, mod = "symbiosis_transmission") 
+res_symbiosis_transmission1 <- left_join(res_symbiosis_transmission1, k_symbiosis_transmission, by =  c("name" = "symbiosis_transmission"))  %>% left_join(pred_symbiosis_transmission)
+#res_symbiosis1 
+# drawing a funnel plot - fig 2b
+fig_symbiosis_transmission <- ggplot(data = res_symbiosis_transmission1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(symbiosis_transmission)), 
+                   aes(x= tanh(Zr), y = symbiosis_transmission, size = ((1/VZr) + 3), colour = symbiosis_transmission), groupOnX = FALSE, alpha=0.4) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values =   c("MutualistBoth"= colour_ls[1], "MutualistHorizontal"= colour_ls[2], "MutualistVertical" = colour_ls[3],"ParasiteBoth"= colour_ls[4], "ParasiteHorizontal" = colour_ls[5])) +
+  scale_fill_manual(values = c("MutualistBoth"= colour_ls[1], "MutualistHorizontal"= colour_ls[2], "MutualistVertical" = colour_ls[3],"ParasiteBoth"= colour_ls[4], "ParasiteHorizontal" = colour_ls[5])) +
+  scale_y_discrete(labels = c("MutualistBoth" = "Mutualist-\nBoth", "MutualistHorizontal" = "Mutualist-\nHorizontal","MutualistVertical" = "Mutualist-\nVertical", "ParasiteBoth" = "Parasite-\nBoth", "ParasiteHorizontal" = "Parasite-\nHorizontal")) +
+  annotate('text', x = -1, y = res_symbiosis_transmission1$name, label= paste("italic(k)==", res_symbiosis_transmission1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+
+fig_symbiosis_transmission
+```
+
+NOTE!!!
+* Do the REF REF REF 
+* Justification of the use of combined datasets.... - done
+* just do the main one for all three datasets but not others
+* or we could - provide forest plots of all the three datasets???? (do it later)
+* heterogeneity - done 
+
+
+
+
+
+* one-by-one analyses here...
+
 #### The combined effect of host taxa and symbiosis (parasitism vs. mutualism)
 
 ```{r}
@@ -957,9 +1083,6 @@ tibble(
 ```
 
 ```{r, fig.width=7, fig.height= 8}
-# colour list
-colour_ls <- c("#000000", "#E69F00", "#56B4E9", "#009E73",  "#F0E422",  "#0072B2",  "#D55E00", "#CC79A7", "#00008B", "#8B0A50", "#54FF9F", "#999999")
-
 # adding sample size (k) for each category
 k_host_tax_symbiosis <- dat %>% group_by(host_tax_symbiosis) %>% count()
 # getting estimates and predicitons
@@ -1205,120 +1328,6 @@ fig_host_symbiont_tax <- ggplot(data = res_host_symbiont_tax1, aes(x = tanh(esti
 
 fig_host_symbiont_tax
 ```
-
-#### The combined effect of symbiosis and mode of transmission
-
-```{r}
-dat$symbiosis_transmission <- factor(dat$symbiosis_transmission,
-                                 levels = c("Mutualistboth", "Mutualisthorizontal","Mutualistvertical", "Parasiteboth", "Parasitehorizontal"),
-                                labels = c("MutualistBoth", "MutualistHorizontal","MutualistVertical", "ParasiteBoth", "ParasiteHorizontal"))
-
-# meta-regression: mutiple intercepts
-mr_symbiosis_transmission1 <- rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ symbiosis_transmission - 1, 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
-
-# # meta-regression: contrasts x 10
-# getting the level names out
-level_names <- levels(dat$symbiosis_transmission)
-
-# helper function to run metafor meta-regression
-run_rma <- function(name) {
-  rma.mv(yi = Zr, 
-                       V = VZr, 
-                       mods = ~ relevel(symbiosis_transmission, ref = name), 
-                       test = "t",
-                       random = ~ 1 | authors, 
-                       data = dat)
-}
-
-# results of meta-regression including all contrast results; taking the last level out ([-length(level_names)])
-mr_symbiosis_transmission <- map(level_names[-length(level_names)], run_rma)
-
-```
-
-**Supplementary Table 3:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
-```{r}
-# getting marginal R2
-r2_symbiosis_transmission1 <- R2(mr_symbiosis_transmission1)
-
-# getting estimates
-res_symbiosis_transmission1 <- get_est(mr_symbiosis_transmission1, mod = "symbiosis_transmission")
-res_symbiosis_transmission <- map(mr_symbiosis_transmission, ~ get_est(.x, mod = "symbiosis_transmission"))
-
-# a list of the numbers to take out unnecessary contrasts
-contra_list <- Map(seq, from=1, to=1:4)
-
-# you need to flatten twice: first to make it a list and make it a vector
-estiamtes <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
-lowerCLs <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"lowerCL"]) %>% flatten() %>% flatten_dbl()
-upperCLs <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"upperCL"]) %>% flatten() %>% flatten_dbl()
-
-# creating a table
-tibble(
-  `Fixed effect` = c(as.character(res_symbiosis_transmission1$name), cont_gen(res_symbiosis_transmission1$name)),
-  Estimate = c(res_symbiosis_transmission1$estimate, estiamtes),
-  `Lower CI [0.025]` = c(res_symbiosis_transmission1$lowerCL,lowerCLs),
-  `Upper CI  [0.975]` = c(res_symbiosis_transmission1$upperCL,lowerCLs),
-  `V[authors]` = c(mr_symbiosis_transmission1$sigma2,  rep(NA, (5 + choose(5,2))- 1)),
-  `R2` = c(r2_symbiosis_transmission1[1], rep(NA, (5 + choose(5, 2))- 1))) %>% kable("html",  digits = 3) %>%
-  kable_styling("striped", position = "left") %>%
-  scroll_box(width = "100%", height = "300px")
-```
-
-```{r, fig.width=7, fig.height= 5}
-
-# adding sample size (k) for each category
-k_symbiosis_transmission <- dat %>% group_by(symbiosis_transmission) %>% count()
-# getting estimates and predicitons
-pred_symbiosis_transmission <- get_pred(mr_symbiosis_transmission1, mod = "symbiosis_transmission") 
-res_symbiosis_transmission1 <- left_join(res_symbiosis_transmission1, k_symbiosis_transmission, by =  c("name" = "symbiosis_transmission"))  %>% left_join(pred_symbiosis_transmission)
-#res_symbiosis1 
-# drawing a funnel plot - fig 2b
-fig_symbiosis_transmission <- ggplot(data = res_symbiosis_transmission1, aes(x = tanh(estimate), y = name)) +
-  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
-  geom_quasirandom(data = dat %>% filter(!is.na(symbiosis_transmission)), 
-                   aes(x= tanh(Zr), y = symbiosis_transmission, size = ((1/VZr) + 3), colour = symbiosis_transmission), groupOnX = FALSE, alpha=0.4) + 
-  # 95 %precition interval (PI)
-  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
-  # 95 %CI
-  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
-  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
-  # creating dots and different size (bee-swarm and bubbles)
-  geom_point(aes(fill = name), size = 3, shape = 21) + #
-  # setting colours
-  scale_color_manual(values =   c("MutualistBoth"= colour_ls[1], "MutualistHorizontal"= colour_ls[2], "MutualistVertical" = colour_ls[3],"ParasiteBoth"= colour_ls[4], "ParasiteHorizontal" = colour_ls[5])) +
-  scale_fill_manual(values = c("MutualistBoth"= colour_ls[1], "MutualistHorizontal"= colour_ls[2], "MutualistVertical" = colour_ls[3],"ParasiteBoth"= colour_ls[4], "ParasiteHorizontal" = colour_ls[5])) +
-  scale_y_discrete(labels = c("MutualistBoth" = "Mutualist-\nBoth", "MutualistHorizontal" = "Mutualist-\nHorizontal","MutualistVertical" = "Mutualist-\nVertical", "ParasiteBoth" = "Parasite-\nBoth", "ParasiteHorizontal" = "Parasite-\nHorizontal")) +
-  annotate('text', x = -1, y = res_symbiosis_transmission1$name, label= paste("italic(k)==", res_symbiosis_transmission1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
-  guides(fill = "none", colour = "none") +
-  theme_bw() +
-  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
-  theme(legend.direction="horizontal") +
-  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
-  theme(legend.background = element_blank()) +
-  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
-
-fig_symbiosis_transmission
-```
-
-NOTE!!!
-* Do the REF REF REF 
-* Justification of the use of combined datasets.... - done
-* just do the main one for all three datasets but not others
-* or we could - provide forest plots of all the three datasets???? (do it later)
-* heterogeneity - done 
-
-
-
-
-
-* one-by-one analyses here...
 
 ### Addtional analyses
 

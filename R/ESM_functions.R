@@ -168,6 +168,11 @@ get_pred <- function (model, mod = " ") {
   table <- tibble(name = name, lowerPR = lowerPR, upperPR = upperPR)
 }
 
+#Here are links for how to do confidence regions for rma.mv regression lines
+#https://www.rdocumentation.org/packages/metafor/versions/1.9-9/topics/predict.rma
+#https://stackoverflow.com/questions/50804464/out-of-sample-prediction-for-rma-object-in-metafor
+
+
 #' Title: Contrast name geneator
 #'
 #' @param name: a vector of character strings
