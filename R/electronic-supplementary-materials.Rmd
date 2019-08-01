@@ -1458,7 +1458,7 @@ fit_egger_regression_uni
 
 ### Multivaraite Egger Regression
 
-
+* adding AIC based stuff plus N??? + Year
 
 ### Recommendation
 * they need to run more simuations so they do not max out!
