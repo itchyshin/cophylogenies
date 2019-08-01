@@ -657,47 +657,46 @@ Regression coefficients (Estimate), 95% confidence intervals (CIs), variance com
 r2_host_range_link_ratio <- R2(mr_host_range_link_ratio)
 
 # getting estimates: name does not work for slopes
-res_range_link_ratio <- get_est(mr_host_range_link_ratio, mod = "log(host_range_link_ratio)")
+res_host_range_link_ratio <- get_est(mr_host_range_link_ratio, mod = "log(host_range_link_ratio)")
 
 # creating a table
 tibble(
   `Fixed effect` = c("Intercept", "log(host_range_link_ratio)"),
-  Estimate = c(res_range_link_ratio$estimate),
-  `Lower CI [0.025]` = c(res_range_link_ratio$lowerCL),
-  `Upper CI  [0.975]` = c(res_range_link_ratio$upperCL),
+  Estimate = c(res_host_range_link_ratio$estimate),
+  `Lower CI [0.025]` = c(res_host_range_link_ratio$lowerCL),
+  `Upper CI  [0.975]` = c(res_host_range_link_ratio$upperCL),
   `V[authors]` = c(mr_host_range_link_ratio$sigma2, NA),
   `R2` = c(r2_host_range_link_ratio[1], NA)) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left")
 ```
 
 ```{r, fig.width=7, fig.height= 4}
-# getting CI for regression line
-#Here are links for how to do confidence regions for rma.mv regression lines
-#https://www.rdocumentation.org/packages/metafor/versions/1.9-9/topics/predict.rma
-#https://stackoverflow.com/questions/50804464/out-of-sample-prediction-for-rma-object-in-metafor
-# 
-
-newmods <- seq(-0.3, 2.2, by = 0.1)
-pred_host_range_link_ratio <-predict.rma(mr_host_range_link_ratio, newmods = newmods) 
-ribbon_dat <- tibble(newmods = newmods, ymin = pred_host_range_link_ratio$ci.lb, ymax = pred_host_range_link_ratio$ci.ub)
-
-
+# newmods <- seq(-0.3, 2.2, by = 0.1)
+# pred_host_range_link_ratio <-predict.rma(mr_host_range_link_ratio, newmods = newmods) 
+# ribbon_dat <- tibble(newmods = newmods, ymin = pred_host_range_link_ratio$ci.lb, ymax = pred_host_range_link_ratio$ci.ub)
 pred_host_range_link_ratio <-predict.rma(mr_host_range_link_ratio) 
 
-
-
-# "Invert"= "#0072B2",  "Vert" = "#D55E00"
-
 # plotting
-dat %>% 
-  filter(!is.na(host_range_link_ratio)) ->dat_temp
-fig_host_range_link_ratio <-  # getting ride of NA values
-  ggplot(data = dat_temp, aes(x = log(host_range_link_ratio), y = Zr, size = (1/VZr) + 3, )) +
+
+fig_host_range_link_ratio <-  dat %>% 
+  filter(!is.na(host_range_link_ratio))  %>% # getting ride of NA values
+  mutate(ymin = pred_host_range_link_ratio$ci.lb, 
+         ymax = pred_host_range_link_ratio$ci.ub,
+         ymin2 = pred_host_range_link_ratio$cr.lb,
+         ymax2 = pred_host_range_link_ratio$cr.ub,
+         pred = pred_host_range_link_ratio$pred) %>% 
+  ggplot(aes(x = log(host_range_link_ratio), y = Zr, size = (1/VZr) + 3, )) +
   geom_point(shape = 21, fill = "grey90") +
-  geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dotted", size = 1) +
+  #geom_ribbon(aes(ymin = ymin, ymax = ymax), fill = "#0072B2")  + # not quite sure why this does not work
+  geom_smooth(aes(y = ymin2), method =  "loess", se = FALSE, lty =  "dotted", lwd = 0.25, colour = "#0072B2") +
+  geom_smooth(aes(y = ymax2), method =  "loess", se = FALSE, lty = "dotted", lwd = 0.25, colour = "#0072B2") +
+  geom_smooth(aes(y = ymin), method =  "loess", se = FALSE,lty = "dotted", lwd = 0.25, colour ="#D55E00") +
+  geom_smooth(aes(y = ymax), method =  "loess", se = FALSE, lty ="dotted", lwd = 0.25, colour ="#D55E00") + 
+  geom_smooth(aes(y = pred), method =  "loess", se = FALSE, lty ="dashed", lwd = 0.5, colour ="black") +  
+  ylim(-1, 2) + xlim(-0.05, 2) +
+  #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
   labs(x = "ln(range link ratio)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
   guides(fill = "none", colour = "none") +
-  geom_ribbon(data = ribbon_dat, aes(ymin = ymin, ymax = ymax, x = newmods), fill = "#0072B2")  +
   # themses
   theme_bw() +
   theme(legend.position= c(1, 1), legend.justification = c(1, 1)) +
@@ -706,19 +705,72 @@ fig_host_range_link_ratio <-  # getting ride of NA values
   theme(legend.background = element_blank()) +
   theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
 
-fig_host_range_link_ratio2 #<- fig_host_range_link_ratio + geom_ribbon(data = ribbon_dat, aes(ymin = ymin, ymax = ymax, x = newmods),fill = "#0072B2")
+fig_host_range_link_ratio
 ```
 
 
 #### Testing specialization 2: taxomic breadth
 
-f
+```{r}
+# meta-regression
+mr_host_range_taxonomic_breadth <- rma.mv(yi = Zr, V = VZr, mods = ~ log(host_range_taxonomic_breadth), random = ~ 1 | authors, data = dat)
 
-#### 
+```
 
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+```{r}
+# getting marginal R2
+r2_host_range_taxonomic_breadth <- R2(mr_host_range_taxonomic_breadth)
 
-#### The effect of the type of symbiosis: endosymbiosis vs. ectosymbiosis
+# getting estimates: name does not work for slopes
+res_host_range_taxonomic_breadth <- get_est(mr_host_range_link_ratio, mod = "log(host_range_link_ratio)")
 
+# creating a table
+tibble(
+  `Fixed effect` = c("Intercept", "log(host_range_taxonomic_breadth)"),
+  Estimate = c(res_host_range_taxonomic_breadth$estimate),
+  `Lower CI [0.025]` = c(res_host_range_taxonomic_breadth$lowerCL),
+  `Upper CI  [0.975]` = c(res_host_range_taxonomic_breadth$upperCL),
+  `V[authors]` = c(mr_host_range_taxonomic_breadth$sigma2, NA),
+  `R2` = c(r2_host_range_taxonomic_breadth[1], NA)) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left")
+```
+
+```{r, fig.width=7, fig.height= 4}
+pred_host_range_taxonomic_breadth <-predict.rma(mr_host_range_taxonomic_breadth) 
+
+# plotting
+
+fig_host_range_taxonomic_breadth <-  dat %>% 
+  filter(!is.na(host_range_taxonomic_breadth))  %>% # getting ride of NA values
+  mutate(ymin = pred_host_range_taxonomic_breadth$ci.lb, 
+         ymax = pred_host_range_taxonomic_breadth$ci.ub,
+         ymin2 = pred_host_range_taxonomic_breadth$cr.lb,
+         ymax2 = pred_host_range_taxonomic_breadth$cr.ub,
+         pred = pred_host_range_taxonomic_breadth$pred) %>% 
+  ggplot(aes(x = log(host_range_taxonomic_breadth), y = Zr, size = (1/VZr) + 3, )) +
+  geom_point(shape = 21, fill = "grey90") +
+  #geom_ribbon(aes(ymin = ymin, ymax = ymax), fill = "#0072B2")  + # not quite sure why this does not work
+  geom_smooth(aes(y = ymin2), method =  "loess", se = FALSE, lty =  "dotted", lwd = 0.25, colour = "#0072B2") +
+  geom_smooth(aes(y = ymax2), method =  "loess", se = FALSE, lty = "dotted", lwd = 0.25, colour = "#0072B2") +
+  geom_smooth(aes(y = ymin), method =  "loess", se = FALSE,lty = "dotted", lwd = 0.25, colour ="#D55E00") +
+  geom_smooth(aes(y = ymax), method =  "loess", se = FALSE, lty ="dotted", lwd = 0.25, colour ="#D55E00") + 
+  geom_smooth(aes(y = pred), method =  "loess", se = FALSE, lty ="dashed", lwd = 0.5, colour ="black") +  
+  ylim(-1, 2) + xlim(0, 1.5) +
+  #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
+  labs(x = "ln(range link ratio)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
+  guides(fill = "none", colour = "none") +
+  # themses
+  theme_bw() +
+  theme(legend.position= c(1, 1), legend.justification = c(1, 1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+
+fig_host_range_taxonomic_breadth
+```
 
 ```{r}
 # reordering
@@ -1212,7 +1264,7 @@ fig_symbiont_tax_symbiosis <- ggplot(data = res_symbiont_tax_symbiosis1, aes(x =
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
-  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.position= c(0, 1), legend.justification = c(0, 1)) +
   theme(legend.direction="horizontal") +
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
@@ -1331,12 +1383,82 @@ fig_host_symbiont_tax
 
 ### Addtional analyses
 
-### Model selection (Mulit-)
+### Model selection (Mulit-varaible model)
+
+
 
 ## Publication Bias and Sensitivity Analysis
 
 * boundary problems
 * Time lag bias
+
+### Univaraite Egger Regression
+
+```{r}
+# 
+egger_regression_uni <- rma.mv(yi = Zr, V = VZr, mods = ~ sqrt(VZr), random = ~ 1 | authors, data = dat)
+
+```
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+```{r}
+# getting marginal R2
+r2_egger_regression_uni <- R2(egger_regression_uni)
+
+# getting estimates: name does not work for slopes
+res_egger_regression_uni <- get_est(egger_regression_uni, mod = "sqrt(VZr)")
+
+# creating a table
+tibble(
+  `Fixed effect` = c("Intercept", "sqrt(VZr)"),
+  Estimate = c(res_egger_regression_uni$estimate),
+  `Lower CI [0.025]` = c(res_egger_regression_uni$lowerCL),
+  `Upper CI  [0.975]` = c(res_egger_regression_uni$upperCL),
+  `V[authors]` = c(egger_regression_uni$sigma2, NA),
+  `R2` = c(r2_egger_regression_uni[1], NA)) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left")
+```
+
+```{r, fig.width=7, fig.height= 4}
+pred_egger_regression_uni <-predict.rma(egger_regression_uni) 
+
+# plotting
+
+fit_egger_regression_uni <-  dat %>% 
+  mutate(ymin = pred_egger_regression_uni$ci.lb, 
+         ymax = pred_egger_regression_uni$ci.ub,
+         ymin2 = pred_egger_regression_uni$cr.lb,
+         ymax2 = pred_egger_regression_uni$cr.ub,
+         pred = pred_egger_regression_uni$pred) %>% 
+  ggplot(aes(x = sqrt(VZr), y = Zr, size = (1/VZr) + 3, )) +
+  geom_point(shape = 21, fill = "grey90") +
+  #geom_ribbon(aes(ymin = ymin, ymax = ymax), fill = "#0072B2")  + # not quite sure why this does not work
+  geom_smooth(aes(y = ymin2), method =  "loess", se = FALSE, lty =  "dotted", lwd = 0.25, colour = "#0072B2") +
+  geom_smooth(aes(y = ymax2), method =  "loess", se = FALSE, lty = "dotted", lwd = 0.25, colour = "#0072B2") +
+  geom_smooth(aes(y = ymin), method =  "loess", se = FALSE,lty = "dotted", lwd = 0.25, colour ="#D55E00") +
+  geom_smooth(aes(y = ymax), method =  "loess", se = FALSE, lty ="dotted", lwd = 0.25, colour ="#D55E00") + 
+  geom_smooth(aes(y = pred), method =  "loess", se = FALSE, lty ="dashed", lwd = 0.5, colour ="black") +  
+  ylim(-1, 2) + xlim(0.05, 0.45) +
+  #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
+  labs(x = "sqrt(sampling variance)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
+  guides(fill = "none", colour = "none") +
+  # themses
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0, 1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+
+fit_egger_regression_uni
+```
+
+
+
+### Multivaraite Egger Regression
+
+
 
 ### Recommendation
 * they need to run more simuations so they do not max out!
