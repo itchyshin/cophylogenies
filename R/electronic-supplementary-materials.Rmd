@@ -48,7 +48,11 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                metafor,  # package for meta-analysis
                MCMCglmm,  # Bayeisan mixed model package
                ggbeeswarm, # making bee-swarm plots possible
-               plotly     # interactive plots using ggplot2
+               plotly,     # interactive plots using ggplot2
+               MuMIn,  # multi-model inference
+               lme4,   # lmm & glmm (models)
+               broom.mixed, # getting estimates from lmer + glmer objects
+               performance # getting R2 from lmer + glmer objects
                #mi,      # missing data analysis
                #betareg   # dependance of the above
 )
@@ -338,12 +342,14 @@ dat %<>%
   mutate(host_tax_symbiosis = str_c(host_tax_broad, symbiosis), 
          host_tax_symbiosis = ifelse(host_tax_symbiosis == "InvertNA", NA, host_tax_symbiosis),
          host_tax_symbiosis = factor(host_tax_symbiosis),
-    # symbiont_tax_broad*symbiosis (symbiont_tax_symbiosis)     
+         # symbiont_tax_broad*symbiosis (symbiont_tax_symbiosis)     
          symbiont_tax_symbiosis = factor(str_c(symbiont_tax_broad, symbiosis)),
-    # host_tax_broad*symbiont_tax_broad (host_symbiont_tax)     
+         # host_tax_broad*symbiont_tax_broad (host_symbiont_tax)     
          host_symbiont_tax  = factor(str_c(host_tax_broad, symbiont_tax_broad)),
-    # symbiosis*mode_of_transmission_broad (symbiosis_transmission)
-    symbiosis_transmission  = factor(str_c(symbiosis, mode_of_transmission_broad))) 
+         # symbiosis*mode_of_transmission_broad (symbiosis_transmission)
+         symbiosis_transmission  = factor(str_c(symbiosis, mode_of_transmission_broad)),
+         # whether p values were the smallest value given the number of randamization - limit_researched (Yes = 1, No = 0)
+         limit_rearched = if_else(abs((1/p_value) - no_randomizations) <= 1, 1, 0))
 
 ```
 
@@ -1383,13 +1389,77 @@ fig_host_symbiont_tax
 
 ### Addtional analyses
 
-### Model selection (Mulit-varaible model)
+### Model selection (Mulit-predictor model)
 
+```{r}
+# creates a new function to run in MuMIn
+updated.rma.mv <- updateable(rma.mv)
+updated.rma.mv
+
+# testing the new function |--> AICc = 1175.0413
+full.model <- updated.rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ symbiosis + 
+                         host_tax_broad +
+                         symbiont_tax_broad +
+                         mode_of_transmission_broad +
+                         endo_or_ecto +
+                         log(host_range_link_ratio),
+                       test = "t",
+                       random = ~ 1 | authors,
+                       method="ML",
+                       data = dat)
+
+summary(full.model)
+
+# testing call of new function
+getCall(full.model)
+
+# update the new function to run in MuMIn
+update(full.model)
+
+#=============================
+### additional methods for "rma.mv" class (made by Kamil Barton)
+### we need this to run model selection with rma.mv in MuMIn
+#=============================
+formula.rma.mv <- function (x, ...) return(eval(getCall(x)$mods))
+
+makeArgs.rma.mv <-
+  function (obj, termNames, comb, opt, ...) {
+    ret <- MuMIn:::makeArgs.default(obj, termNames, comb, opt)
+    names(ret)[1L] <- "mods"
+    ret
+  }
+
+nobs.rma.mv <-
+  function (object, ...)
+    attr(logLik(object), "nall")
+
+coefTable.rma.mv <- function (model, ...)
+  MuMIn:::.makeCoefTable(model$b, model$se, coefNames = rownames(model$b))
+#=============================
+
+# testing dredge
+#dredge(full.model, evaluate=F) # show all candidate models
+candidate.models = dredge(full.model)
+
+# displays delta AICc <2
+subset(candidate.models, delta < 2)
+
+# model averaging
+summary(model.avg(candidate.models,  delta < 2))
+
+# relative importance of each predictor
+importance(candidate.models)
+
+
+```
 
 
 ## Publication Bias and Sensitivity Analysis
 
 * boundary problems
+ ** no of randomzations and limit_rearched
 * Time lag bias
 
 ### Univaraite Egger Regression
@@ -1454,9 +1524,148 @@ fit_egger_regression_uni <-  dat %>%
 fit_egger_regression_uni
 ```
 
+### Univaraite Time-lag Bias
+```{r}
+# 
+time_lag_effect <- rma.mv(yi = Zr, V = VZr, mods = ~ year, random = ~ 1 | authors, data = dat)
 
+```
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+```{r}
+# getting marginal R2
+r2_time_lag_effect <- R2(time_lag_effect)
+
+# getting estimates: name does not work for slopes
+res_egger_regression_uni <- get_est(egger_regression_uni, mod = "sqrt(VZr)")
+
+# creating a table
+tibble(
+  `Fixed effect` = c("Intercept", "sqrt(VZr)"),
+  Estimate = c(res_egger_regression_uni$estimate),
+  `Lower CI [0.025]` = c(res_egger_regression_uni$lowerCL),
+  `Upper CI  [0.975]` = c(res_egger_regression_uni$upperCL),
+  `V[authors]` = c(egger_regression_uni$sigma2, NA),
+  `R2` = c(r2_egger_regression_uni[1], NA)) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left")
+```
+
+```{r, fig.width=7, fig.height= 4}
+pred_egger_regression_uni <-predict.rma(egger_regression_uni) 
+
+# plotting
+
+fit_egger_regression_uni <-  dat %>% 
+  mutate(ymin = pred_egger_regression_uni$ci.lb, 
+         ymax = pred_egger_regression_uni$ci.ub,
+         ymin2 = pred_egger_regression_uni$cr.lb,
+         ymax2 = pred_egger_regression_uni$cr.ub,
+         pred = pred_egger_regression_uni$pred) %>% 
+  ggplot(aes(x = sqrt(VZr), y = Zr, size = (1/VZr) + 3, )) +
+  geom_point(shape = 21, fill = "grey90") +
+  #geom_ribbon(aes(ymin = ymin, ymax = ymax), fill = "#0072B2")  + # not quite sure why this does not work
+  geom_smooth(aes(y = ymin2), method =  "loess", se = FALSE, lty =  "dotted", lwd = 0.25, colour = "#0072B2") +
+  geom_smooth(aes(y = ymax2), method =  "loess", se = FALSE, lty = "dotted", lwd = 0.25, colour = "#0072B2") +
+  geom_smooth(aes(y = ymin), method =  "loess", se = FALSE,lty = "dotted", lwd = 0.25, colour ="#D55E00") +
+  geom_smooth(aes(y = ymax), method =  "loess", se = FALSE, lty ="dotted", lwd = 0.25, colour ="#D55E00") + 
+  geom_smooth(aes(y = pred), method =  "loess", se = FALSE, lty ="dashed", lwd = 0.5, colour ="black") +  
+  ylim(-1, 2) + xlim(0.05, 0.45) +
+  #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
+  labs(x = "sqrt(sampling variance)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
+  guides(fill = "none", colour = "none") +
+  # themses
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0, 1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+
+fit_egger_regression_uni
+```
 
 ### Multivaraite Egger Regression
+
+```{r}
+# 
+egger_regression_mul <- rma.mv(yi = Zr, V = VZr, 
+                               mods = ~ VZr +
+                                 mode_of_transmission_broad +
+                                 host_tax_broad +
+                                 symbiosis, 
+                               random = ~ 1 | authors, data = dat)
+
+summary(egger_regression_mul)
+
+# residual funnel plot is OK
+funnel(egger_regression_mul, yaxis="seinv")
+
+```
+
+### Sensitivity test 1: 
+
+* boundary problems
+ ** no of randomzations and limit_rearched = if they are different, then, it could lead to bias
+ ** limit_reached = if high - more likley to be underestiamted 
+
+```{r}
+# 233 --- Yes = 74 (0.3175966%); No = 159
+
+library(lme4)
+install.packages("broom.mixed")
+library(broom.mixed)
+install.packages("performance")
+library(performance)
+
+# symbiosis
+## 
+sa_random_symbiosis<-lmer(log(no_randomizations) ~ symbiosis + (1 | authors), data = dat)
+summary(sa_random_symbiosis)
+tidy(sa_random_symbiosis)
+r2(sa_random_symbiosis)
+
+sa_random_symbiosis1<-lmer(log(no_randomizations) ~ symbiosis - 1 + (1 | authors), data = dat)
+summary(sa_random_symbiosis1)
+
+sa_limit_symbiosis<-glmer(limit_rearched ~ symbiosis + (1 | authors), family = "binomial", data = dat)
+summary(sa_limit_symbiosis)
+tidy(sa_limit_symbiosis)
+r2(sa_limit_symbiosis)
+
+sa_limit_symbiosis1<-glmer(limit_rearched ~ symbiosis - 1 + (1 | authors), family = "binomial", data = dat)
+summary(sa_limit_symbiosis1)
+
+
+# host_tax_broad
+sa_random_host_tax_broad<-glmer(log(no_randomizations) ~ host_tax_broad + (1 | authors), data = dat)
+summary(sa_random_host_tax_broad)
+
+sa_random_host_tax_broad1<-glmer(log(no_randomizations) ~ host_tax_broad - 1 + (1 | authors), data = dat)
+summary(sa_random_host_tax_broad1)
+
+sa_limit_host_tax_broad<-glmer(limit_rearched ~ host_tax_broad  + (1 | authors), family = "binomial", data = dat)
+summary(sa_limit_host_tax_broad)
+r2(sa_limit_host_tax_broad)
+
+sa_limit_host_tax_broad1<-glmer(limit_rearched ~ host_tax_broad - 1  + (1 | authors), family = "binomial", data = dat)
+summary(sa_limit_host_tax_broad1)
+
+
+# mode_of_transmission_broad
+sa_random_mode_of_transmission_broad<-glmer(log(no_randomizations) ~ mode_of_transmission_broad + (1 | authors), data = dat)
+summary(sa_random_mode_of_transmission_broad)
+
+sa_random_mode_of_transmission_broad1<-glmer(log(no_randomizations) ~ mode_of_transmission_broad - 1 + (1 | authors), data = dat)
+summary(sa_random_mode_of_transmission_broad1)
+
+sa_limit_mode_of_transmission_broad<-glmer(limit_rearched ~ mode_of_transmission_broad + (1 | authors), family = "binomial", data = dat)
+summary(sa_limit_mode_of_transmission_broad)
+
+sa_limit_mode_of_transmission_broad1<-glmer(limit_rearched ~ mode_of_transmission_broad - 1 + (1 | authors), family = "binomial", data = dat)
+summary(sa_limit_mode_of_transmission_broad1)
+
+```
 
 * adding AIC based stuff plus N??? + Year
 
