@@ -1396,8 +1396,8 @@ fig_host_symbiont_tax
 updated.rma.mv <- updateable(rma.mv)
 updated.rma.mv
 
-# testing the new function |--> AICc = 1175.0413
-full.model <- updated.rma.mv(yi = Zr, 
+# testing the new function 
+mr_full <- updated.rma.mv(yi = Zr, 
                        V = VZr, 
                        mods = ~ symbiosis + 
                          host_tax_broad +
@@ -1410,13 +1410,13 @@ full.model <- updated.rma.mv(yi = Zr,
                        method="ML",
                        data = dat)
 
-summary(full.model)
-
-# testing call of new function
-getCall(full.model)
-
-# update the new function to run in MuMIn
-update(full.model)
+# summary(mr_full)
+# 
+# # testing call of new function
+# getCall(mr_full)
+# 
+# # update the new function to run in MuMIn
+# update(mr_full)
 
 #=============================
 ### additional methods for "rma.mv" class (made by Kamil Barton)
@@ -1441,17 +1441,20 @@ coefTable.rma.mv <- function (model, ...)
 
 # testing dredge
 #dredge(full.model, evaluate=F) # show all candidate models
-candidate.models = dredge(full.model)
+# n = 32 model exisits
+candidates <- dredge(mr_full)
 
 # displays delta AICc <2
-subset(candidate.models, delta < 2)
+candidates_aic2 <- subset(candidates, delta < 2)
 
 # model averaging
-summary(model.avg(candidate.models,  delta < 2))
+mr_averaged_aic2 <- summary(model.avg(candidates,  delta < 2))
 
 # relative importance of each predictor
-importance(candidate.models)
+importance <- importance(candidates)
 
+model1 <-
+model2 <- 
 
 ```
 
@@ -1603,7 +1606,7 @@ funnel(egger_regression_mul, yaxis="seinv")
 
 ```
 
-### Sensitivity test 1: 
+### Sensitivity test 1: the number of randamizations
 
 * boundary problems
  ** no of randomzations and limit_rearched = if they are different, then, it could lead to bias
@@ -1666,6 +1669,67 @@ sa_limit_mode_of_transmission_broad1<-glmer(limit_rearched ~ mode_of_transmissio
 summary(sa_limit_mode_of_transmission_broad1)
 
 ```
+
+### Sensitivity test 2: reaching the limits
+
+```{r}
+# 233 --- Yes = 74 (0.3175966%); No = 159
+
+library(lme4)
+install.packages("broom.mixed")
+library(broom.mixed)
+install.packages("performance")
+library(performance)
+
+# symbiosis
+## 
+sa_random_symbiosis<-lmer(log(no_randomizations) ~ symbiosis + (1 | authors), data = dat)
+summary(sa_random_symbiosis)
+tidy(sa_random_symbiosis)
+r2(sa_random_symbiosis)
+
+sa_random_symbiosis1<-lmer(log(no_randomizations) ~ symbiosis - 1 + (1 | authors), data = dat)
+summary(sa_random_symbiosis1)
+
+sa_limit_symbiosis<-glmer(limit_rearched ~ symbiosis + (1 | authors), family = "binomial", data = dat)
+summary(sa_limit_symbiosis)
+tidy(sa_limit_symbiosis)
+r2(sa_limit_symbiosis)
+
+sa_limit_symbiosis1<-glmer(limit_rearched ~ symbiosis - 1 + (1 | authors), family = "binomial", data = dat)
+summary(sa_limit_symbiosis1)
+
+
+# host_tax_broad
+sa_random_host_tax_broad<-glmer(log(no_randomizations) ~ host_tax_broad + (1 | authors), data = dat)
+summary(sa_random_host_tax_broad)
+
+sa_random_host_tax_broad1<-glmer(log(no_randomizations) ~ host_tax_broad - 1 + (1 | authors), data = dat)
+summary(sa_random_host_tax_broad1)
+
+sa_limit_host_tax_broad<-glmer(limit_rearched ~ host_tax_broad  + (1 | authors), family = "binomial", data = dat)
+summary(sa_limit_host_tax_broad)
+r2(sa_limit_host_tax_broad)
+
+sa_limit_host_tax_broad1<-glmer(limit_rearched ~ host_tax_broad - 1  + (1 | authors), family = "binomial", data = dat)
+summary(sa_limit_host_tax_broad1)
+
+
+# mode_of_transmission_broad
+sa_random_mode_of_transmission_broad<-glmer(log(no_randomizations) ~ mode_of_transmission_broad + (1 | authors), data = dat)
+summary(sa_random_mode_of_transmission_broad)
+
+sa_random_mode_of_transmission_broad1<-glmer(log(no_randomizations) ~ mode_of_transmission_broad - 1 + (1 | authors), data = dat)
+summary(sa_random_mode_of_transmission_broad1)
+
+sa_limit_mode_of_transmission_broad<-glmer(limit_rearched ~ mode_of_transmission_broad + (1 | authors), family = "binomial", data = dat)
+summary(sa_limit_mode_of_transmission_broad)
+
+sa_limit_mode_of_transmission_broad1<-glmer(limit_rearched ~ mode_of_transmission_broad - 1 + (1 | authors), family = "binomial", data = dat)
+summary(sa_limit_mode_of_transmission_broad1)
+
+```
+
 
 * adding AIC based stuff plus N??? + Year
 
