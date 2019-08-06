@@ -6,7 +6,7 @@ output:
   html_document:
     code_download: true
     code_folding: hide
-    depth: 3
+    depth: 4
     number_sections: no
     theme:  cosmo # “default”, “cerulean”, “journal”, “flatly”, “darkly”, “readable”, “spacelab”, “united”, “cosmo”, “lumen”, “paper”, “sandstone”, “simplex”, “yeti”
     toc: yes
@@ -1397,6 +1397,7 @@ updated.rma.mv <- updateable(rma.mv)
 updated.rma.mv
 
 # testing the new function 
+# use method = "ML" so that we can compare AIC
 mr_full <- updated.rma.mv(yi = Zr, 
                        V = VZr, 
                        mods = ~ symbiosis + 
@@ -1448,16 +1449,57 @@ candidates <- dredge(mr_full)
 candidates_aic2 <- subset(candidates, delta < 2)
 
 # model averaging
+# it seems like models are using z values rather than t values (which will be OK)
 mr_averaged_aic2 <- summary(model.avg(candidates,  delta < 2))
 
 # relative importance of each predictor
 importance <- importance(candidates)
 
-model1 <-
-model2 <- 
+# use REML if not for model comparision
+model1 <- rma.mv(yi = Zr, V = VZr, mods = ~  mode_of_transmission_broad + host_tax_broad, test = "t",
+                 random = ~ 1 | authors, method="REML", data = dat)
+model2 <- rma.mv(yi = Zr, V = VZr, mods = ~  mode_of_transmission_broad + host_tax_broad + symbiosis, test = "t",
+                 random = ~ 1 | authors, method="REML", data = dat)
 
 ```
 
+** table model aic etc
+```{r}
+# creating a table
+tibble(
+  `Model (variable weight)` = c("Model1", "Model2", "(Sum of weights)"),
+  transmission = c(as.character(candidates_aic2$mode_of_transmission_broad),round(importance[1],3) ),
+  host_tax = c(as.character(candidates_aic2$host_tax_broad),round(importance[2], 3)),
+  symbiosis =  c(as.character(candidates_aic2$symbiosis),round(importance[3], 3)),
+  symbiont_tax = c(as.character(candidates_aic2$symbiont_tax_broad),round(importance[4], 3)),
+  endo_or_ecto = c(as.character(candidates_aic2$endo_or_ecto),round(importance[5], 3)),
+  `host_range` = c(as.character(candidates_aic2$`log(host_range_link_ratio)`),round(importance[6], 3)),
+  delta_AICc = c(candidates_aic2$delta, NA),
+  Weight = c(candidates_aic2$weight, NA)) %>% 
+  kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left")
+```
+
+** model averaged estiamtes (full average)
+```{r}
+
+# getting averaged R2 and variance components not provided by the MuMIn package
+average_sigma2 <- weighted.mean(x = c(model1$sigma2, model2$sigma2), w = candidates_aic2$weight)
+average_R2 <- weighted.mean(x = c(R2(model1)[1], R2(model2)[1])  ,w = candidates_aic2$weight)
+
+# creating a table
+tibble(
+  `Fixed effect` = c("Intercept (both-Microbe-Mutulist)",
+                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", 
+                     "both-horizontal", "both-vertical", "Mutulist-Parasite"),
+  Estimate = mr_averaged_aic2$coefmat.full[,1],
+  `Lower CI [0.025]` =  mr_averaged_aic2$coefmat.full[,1] - mr_averaged_aic2$coefmat.full[,2]*qnorm(0.975),
+  `Upper CI  [0.975]` =  mr_averaged_aic2$coefmat.full[,1] + mr_averaged_aic2$coefmat.full[,2]*qnorm(0.975),
+  `V[authors]` = c(average_sigma2, rep(NA,6)),
+  `R2` = c(average_R2, rep(NA,6))) %>% 
+  kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left")
+```
 
 ## Publication Bias and Sensitivity Analysis
 
@@ -1465,7 +1507,21 @@ model2 <-
  ** no of randomzations and limit_rearched
 * Time lag bias
 
-### Univaraite Egger Regression
+### Residual funnel plot
+
+```{r}
+# 
+res_funnel_plot <- rma.mv(yi = Zr, V = VZr, 
+                               mods = ~ mode_of_transmission_broad +
+                                 host_tax_broad +
+                                 symbiosis, 
+                               random = ~ 1 | authors, data = dat)
+
+funnel(res_funnel_plot, yaxis = "seinv")
+```
+
+
+### Univaraite Egger regression
 
 ```{r}
 # 
@@ -1504,7 +1560,7 @@ fit_egger_regression_uni <-  dat %>%
          ymin2 = pred_egger_regression_uni$cr.lb,
          ymax2 = pred_egger_regression_uni$cr.ub,
          pred = pred_egger_regression_uni$pred) %>% 
-  ggplot(aes(x = sqrt(VZr), y = Zr, size = (1/VZr) + 3, )) +
+  ggplot(aes(x = sqrt(VZr), y = Zr, size = (1/VZr) + 3)) +
   geom_point(shape = 21, fill = "grey90") +
   #geom_ribbon(aes(ymin = ymin, ymax = ymax), fill = "#0072B2")  + # not quite sure why this does not work
   geom_smooth(aes(y = ymin2), method =  "loess", se = FALSE, lty =  "dotted", lwd = 0.25, colour = "#0072B2") +
@@ -1527,10 +1583,16 @@ fit_egger_regression_uni <-  dat %>%
 fit_egger_regression_uni
 ```
 
-### Univaraite Time-lag Bias
+### Multivaraite Egger regression
+
 ```{r}
 # 
-time_lag_effect <- rma.mv(yi = Zr, V = VZr, mods = ~ year, random = ~ 1 | authors, data = dat)
+egger_regression_mul <- rma.mv(yi = Zr, V = VZr, 
+                               mods = ~ sqrt(VZr) +
+                                 mode_of_transmission_broad +
+                                 host_tax_broad +
+                                 symbiosis, 
+                               random = ~ 1 | authors, data = dat)
 
 ```
 
@@ -1538,34 +1600,33 @@ time_lag_effect <- rma.mv(yi = Zr, V = VZr, mods = ~ year, random = ~ 1 | author
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 ```{r}
 # getting marginal R2
-r2_time_lag_effect <- R2(time_lag_effect)
-
-# getting estimates: name does not work for slopes
-res_egger_regression_uni <- get_est(egger_regression_uni, mod = "sqrt(VZr)")
+r2_egger_regression_mul <- R2(egger_regression_mul)
 
 # creating a table
 tibble(
-  `Fixed effect` = c("Intercept", "sqrt(VZr)"),
-  Estimate = c(res_egger_regression_uni$estimate),
-  `Lower CI [0.025]` = c(res_egger_regression_uni$lowerCL),
-  `Upper CI  [0.975]` = c(res_egger_regression_uni$upperCL),
-  `V[authors]` = c(egger_regression_uni$sigma2, NA),
-  `R2` = c(r2_egger_regression_uni[1], NA)) %>% kable("html", digits = 3) %>%
+  `Fixed effect` = c("Intercept (both-Microbe-Mutulist)", "sqrt(VZr)", "both-horizontal", "both-vertical", 
+                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", "Mutulist-Parasite"),
+  Estimate = c(egger_regression_mul$b),
+  `Lower CI [0.025]` = c(egger_regression_mul$ci.lb),
+  `Upper CI  [0.975]` = c(egger_regression_mul$ci.ub),
+  `V[authors]` = c(egger_regression_mul$sigma2, rep(NA,7)),
+  `R2` = c(r2_egger_regression_mul[1], rep(NA,7))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left")
 ```
 
 ```{r, fig.width=7, fig.height= 4}
-pred_egger_regression_uni <-predict.rma(egger_regression_uni) 
+pred_egger_regression_mul <-predict.rma(egger_regression_mul) 
 
 # plotting
 
-fit_egger_regression_uni <-  dat %>% 
-  mutate(ymin = pred_egger_regression_uni$ci.lb, 
-         ymax = pred_egger_regression_uni$ci.ub,
-         ymin2 = pred_egger_regression_uni$cr.lb,
-         ymax2 = pred_egger_regression_uni$cr.ub,
-         pred = pred_egger_regression_uni$pred) %>% 
-  ggplot(aes(x = sqrt(VZr), y = Zr, size = (1/VZr) + 3, )) +
+fit_egger_regression_mul <-  dat %>% 
+  filter(!is.na(mode_of_transmission_broad) & !is.na(host_tax_broad) & !is.na(symbiosis))  %>% # getting ride of NA values
+  mutate(ymin = pred_egger_regression_mul$ci.lb, 
+         ymax = pred_egger_regression_mul$ci.ub,
+         ymin2 = pred_egger_regression_mul$cr.lb,
+         ymax2 = pred_egger_regression_mul$cr.ub,
+         pred = pred_egger_regression_mul$pred) %>% 
+  ggplot(aes(x = sqrt(VZr), y = Zr, size = (1/VZr) + 3)) +
   geom_point(shape = 21, fill = "grey90") +
   #geom_ribbon(aes(ymin = ymin, ymax = ymax), fill = "#0072B2")  + # not quite sure why this does not work
   geom_smooth(aes(y = ymin2), method =  "loess", se = FALSE, lty =  "dotted", lwd = 0.25, colour = "#0072B2") +
@@ -1585,26 +1646,137 @@ fit_egger_regression_uni <-  dat %>%
   theme(legend.background = element_blank()) +
   theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
 
-fit_egger_regression_uni
+fit_egger_regression_mul
 ```
 
-### Multivaraite Egger Regression
-
+### Univaraite time-lag bias
 ```{r}
 # 
-egger_regression_mul <- rma.mv(yi = Zr, V = VZr, 
-                               mods = ~ VZr +
-                                 mode_of_transmission_broad +
-                                 host_tax_broad +
-                                 symbiosis, 
-                               random = ~ 1 | authors, data = dat)
-
-summary(egger_regression_mul)
-
-# residual funnel plot is OK
-funnel(egger_regression_mul, yaxis="seinv")
+time_lag_effect_uni <- rma.mv(yi = Zr, V = VZr, mods = ~ year, random = ~ 1 | authors, data = dat)
 
 ```
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+```{r}
+# getting marginal R2
+r2_time_lag_effect_uni <- R2(time_lag_effect_uni)
+
+# getting estimates: name does not work for slopes
+res_time_lag_effect_uni <- get_est(time_lag_effect_uni, mod = "year")
+
+# creating a table
+tibble(
+  `Fixed effect` = c("Intercept", "Year"),
+  Estimate = c(res_time_lag_effect_uni$estimate),
+  `Lower CI [0.025]` = c(res_time_lag_effect_uni$lowerCL),
+  `Upper CI  [0.975]` = c(res_time_lag_effect_uni$upperCL),
+  `V[authors]` = c(time_lag_effect_uni$sigma2, NA),
+  `R2` = c(r2_time_lag_effect_uni[1], NA)) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left")
+```
+
+```{r, fig.width=7, fig.height= 4}
+pred_time_lag_effect_uni <-predict.rma(time_lag_effect_uni) 
+
+# plotting
+
+fit_time_lag_effect <-  dat %>% 
+  mutate(ymin = pred_time_lag_effect_uni$ci.lb, 
+         ymax = pred_time_lag_effect_uni$ci.ub,
+         ymin2 = pred_time_lag_effect_uni$cr.lb,
+         ymax2 = pred_time_lag_effect_uni$cr.ub,
+         pred = pred_time_lag_effect_uni$pred) %>% 
+  ggplot(aes(x = year, y = Zr, size = (1/VZr) + 3)) +
+  geom_point(shape = 21, fill = "grey90") +
+  #geom_ribbon(aes(ymin = ymin, ymax = ymax), fill = "#0072B2")  + # not quite sure why this does not work
+  geom_smooth(aes(y = ymin2), method =  "loess", se = FALSE, lty =  "dotted", lwd = 0.25, colour = "#0072B2") +
+  geom_smooth(aes(y = ymax2), method =  "loess", se = FALSE, lty = "dotted", lwd = 0.25, colour = "#0072B2") +
+  geom_smooth(aes(y = ymin), method =  "loess", se = FALSE,lty = "dotted", lwd = 0.25, colour ="#D55E00") +
+  geom_smooth(aes(y = ymax), method =  "loess", se = FALSE, lty ="dotted", lwd = 0.25, colour ="#D55E00") + 
+  geom_smooth(aes(y = pred), method =  "loess", se = FALSE, lty ="dashed", lwd = 0.5, colour ="black") +  
+  ylim(-1, 2) + xlim(1994,2019) +
+  scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015, 2020)) + 
+  #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
+  labs(x = "Year", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
+  guides(fill = "none", colour = "none") +
+  # themses
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0, 1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+
+fit_time_lag_effect
+```
+
+### Multivaraite time-lag bias
+```{r}
+# 
+time_lag_effect_mul <- rma.mv(yi = Zr, V = VZr, 
+                              mods = ~ year +
+                                mode_of_transmission_broad +
+                                host_tax_broad +
+                                symbiosis,
+                              random = ~ 1 | authors, data = dat)
+
+```
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+```{r}
+# getting marginal R2
+r2_time_lag_effect_mul <- R2(time_lag_effect_mul)
+
+# creating a table
+tibble(
+  `Fixed effect` = c("Intercept (both-Microbe-Mutulist)", "Year", "both-horizontal", "both-vertical", 
+                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", "Mutulist-Parasite"),
+  Estimate = c(time_lag_effect_mul$b),
+  `Lower CI [0.025]` = c(time_lag_effect_mul$ci.lb),
+  `Upper CI  [0.975]` = c(time_lag_effect_mul$ci.ub),
+  `V[authors]` = c(time_lag_effect_mul$sigma2, rep(NA,7)),
+  `R2` = c(r2_time_lag_effect_mul[1], rep(NA,7))) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left")
+```
+
+```{r, fig.width=7, fig.height= 4}
+pred_time_lag_effect_mul <-predict.rma(time_lag_effect_mul) 
+
+# plotting
+fit_time_lag_effect_mul <-  dat %>% 
+  filter(!is.na(mode_of_transmission_broad) & !is.na(host_tax_broad) & !is.na(symbiosis))  %>% 
+  mutate(ymin = pred_time_lag_effect_mul$ci.lb, 
+         ymax = pred_time_lag_effect_mul$ci.ub,
+         ymin2 = pred_time_lag_effect_mul$cr.lb,
+         ymax2 = pred_time_lag_effect_mul$cr.ub,
+         pred = pred_time_lag_effect_mul$pred) %>% 
+  ggplot(aes(x = year, y = Zr, size = (1/VZr) + 3)) +
+  geom_point(shape = 21, fill = "grey90") +
+  #geom_ribbon(aes(ymin = ymin, ymax = ymax), fill = "#0072B2")  + # not quite sure why this does not work
+  geom_smooth(aes(y = ymin2), method =  "loess", se = FALSE, lty =  "dotted", lwd = 0.25, colour = "#0072B2") +
+  geom_smooth(aes(y = ymax2), method =  "loess", se = FALSE, lty = "dotted", lwd = 0.25, colour = "#0072B2") +
+  geom_smooth(aes(y = ymin), method =  "loess", se = FALSE,lty = "dotted", lwd = 0.25, colour ="#D55E00") +
+  geom_smooth(aes(y = ymax), method =  "loess", se = FALSE, lty ="dotted", lwd = 0.25, colour ="#D55E00") + 
+  geom_smooth(aes(y = pred), method =  "loess", se = FALSE, lty ="dashed", lwd = 0.5, colour ="black") +  
+  ylim(-1, 2) + xlim(1994,2019) +
+  scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015, 2020)) + 
+  #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
+  labs(x = "Year", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
+  guides(fill = "none", colour = "none") +
+  # themses
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0, 1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+
+fit_time_lag_effect_mul
+```
+
+
 
 ### Sensitivity test 1: the number of randamizations
 
@@ -1615,14 +1787,7 @@ funnel(egger_regression_mul, yaxis="seinv")
 ```{r}
 # 233 --- Yes = 74 (0.3175966%); No = 159
 
-library(lme4)
-install.packages("broom.mixed")
-library(broom.mixed)
-install.packages("performance")
-library(performance)
-
 # symbiosis
-## 
 sa_random_symbiosis<-lmer(log(no_randomizations) ~ symbiosis + (1 | authors), data = dat)
 summary(sa_random_symbiosis)
 tidy(sa_random_symbiosis)
@@ -1631,13 +1796,7 @@ r2(sa_random_symbiosis)
 sa_random_symbiosis1<-lmer(log(no_randomizations) ~ symbiosis - 1 + (1 | authors), data = dat)
 summary(sa_random_symbiosis1)
 
-sa_limit_symbiosis<-glmer(limit_rearched ~ symbiosis + (1 | authors), family = "binomial", data = dat)
-summary(sa_limit_symbiosis)
-tidy(sa_limit_symbiosis)
-r2(sa_limit_symbiosis)
 
-sa_limit_symbiosis1<-glmer(limit_rearched ~ symbiosis - 1 + (1 | authors), family = "binomial", data = dat)
-summary(sa_limit_symbiosis1)
 
 
 # host_tax_broad
