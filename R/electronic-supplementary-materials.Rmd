@@ -52,7 +52,8 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                MuMIn,  # multi-model inference
                lme4,   # lmm & glmm (models)
                broom.mixed, # getting estimates from lmer + glmer objects
-               performance # getting R2 from lmer + glmer objects
+               performance, # getting R2 from lmer + glmer objects
+               lmerTest
                #mi,      # missing data analysis
                #betareg   # dependance of the above
 )
@@ -443,10 +444,6 @@ fig_symbiosis
 # reordering
 dat$host_tax_broad <- factor(dat$host_tax_broad, levels = c("Microbe", "Plant", "Invert", "Vert"))
 
-#sizes <- factor(sizes, levels = c("small", "medium", "large"))
-#sizes
-#> [1] small  large  large  small  medium
-#> Levels: small medium large
 # meta-regression: mutiple intercepts
 mr_host_tax_broad1 <- rma.mv(yi = Zr, 
                        V = VZr, 
@@ -895,7 +892,6 @@ mr_mode_of_transmission_broad3 <- rma.mv(yi = Zr,
                        test = "t",
                        random = ~ 1 | authors, 
                        data = dat)
-
 ```
 
 **Supplementary Table 3:**
@@ -1790,7 +1786,9 @@ fit_time_lag_effect_mul
 # 233 --- Yes = 74 (0.3175966%); No = 159
 
 # symbiosis
+# multiple intercepts
 sa_random_symbiosis1<-lmer(log(no_randomizations) ~ symbiosis - 1 + (1 | authors), data = dat)
+#contrast
 sa_random_symbiosis2<-lmer(log(no_randomizations) ~ symbiosis + (1 | authors), data = dat)
 
 ```
@@ -1823,67 +1821,161 @@ tibble(
 #### The effect of host taxa
 
 ```{r}
+# host_tax_broad
+# mutiple intercepts
+sa_random_host_tax_broad1<-lmer(log(no_randomizations) ~ host_tax_broad - 1 + 
+                                (1 | authors), data = dat)
+# contrast 1
+sa_random_host_tax_broad2<-lmer(log(no_randomizations) ~ host_tax_broad +
+                               (1 | authors), data = dat)
+# contrast 2
+sa_random_host_tax_broad3<-lmer(log(no_randomizations) ~ relevel(host_tax_broad, ref = "Plant") +
+                               (1 | authors), data = dat)
 
+# contrast 3
+sa_random_host_tax_broad4<-lmer(log(no_randomizations) ~ relevel(host_tax_broad, ref = "Invert") + 
+                                  (1 | authors), data = dat)
 ```
 
 
 ```{r}
+# getting marginal R2
+r2_sa_random_host_tax_broad <- r2_nakagawa(sa_random_host_tax_broad1)
+
+# getting estimates
+res_sa_random_host_tax_broad <- tibble(estiamte = c(fixef(sa_random_host_tax_broad1), 
+                                                    fixef(sa_random_host_tax_broad2)[2:4],
+                                                    fixef(sa_random_host_tax_broad3)[3:4],
+                                                    fixef(sa_random_host_tax_broad4)[4])) 
+  
+ci_sa_random_host_tax_broad1<-confint(sa_random_host_tax_broad1)
+ci_sa_random_host_tax_broad2<-confint(sa_random_host_tax_broad2)
+ci_sa_random_host_tax_broad3<-confint(sa_random_host_tax_broad3)
+ci_sa_random_host_tax_broad4<-confint(sa_random_host_tax_broad4)
+res_sa_random_host_tax_broad %<>% mutate(lowerCL = c(ci_sa_random_host_tax_broad1[3:6,1], 
+                                                ci_sa_random_host_tax_broad2[4:6,1],
+                                                ci_sa_random_host_tax_broad3[5:6,1],
+                                                ci_sa_random_host_tax_broad4[6,1]))
+res_sa_random_host_tax_broad %<>% mutate(upperCL = c(ci_sa_random_host_tax_broad1[3:6,2], 
+                                                ci_sa_random_host_tax_broad2[4:6,2],
+                                                ci_sa_random_host_tax_broad3[5:6,2],
+                                                ci_sa_random_host_tax_broad4[6,2]))
+# creating a table
+tibble(
+  `Fixed effect` =  c(as.character(res_symbiont_tax_broad1$name), cont_gen(res_symbiont_tax_broad1$name)), # done
+  Estimate = res_sa_random_host_tax_broad$estiamte,
+  `Lower CI [0.025]` = res_sa_random_host_tax_broad$lowerCL,
+  `Upper CI  [0.975]` = res_sa_random_host_tax_broad$upperCL,
+  `V[authors]` = c(attr(VarCorr(sa_random_host_tax_broad1)$author,"stddev")^2,  rep(NA, 9)),
+  `V[residuals]` =c(attr(VarCorr(sa_random_host_tax_broad1),"sc")^2, rep(NA, 9)),
+  `R2` = c(r2_sa_random_host_tax_broad$R2_marginal, rep(NA, 9))) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left") 
+```
 
 
-# host_tax_broad
-sa_random_host_tax_broad<-lmer(log(no_randomizations) ~ host_tax_broad + (1 | authors), data = dat)
-sa_random_host_tax_broad1<-lmer(log(no_randomizations) ~ host_tax_broad - 1 + (1 | authors), data = dat)
+#### The effect of the model of transmission
 
+```{r}
 # mode_of_transmission_broad
-sa_random_mode_of_transmission_broad<-lmer(log(no_randomizations) ~ mode_of_transmission_broad + (1 | authors), data = dat)
-sa_random_mode_of_transmission_broad1<-lmer(log(no_randomizations) ~ mode_of_transmission_broad - 1 + (1 | authors), data = dat)
+
+sa_random_mode_of_transmission_broad1<-lmer(log(no_randomizations) ~ mode_of_transmission_broad - 1 + 
+                                              (1 | authors), data = dat)
 
 
-summary(sa_random_host_tax_broad)
-summary(sa_random_host_tax_broad1)
+# contrast 1
+sa_random_mode_of_transmission_broad2<-lmer(log(no_randomizations) ~ mode_of_transmission_broad + 
+                                             (1 | authors), data = dat)
+
+# contrast 2
+sa_random_mode_of_transmission_broad3 <- lmer(log(no_randomizations) ~ relevel(mode_of_transmission_broad, ref = "vertical") + 
+                                             (1 | authors), data = dat)
+```
+
+```{r}
 # getting marginal R2
-r2_symbiont_tax_broad1 <- R2(mr_symbiont_tax_broad1)
+r2_sa_random_mode_of_transmission_broad <- r2_nakagawa(sa_random_mode_of_transmission_broad1)
 
 # getting estimates
-res_symbiont_tax_broad1 <- get_est(mr_symbiont_tax_broad1, mod = "symbiont_tax_broad")
-res_symbiont_tax_broad2 <- get_est(mr_symbiont_tax_broad2, mod = "symbiont_tax_broad")
-res_symbiont_tax_broad3 <- get_est(mr_symbiont_tax_broad3, mod = "symbiont_tax_broad")
-res_symbiont_tax_broad4 <- get_est(mr_symbiont_tax_broad4, mod = "symbiont_tax_broad")
-
+res_sa_random_mode_of_transmission_broad <- tibble(estiamte = c(fixef(sa_random_mode_of_transmission_broad1), 
+                                                    fixef(sa_random_mode_of_transmission_broad2)[2:3],
+                                                    fixef(sa_random_mode_of_transmission_broad3)[3])) 
+  
+ci_sa_random_mode_of_transmission_broad1<-confint(sa_random_mode_of_transmission_broad1)
+ci_sa_random_mode_of_transmission_broad2<-confint(sa_random_mode_of_transmission_broad2)
+ci_sa_random_mode_of_transmission_broad3<-confint(sa_random_mode_of_transmission_broad3)
+res_sa_random_mode_of_transmission_broad %<>% mutate(lowerCL = c(ci_sa_random_mode_of_transmission_broad1[3:5,1], 
+                                                ci_sa_random_mode_of_transmission_broad2[4:5,1],
+                                                ci_sa_random_mode_of_transmission_broad3[5,1]))
+res_sa_random_mode_of_transmission_broad %<>% mutate(upperCL = c(ci_sa_random_mode_of_transmission_broad1[3:5,2], 
+                                                ci_sa_random_mode_of_transmission_broad2[4:5,2],
+                                                ci_sa_random_mode_of_transmission_broad3[5,2]))
 # creating a table
 tibble(
-  `Fixed effect` = c(as.character(res_symbiont_tax_broad1$name), cont_gen(res_symbiont_tax_broad1$name)),
-  Estimate = c(res_symbiont_tax_broad1$estimate, res_symbiont_tax_broad2$estimate[-1],  res_symbiont_tax_broad3$estimate[-(1:2)], res_symbiont_tax_broad4$estimate[-(1:3)]),
-  `Lower CI [0.025]` = c(res_symbiont_tax_broad1$lowerCL, res_symbiont_tax_broad2$lowerCL[-1], res_symbiont_tax_broad3$lowerCL[-(1:2)], res_symbiont_tax_broad4$lowerCL[-(1:3)]),
-  `Upper CI  [0.975]` = c(res_symbiont_tax_broad1$upperCL, res_symbiont_tax_broad2$upperCL[-1], res_symbiont_tax_broad3$upperCL[-(1:2)], res_symbiont_tax_broad4$upperCL[-(1:3)]),
-  `V[authors]` = c(mr_symbiont_tax_broad1$sigma2,  rep(NA, 9)),
-  `R2` = c(r2_symbiont_tax_broad1[1], rep(NA, 9))) %>% kable("html", digits = 3) %>%
-  kable_styling("striped", position = "left") %>%
-  scroll_box(width = "100%", height = "300px")
-summary(sa_random_mode_of_transmission_broad)
+  `Fixed effect` = c(as.character(res_mode_of_transmission_broad1$name), cont_gen(res_mode_of_transmission_broad1$name)),
+  Estimate = res_sa_random_mode_of_transmission_broad$estiamte,
+  `Lower CI [0.025]` = res_sa_random_mode_of_transmission_broad$lowerCL,
+  `Upper CI  [0.975]` = res_sa_random_mode_of_transmission_broad$upperCL,
+  `V[authors]` = c(attr(VarCorr(sa_random_mode_of_transmission_broad1)$author,"stddev")^2,  rep(NA, 5)),
+  `V[residuals]` =c(attr(VarCorr(sa_random_mode_of_transmission_broad1),"sc")^2, rep(NA, 5)),
+  `R2` = c(r2_sa_random_mode_of_transmission_broad$R2_marginal, rep(NA, 5))) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left") 
+```
 
+
+### Sensitivity test 2: reaching the limits
+
+#### The type of symbiosis: parasitism vs. mutualism
+
+```{r}
+# symbiosis
+sa_limit_symbiosis1<-glmer(limit_rearched ~ symbiosis - 1 + (1 | authors), family = "binomial", data = dat)
 
 # getting marginal R2
-r2_sa_random_symbiosis <- r2_nakagawa(sa_random_symbiosis)
+r2_sa_limit_symbiosis <- r2_nakagawa(sa_limit_symbiosis1)
 
 # getting estimates
-
-res_sa_random_symbiosis<- tibble(estiamte = c(fixef(sa_random_symbiosis1), fixef(sa_random_symbiosis2)[2]))
-
-ci_sa_random_symbiosis1<-confint(sa_random_symbiosis1)
-ci_sa_random_symbiosis2<-confint(sa_random_symbiosis2)
-res_sa_random_symbiosis %<>% mutate(lowerCL = c(ci_sa_random_symbiosis1[3:4,1], ci_sa_random_symbiosis2[4,1]))
-res_sa_random_symbiosis %<>% mutate(upperCL = c(ci_sa_random_symbiosis1[3:4,2], ci_sa_random_symbiosis2[4,2]))
-           
+res_sa_limit_symbiosis <- tibble(estiamte = fixef(sa_limit_symbiosis1))
+  
+res_sa_limit_symbiosis %<>% mutate(lowerCL = (tidy(sa_limit_symbiosis1)$estimate[-3] -
+                                                       tidy(sa_limit_symbiosis1)$std.error[-3]*qnorm(0.975)))
+res_sa_limit_symbiosis %<>% mutate(upperCL = (tidy(sa_limit_symbiosis1)$estimate[-3] +
+                                                       tidy(sa_limit_symbiosis1)$std.error[-3]*qnorm(0.975)))
 # creating a table
 tibble(
-  `Fixed effect` = c(as.character(res_symbiosis1$name), cont_gen(res_symbiosis1$name)),
-  Estimate = res_sa_random_symbiosis$estiamte,
-  `Lower CI [0.025]` = res_sa_random_symbiosis$lowerCL,
-  `Upper CI  [0.975]` = res_sa_random_symbiosis$upperCL,
-  `V[authors]` = c(attr(VarCorr(sa_random_symbiosis1)$author,"stddev")^2,  rep(NA, 2)),
-  `V[residuals]` =c(attr(VarCorr(sa_random_symbiosis1),"sc")^2, rep(NA, 2)),
-  `R2` = c(r2_sa_random_symbiosis$R2_marginal, rep(NA, 2))) %>% kable("html", digits = 3) %>%
+  `Fixed effect` = as.character(res_symbiosis1$name),
+  Estimate = res_sa_limit_symbiosis$estiamte,
+  `Lower CI [0.025]` = res_sa_limit_symbiosis$lowerCL,
+  `Upper CI  [0.975]` = res_sa_limit_symbiosis$upperCL,
+  `V[authors]` = c(attr(VarCorr(sa_limit_symbiosis1)$author,"stddev")^2,  rep(NA, 1)),
+  `R2` = c(r2_sa_limit_symbiosis$R2_marginal, rep(NA, 1))) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left") 
+
+```
+
+#### The effect of host taxa
+
+```{r}
+# host_tax_broad
+sa_limit_host_tax_broad1<-glmer(limit_rearched ~ host_tax_broad - 1  + (1 | authors), family = "binomial", data = dat)
+
+# getting marginal R2
+r2_sa_limit_host_tax_broad <- r2_nakagawa(sa_limit_host_tax_broad1)
+
+# getting estimates
+res_sa_limit_host_tax_broad <- tibble(estiamte = fixef(sa_limit_host_tax_broad1))
+  
+res_sa_limit_host_tax_broad %<>% mutate(lowerCL = (tidy(sa_limit_host_tax_broad1)$estimate[-5] -
+                                                       tidy(sa_limit_host_tax_broad1)$std.error[-5]*qnorm(0.975)))
+res_sa_limit_host_tax_broad %<>% mutate(upperCL = (tidy(sa_limit_host_tax_broad1)$estimate[-5] +
+                                                       tidy(sa_limit_host_tax_broad1)$std.error[-5]*qnorm(0.975)))
+# creating a table
+tibble(
+  `Fixed effect` = as.character(res_symbiont_tax_broad1$name),
+  Estimate = res_sa_limit_host_tax_broad$estiamte,
+  `Lower CI [0.025]` = res_sa_limit_host_tax_broad$lowerCL,
+  `Upper CI  [0.975]` = res_sa_limit_host_tax_broad$upperCL,
+  `V[authors]` = c(attr(VarCorr(sa_limit_host_tax_broad1)$author,"stddev")^2,  rep(NA, 3)),
+  `R2` = c(r2_sa_limit_host_tax_broad$R2_marginal, rep(NA, 3))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 
 ```
@@ -1891,66 +1983,30 @@ tibble(
 
 #### The effect of the model of transmission
 
-### Sensitivity test 2: reaching the limits
-
-#### The type of symbiosis: parasitism vs. mutualism
-
 ```{r}
-
-# symbiosis
-## 
-sa_random_symbiosis <-lmer(log(no_randomizations) ~ symbiosis + (1 | authors), data = dat)
-summary(sa_random_symbiosis)
-tidy(sa_random_symbiosis)
-r2(sa_random_symbiosis)
-
-sa_random_symbiosis1<-lmer(log(no_randomizations) ~ symbiosis - 1 + (1 | authors), data = dat)
-summary(sa_random_symbiosis1)
-
-sa_limit_symbiosis<-glmer(limit_rearched ~ symbiosis + (1 | authors), family = "binomial", data = dat)
-summary(sa_limit_symbiosis)
-tidy(sa_limit_symbiosis)
-r2(sa_limit_symbiosis)
-
-sa_limit_symbiosis1<-glmer(limit_rearched ~ symbiosis - 1 + (1 | authors), family = "binomial", data = dat)
-summary(sa_limit_symbiosis1)
-
-
-# host_tax_broad
-sa_random_host_tax_broad<-glmer(log(no_randomizations) ~ host_tax_broad + (1 | authors), data = dat)
-summary(sa_random_host_tax_broad)
-
-sa_random_host_tax_broad1<-glmer(log(no_randomizations) ~ host_tax_broad - 1 + (1 | authors), data = dat)
-summary(sa_random_host_tax_broad1)
-
-sa_limit_host_tax_broad<-glmer(limit_rearched ~ host_tax_broad  + (1 | authors), family = "binomial", data = dat)
-summary(sa_limit_host_tax_broad)
-r2(sa_limit_host_tax_broad)
-
-sa_limit_host_tax_broad1<-glmer(limit_rearched ~ host_tax_broad - 1  + (1 | authors), family = "binomial", data = dat)
-summary(sa_limit_host_tax_broad1)
-
-
 # mode_of_transmission_broad
-sa_random_mode_of_transmission_broad<-glmer(log(no_randomizations) ~ mode_of_transmission_broad + (1 | authors), data = dat)
-summary(sa_random_mode_of_transmission_broad)
-
-sa_random_mode_of_transmission_broad1<-glmer(log(no_randomizations) ~ mode_of_transmission_broad - 1 + (1 | authors), data = dat)
-summary(sa_random_mode_of_transmission_broad1)
-
-sa_limit_mode_of_transmission_broad<-glmer(limit_rearched ~ mode_of_transmission_broad + (1 | authors), family = "binomial", data = dat)
-summary(sa_limit_mode_of_transmission_broad)
-
 sa_limit_mode_of_transmission_broad1<-glmer(limit_rearched ~ mode_of_transmission_broad - 1 + (1 | authors), family = "binomial", data = dat)
-summary(sa_limit_mode_of_transmission_broad1)
 
+# getting marginal R2
+r2_sa_limit_mode_of_transmission_broad <- r2_nakagawa(sa_limit_mode_of_transmission_broad1)
+
+# getting estimates
+res_sa_limit_mode_of_transmission_broad <- tibble(estiamte = fixef(sa_limit_mode_of_transmission_broad1))
+  
+res_sa_limit_mode_of_transmission_broad %<>% mutate(lowerCL = (tidy(sa_limit_mode_of_transmission_broad1)$estimate[-4] -
+                                                       tidy(sa_limit_mode_of_transmission_broad1)$std.error[-4]*qnorm(0.975)))
+res_sa_limit_mode_of_transmission_broad %<>% mutate(upperCL = (tidy(sa_limit_mode_of_transmission_broad1)$estimate[-4] +
+                                                       tidy(sa_limit_mode_of_transmission_broad1)$std.error[-4]*qnorm(0.975)))
+# creating a table
+tibble(
+  `Fixed effect` = as.character(res_mode_of_transmission_broad1$name),
+  Estimate = res_sa_limit_mode_of_transmission_broad$estiamte,
+  `Lower CI [0.025]` = res_sa_limit_mode_of_transmission_broad$lowerCL,
+  `Upper CI  [0.975]` = res_sa_limit_mode_of_transmission_broad$upperCL,
+  `V[authors]` = c(attr(VarCorr(sa_limit_mode_of_transmission_broad1)$author,"stddev")^2,  rep(NA, 2)),
+  `R2` = c(r2_sa_limit_mode_of_transmission_broad$R2_marginal, rep(NA, 2))) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left") 
 ```
-
-#### The effect of host taxa
-
-#### The effect of the model of transmission
-
-* adding AIC based stuff plus N??? + Year
 
 ### Recommendation
 * they need to run more simuations so they do not max out!
