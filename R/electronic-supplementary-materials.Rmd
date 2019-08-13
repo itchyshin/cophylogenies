@@ -16,7 +16,8 @@ output:
     toc: yes
 subtitle: Electronic Supplementary Material
 bibliography: references.bib
-biblio-style: "apalike"
+#biblio-style: "apalike"
+csl: nature.csl
 link-citations: yes
 ---
 
@@ -278,7 +279,7 @@ ma_all <- rma.mv(yi = Zr,
 ```
 
 **Supplementary Table 1:**
-Overall effects (meta-analytic means), 95% confidence intervals (CIs), variance components (V) and heterogeneity, *I*^2^ (I2) from `metafor` model using the 3 datasets (`Parafit`, `TreeMap` and both combined, or `All`). Note that in these models, *I*^2^~[total]~ = *I*^2^~[authors]~ (see @nakagawa2012methodological; [REF] - probably Senior as well?), as we only have one random factor. 
+Overall effects (meta-analytic means), 95% confidence intervals (CIs), variance components (V) and heterogeneity, *I*^2^ (I2) [@higgins2003measuring] from `metafor` model using the 3 datasets (`Parafit`, `TreeMap` and both combined, or `All`). Note that in these models, *I*^2^~[total]~ = *I*^2^~[authors]~ (see [@nakagawa2012methodological;@senior2016heterogeneity]), as we only have one random factor. 
 ```{r}
 # getting I2 for the models
 # could use map()
