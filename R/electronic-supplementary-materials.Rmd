@@ -6,15 +6,18 @@ output:
   html_document:
     code_download: true
     code_folding: hide
-    depth: 5
+    depth: 4
     number_sections: no
     theme:  cosmo # “default”, “cerulean”, “journal”, “flatly”, “darkly”, “readable”, “spacelab”, “united”, “cosmo”, “lumen”, “paper”, “sandstone”, “simplex”, “yeti”
     toc: yes
     toc_float: yes
+    toc_depth: 4
   pdf_document:
     toc: yes
 subtitle: Electronic Supplementary Material
 bibliography: references.bib
+biblio-style: "apalike"
+link-citations: yes
 ---
 
 <!--- Try to add references for this!!!! --->
@@ -188,7 +191,7 @@ Note that for the numbers of papers do not add up (TreeMap + Parafit $\neq$ Comb
 
 ### Missing data patterns
 
-Here we have the number of missing data (cells) for all the varaibles used in the analysis below.
+Below, we have the number of missing data (cells) for all the varaibles used in the analysis.
 
 ```{r}
 # summaring missingness in our dataset
@@ -219,9 +222,6 @@ dat %<>%
 # somehow it did not run by piping with above (not recognising the first aurgument)  
 dat %<>% p_to_Zr(p_value, sample_size) 
 
-# TODO
-# some factor reordering required!!!
-levels = c("small", "medium", "large")
 ```
 
 
@@ -246,11 +246,11 @@ ma_test2 <- rma.mv(yi = Zr,
 aic2 <- AIC(ma_test2)
 ```
 
-The model (`ma_test1`), which included both random factors, had a larger AIC value (`r round(aic1,2)`) than the model with only one random effect (`r round(aic2, 2)`) . This is becuase `observation` hardly accounted any variance (< 0.0001) compared to `authors` (`r round(ma_test1$sigma2[1], 4)`). Therefore, we only had `authors` as our random factor in subsquentb analyses.
+The model (`ma_test1`), which included both random factors, had a larger AIC value (`r round(aic1,2)`) than the model with only one random effect (`r round(aic2, 2)`) . This is becuase `observation` hardly accounted any variance (< 0.0001) compared to `authors` (`r round(ma_test1$sigma2[1], 4)`). Therefore, we only had `authors` as our random factor in subsquent analyses.
 
-We ran intercept models (meta-analyses) with 3 different datasets (`Parafit`, `TreeMap` and both combined; see the explantion of `method` above). Also, we note that we used adjustments for test statistics and confidence intervals (`test = "t"`), which is similar to (but not the same as) those proposed by Kanpp and Hartung (2003); probably this approch is a more conservative approach.
+We ran intercept models (meta-analyses) with 3 different datasets (`Parafit`, `TreeMap` and both combined; see the explantion of `method` above). Also, we note that we used adjustments for test statistics and confidence intervals (`test = "t"`), which is similar to (but not the same as) those proposed by Kanpp and Hartung (2003)[REF]; probably this approch is a more conservative approach.
 
-### Running Multilevel Meta-analytic models with 3 datasets
+#### Running Multilevel Meta-analytic models with 3 datasets
 ```{r, cache=TRUE}
 # think about making this into a tibble
 # meta-analysis with Parafit
@@ -278,7 +278,7 @@ ma_all <- rma.mv(yi = Zr,
 ```
 
 **Supplementary Table 1:**
-Overall effects (meta-analytic means), 95% confidence intervals (CIs), variance components (V) and heterogeneity, *I*^2^ (I2) from `metafor` model using the 3 datasets (`Parafit`, `TreeMap` and both combined, or `All`). Note that in these models, *I*^2^~[total]~ = *I*^2^~[authors]~ (see Nakagawa & Santos 2012; REF - probably Senior as well?), as we only have one random factor. 
+Overall effects (meta-analytic means), 95% confidence intervals (CIs), variance components (V) and heterogeneity, *I*^2^ (I2) from `metafor` model using the 3 datasets (`Parafit`, `TreeMap` and both combined, or `All`). Note that in these models, *I*^2^~[total]~ = *I*^2^~[authors]~ (see @nakagawa2012methodological; [REF] - probably Senior as well?), as we only have one random factor. 
 ```{r}
 # getting I2 for the models
 # could use map()
@@ -329,7 +329,7 @@ fig_ma <- ggplot(data = effect_ma, aes(x = tanh(estimate), y = "Overall mean")) 
 fig_ma
 ```
 
-**Figure 2a:** The effect XXXXXX
+**Figure 3a:** A forest plot showing the meta-analytic mean (mean effect size) with its 95% confidence interval (thick line) and 95% prediction interval (thin line) with observed effect sizes based on various sample sizes.  
 
 ## Meta-regression
 
@@ -354,9 +354,11 @@ dat %<>%
 
 ```
 
-### Univaraite (Uni-predictor) analyses
+### Univaraite (uni-predictor) analyses
 
-### The type of symbiosis: parasitism vs. mutualism
+We first conducted a serise of meta-regression model with one predcitor. 
+
+#### The type of symbiosis: parasitism vs. mutualism
 
 ```{r}
 # meta-regression: mutiple intercepts
@@ -374,6 +376,7 @@ mr_symbiosis2 <- rma.mv(yi = Zr,
                        random = ~ 1 | authors, 
                        data = dat)
 ```
+
 **Supplementary Table 2:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiosis`. 
 
@@ -433,9 +436,9 @@ fig_symbiosis <- ggplot(data = res_symbiosis1, aes(x = tanh(estimate), y = name)
 fig_symbiosis
 ```
 
-**Figure 2b:** The effect XXXXXX
+**Figure 3b:** A forest plot showing the group-wise means (the categorical varaible `symbiosis`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.  
 
-### The effect of host taxa
+#### The effect of host taxa
 
 ```{r}
 # reordering
@@ -535,9 +538,9 @@ fig_host_tax_broad <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate),
 fig_host_tax_broad
 ```
 
-**Figure 2c:** The effect XXXXXX
+**Figure 3c:** A forest plot showing the group-wise means (the categorical varaible `host_tax_broad`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.  
 
-### The effect of symbiont taxa
+#### The effect of symbiont taxa
 
 ```{r}
 # reordering
@@ -580,7 +583,7 @@ mr_symbiont_tax_broad4 <- rma.mv(yi = Zr,
                        data = dat)
 ```
 
-**Supplementary Table 3:**
+**Supplementary Table 4:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 ```{r}
 # getting marginal R2
@@ -640,9 +643,9 @@ fig_symbiont_tax_broad <- ggplot(data = res_symbiont_tax_broad1, aes(x = tanh(es
 fig_symbiont_tax_broad
 ```
 
-**Figure 2d:** The effect XXXXXX
+**Figure 2d:** A forest plot showing the group-wise means (the categorical varaible `symbiont_tax_broad`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.  
 
-### Testing specialization 1: host range
+#### Testing specialization 1: host range
 
 ```{r}
 # meta-regression
@@ -650,8 +653,8 @@ mr_host_range_link_ratio <- rma.mv(yi = Zr, V = VZr, mods = ~ log(host_range_lin
 
 ```
 
-**Supplementary Table 3:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+**Supplementary Table 5:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `log(host_range_link_ratio)`. 
 ```{r}
 # getting marginal R2
 r2_host_range_link_ratio <- R2(mr_host_range_link_ratio)
@@ -695,7 +698,7 @@ fig_host_range_link_ratio <-  dat %>%
   geom_smooth(aes(y = pred), method =  "loess", se = FALSE, lty ="dashed", lwd = 0.5, colour ="black") +  
   ylim(-1, 2) + xlim(-0.05, 2) +
   #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
-  labs(x = "ln(range link ratio)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
+  labs(x = "ln(host range link ratio)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
   guides(fill = "none", colour = "none") +
   # themses
   theme_bw() +
@@ -708,10 +711,10 @@ fig_host_range_link_ratio <-  dat %>%
 fig_host_range_link_ratio
 ```
 
-**Supplementary Figure 1:**
+**Supplementary Figure 1:** 
+A bubble plot showing a predicted regression line for the contenious varaible `log(host_range_link_ratio)` with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
 
-
-### Testing specialization 2: taxomic breadth
+#### Testing specialization 2: taxomic breadth
 
 ```{r}
 # meta-regression
@@ -719,8 +722,8 @@ mr_host_range_taxonomic_breadth <- rma.mv(yi = Zr, V = VZr, mods = ~ log(host_ra
 
 ```
 
-**Supplementary Table 3:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+**Supplementary Table 6:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `log(host_range_taxonomic_breadth)`. 
 ```{r}
 # getting marginal R2
 r2_host_range_taxonomic_breadth <- R2(mr_host_range_taxonomic_breadth)
@@ -761,7 +764,7 @@ fig_host_range_taxonomic_breadth <-  dat %>%
   geom_smooth(aes(y = pred), method =  "loess", se = FALSE, lty ="dashed", lwd = 0.5, colour ="black") +  
   ylim(-1, 2) + xlim(0, 1.5) +
   #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
-  labs(x = "ln(range link ratio)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
+  labs(x = "ln(host range taxonomic breadth)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
   guides(fill = "none", colour = "none") +
   # themses
   theme_bw() +
@@ -775,6 +778,7 @@ fig_host_range_taxonomic_breadth
 ```
 
 **Supplementary Figure 2:**
+A bubble plot showing a predicted regression line for the contenious varaible `log(log(host_range_taxonomic_breadth)` with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
 
 ```{r}
 # reordering
@@ -806,7 +810,7 @@ mr_endo_or_ecto3 <- rma.mv(yi = Zr,
 
 ```
 
-**Supplementary Table 3:**
+**Supplementary Table 7:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `endo_or_ecto`. 
 ```{r}
 # getting marginal R2
@@ -864,10 +868,10 @@ fig_endo_or_ecto <- ggplot(data = res_endo_or_ecto1, aes(x = tanh(estimate), y =
 fig_endo_or_ecto
 ```
 
-**Figure 2g:** The effect XXXXXX
+**Figure 3e:** The effect XXXXXX
 
 
-### The effect of the model of transmission
+#### The effect of the model of transmission
 
 ```{r}
 # meta-regression: mutiple intercepts
@@ -895,7 +899,7 @@ mr_mode_of_transmission_broad3 <- rma.mv(yi = Zr,
                        data = dat)
 ```
 
-**Supplementary Table 3:**
+**Supplementary Table 8:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `mode_of_transmission_broad`. 
 ```{r}
 # getting marginal R2
@@ -953,10 +957,10 @@ fig_mode_of_transmission_broad <- ggplot(data = res_mode_of_transmission_broad1,
 fig_mode_of_transmission_broad
 ```
 
-**Figure 2g:** The effect XXXXXX
+**Figure 2f:** A forest plot showing the group-wise means (the categorical varaible `mode_of_transmission_broad`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.
 
 
-### The combined effect of symbiosis and mode of transmission
+#### The combined effect of symbiosis and mode of transmission
 
 ```{r}
 # reordering
@@ -991,8 +995,8 @@ mr_symbiosis_transmission <- map(level_names[-length(level_names)], run_rma)
 
 ```
 
-**Supplementary Table 3:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
+**Supplementary Table 9:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiosis_transmission`. 
 ```{r}
 # getting marginal R2
 r2_symbiosis_transmission1 <- R2(mr_symbiosis_transmission1)
@@ -1060,20 +1064,19 @@ fig_symbiosis_transmission <- ggplot(data = res_symbiosis_transmission1, aes(x =
 fig_symbiosis_transmission
 ```
 
-NOTE!!!
-* Do the REF REF REF 
-* Justification of the use of combined datasets.... - done
-* just do the main one for all three datasets but not others
-* or we could - provide forest plots of all the three datasets???? (do it later)
-* heterogeneity - done 
+**Figure 3g:** A forest plot showing the group-wise means (the categorical varaible `symbiosis_transmission`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.
 
+#### Putting together Figure 3
 
+```{r}
 
+```
 
+### Addtional analyses (uni-predictor)
 
-* one-by-one analyses here...
+These are extra analyses not discussed in the main text. 
 
-### The combined effect of host taxa and symbiosis (parasitism vs. mutualism)
+#### The combined effect of host taxa and symbiosis (parasitism vs. mutualism)
 
 ```{r}
 # reordering
@@ -1107,8 +1110,8 @@ mr_host_tax_symbiosis <- map(level_names[-length(level_names)], run_rma)
 
 ```
 
-**Supplementary Table 3:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
+**Supplementary Table 10:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_symbiosis`. 
 ```{r}
 # getting marginal R2
 r2_host_tax_symbiosis1 <- R2(mr_host_tax_symbiosis1)
@@ -1173,9 +1176,9 @@ fig_host_tax_symbiosis <- ggplot(data = res_host_tax_symbiosis1, aes(x = tanh(es
 fig_host_tax_symbiosis
 ```
 
-**Supplementary Figure 3:**
+**Supplementary Figure 3:** A forest plot showing the group-wise means (the categorical varaible `host_tax_symbiosis`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.
 
-### The combined effect of symbiont taxa and symbiosis (parasitism vs. mutualism)
+#### The combined effect of symbiont taxa and symbiosis (parasitism vs. mutualism)
 
 NOTE - symbiont_tax_symbiosis = 21 combinations
 
@@ -1211,8 +1214,8 @@ mr_symbiont_tax_symbiosis <- map(level_names[-length(level_names)], run_rma)
 
 ```
 
-**Supplementary Table 3:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
+**Supplementary Table 11:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_symbiosis`. 
 ```{r}
 # getting marginal R2
 r2_symbiont_tax_symbiosis1 <- R2(mr_symbiont_tax_symbiosis1)
@@ -1278,11 +1281,9 @@ fig_symbiont_tax_symbiosis <- ggplot(data = res_symbiont_tax_symbiosis1, aes(x =
 fig_symbiont_tax_symbiosis
 ```
 
-**Supplementary Figure 4:**
+**Supplementary Figure 4:** A forest plot showing the group-wise means (the categorical varaible `symbiont_tax_symbiosis`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.
 
-### The combined effect of host and symbiont taxa
-
-NOTE -- host_symbiont_tax - 11 varaibles and 55 combinations!!!!
+#### The combined effect of host and symbiont taxa
 
 ```{r}
 # reordering
@@ -1316,8 +1317,8 @@ mr_host_symbiont_tax <- map(level_names[-length(level_names)], run_rma)
 
 ```
 
-**Supplementary Table 3:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
+**Supplementary Table 12:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_symbiont_tax`. 
 ```{r}
 # getting marginal R2
 r2_host_symbiont_tax1 <- R2(mr_host_symbiont_tax1)
@@ -1387,11 +1388,11 @@ fig_host_symbiont_tax <- ggplot(data = res_host_symbiont_tax1, aes(x = tanh(esti
 fig_host_symbiont_tax
 ```
 
-**Supplementary Figure 4:**
+**Supplementary Figure 4:** A forest plot showing the group-wise means (the categorical varaible `host_symbiont_tax`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.
 
-### Addtional analyses
+### Model selection (mulit-predictor model)
 
-### Model selection (Mulit-predictor model)
+Here we build the best model via an AICc based model selection method inplmented in the R pacakge `MuMin`. For the full model, we had 6 varaibles: `symbiosis`, `host_tax_broad`, `symbiont_tax_broad`, `mode_of_transmission_broad`, `endo_or_ecto`, & `log(host_range_link_ratio)`. We did not use `log(host_range_taxonomic_breadth)` as it is colinear with `log(host_range_link_ratio)` and also any of interaction terms. 
 
 ```{r}
 # creates a new function to run in MuMIn
@@ -1412,14 +1413,6 @@ mr_full <- updated.rma.mv(yi = Zr,
                        random = ~ 1 | authors,
                        method="ML",
                        data = dat)
-
-# summary(mr_full)
-# 
-# # testing call of new function
-# getCall(mr_full)
-# 
-# # update the new function to run in MuMIn
-# update(mr_full)
 
 #=============================
 ### additional methods for "rma.mv" class (made by Kamil Barton)
@@ -1465,7 +1458,9 @@ model2 <- rma.mv(yi = Zr, V = VZr, mods = ~  mode_of_transmission_broad + host_t
 
 ```
 
-** table model aic etc
+**Supplementary Table 13:**
+The top 2 models (out of 32 possible models) within the $\Delta$AIC difference of 2 and which 6 varaibles: `symbiosis`, `host_tax_broad`, `symbiont_tax_broad`, `mode_of_transmission_broad`, `endo_or_ecto`, & `log(host_range_link_ratio)` were included (indicated by $+$); model weights (for the 2 models) and the sum of weights for each of the varaible (from the 32 models) are included. 
+
 ```{r}
 # creating a table
 tibble(
@@ -1482,7 +1477,10 @@ tibble(
   kable_styling("striped", position = "left")
 ```
 
-** model averaged estiamtes (full average)
+#### Model averaging
+
+**Supplementary Table 14:**
+The averaged estimates for regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the 2 best meta-regression models.
 ```{r}
 
 # getting averaged R2 and variance components not provided by the MuMIn package
@@ -1505,26 +1503,11 @@ tibble(
 
 ## Publication Bias and Sensitivity Analysis
 
-* boundary problems
- ** no of randomzations and limit_rearched
-* Time lag bias
+Here, 
 
-### Residual funnel plot 1
+### Egger regression
 
-```{r}
-# 
-res_funnel_plot <- rma.mv(yi = Zr, V = VZr, 
-                               mods = ~ mode_of_transmission_broad +
-                                 host_tax_broad +
-                                 symbiosis, 
-                               random = ~ 1 | authors, data = dat)
-
-funnel(res_funnel_plot, yaxis = "seinv")
-```
-
-**Supplementary Figure 5:**
-
-### Univaraite Egger regression
+#### Univaraite Egger regression
 
 ```{r}
 # 
@@ -1532,7 +1515,7 @@ egger_regression_uni <- rma.mv(yi = Zr, V = VZr, mods = ~ sqrt(VZr), random = ~ 
 
 ```
 
-**Supplementary Table 3:**
+**Supplementary Table 15:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 ```{r}
 # getting marginal R2
@@ -1586,7 +1569,13 @@ fit_egger_regression_uni <-  dat %>%
 fit_egger_regression_uni
 ```
 
-### Multivaraite Egger regression
+**Supplementary Figure 5:**
+A bubble plot showing a predicted regression line for the contenious varaible `log(host_range_link_ratio)` with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
+
+
+
+
+#### Multivaraite Egger regression
 
 ```{r}
 # 
@@ -1599,7 +1588,7 @@ egger_regression_mul <- rma.mv(yi = Zr, V = VZr,
 
 ```
 
-**Supplementary Table 3:**
+**Supplementary Table 16:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 ```{r}
 # getting marginal R2
@@ -1652,11 +1641,30 @@ fit_egger_regression_mul <-  dat %>%
 fit_egger_regression_mul
 ```
 
-**Supplementary Figure 5:**
+**Supplementary Figure 6:**
+A bubble plot showing a predicted regression line for the contenious varaible `log(host_range_link_ratio)` with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
 
 it is not linear becuase these are 
 
-### Residual funnel plot 2
+### Funnel plot 
+
+#### Residual funnel plot 1
+
+```{r}
+# 
+res_funnel_plot <- rma.mv(yi = Zr, V = VZr, 
+                               mods = ~ mode_of_transmission_broad +
+                                 host_tax_broad +
+                                 symbiosis, 
+                               random = ~ 1 | authors, data = dat)
+
+funnel(res_funnel_plot, yaxis = "seinv")
+```
+
+**Supplementary Figure 7:**
+
+
+#### Residual funnel plot 2
 
 ```{r}
 # 
@@ -1670,16 +1678,18 @@ res_funnel_plot2 <- rma.mv(yi = Zr, V = VZr,
 funnel(res_funnel_plot2, yaxis = "seinv")
 ```
 
-**Supplementary Figure 6:**
+**Supplementary Figure 8:**
 
-### Univaraite time-lag bias
+### Time-lag bias
+
+#### Univaraite time-lag bias
 ```{r}
 # 
 time_lag_effect_uni <- rma.mv(yi = Zr, V = VZr, mods = ~ year, random = ~ 1 | authors, data = dat)
 
 ```
 
-**Supplementary Table 3:**
+**Supplementary Table 17:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 ```{r}
 # getting marginal R2
@@ -1734,9 +1744,9 @@ fit_time_lag_effect <-  dat %>%
 fit_time_lag_effect
 ```
 
-**Supplementary Figure 6:**
+**Supplementary Figure 9:**
 
-### Multivaraite time-lag bias
+#### Multivaraite time-lag bias
 ```{r}
 # 
 time_lag_effect_mul <- rma.mv(yi = Zr, V = VZr, 
@@ -1748,7 +1758,7 @@ time_lag_effect_mul <- rma.mv(yi = Zr, V = VZr,
 
 ```
 
-**Supplementary Table 3:**
+**Supplementary Table 18:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 ```{r}
 # getting marginal R2
@@ -1801,7 +1811,7 @@ fit_time_lag_effect_mul <-  dat %>%
 fit_time_lag_effect_mul
 ```
 
-**Supplementary Figure 6:** - not linear
+**Supplementary Figure 10:** - not linear
 
 ### Sensitivity test 1: the number of randamizations
 
@@ -1809,7 +1819,7 @@ fit_time_lag_effect_mul
  ** no of randomzations and limit_rearched = if they are different, then, it could lead to bias
  ** limit_reached = if high - more likley to be underestiamted 
  
-### The type of symbiosis: parasitism vs. mutualism
+#### The type of symbiosis: parasitism vs. mutualism
 
 ```{r}
 # 233 --- Yes = 74 (0.3175966%); No = 159
@@ -1822,7 +1832,7 @@ sa_random_symbiosis2<-lmer(log(no_randomizations) ~ symbiosis + (1 | authors), d
 
 ```
 
-**Supplementary Table 3:**
+**Supplementary Table 19:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 
 ```{r}
@@ -1850,7 +1860,7 @@ tibble(
   kable_styling("striped", position = "left") 
 ```
 
-### The effect of host taxa
+#### The effect of host taxa
 
 ```{r}
 # host_tax_broad
@@ -1869,7 +1879,7 @@ sa_random_host_tax_broad4<-lmer(log(no_randomizations) ~ relevel(host_tax_broad,
                                   (1 | authors), data = dat)
 ```
 
-**Supplementary Table 3:**
+**Supplementary Table 20:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 
 ```{r}
@@ -1907,7 +1917,7 @@ tibble(
 ```
 
 
-### The effect of the model of transmission
+#### The effect of the model of transmission
 
 ```{r}
 # mode_of_transmission_broad
@@ -1925,7 +1935,7 @@ sa_random_mode_of_transmission_broad3 <- lmer(log(no_randomizations) ~ relevel(m
                                              (1 | authors), data = dat)
 ```
 
-**Supplementary Table 3:**
+**Supplementary Table 21:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 
 ```{r}
@@ -1961,9 +1971,9 @@ tibble(
 
 ### Sensitivity test 2: reaching the limits
 
-### The type of symbiosis: parasitism vs. mutualism
+#### The type of symbiosis: parasitism vs. mutualism
 
-**Supplementary Table 3:**
+**Supplementary Table 22:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 
 ```{r}
@@ -1992,9 +2002,9 @@ tibble(
 
 ```
 
-### The effect of host taxa
+#### The effect of host taxa
 
-**Supplementary Table 3:**
+**Supplementary Table 23:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 
 ```{r}
@@ -2024,9 +2034,9 @@ tibble(
 ```
 
 
-### The effect of the model of transmission
+#### The effect of the model of transmission
 
-**Supplementary Table 3:**
+**Supplementary Table 24:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 
 ```{r}
@@ -2061,12 +2071,12 @@ tibble(
 
 ## Acknowledgement
 
-Much of coding materials have been borrowed from h
+Many coding materials have been borrowed from Luke's and Rose's
 
-## Refererences
-
-## Information for this R session
+## R Session Information
 
 ```{r}
 sessionInfo() %>% pander()
 ```
+
+## Refererences
