@@ -6,7 +6,7 @@ output:
   html_document:
     code_download: true
     code_folding: hide
-    depth: 4
+    depth: 5
     number_sections: no
     theme:  cosmo # “default”, “cerulean”, “journal”, “flatly”, “darkly”, “readable”, “spacelab”, “united”, “cosmo”, “lumen”, “paper”, “sandstone”, “simplex”, “yeti”
     toc: yes
@@ -53,7 +53,7 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                lme4,   # lmm & glmm (models)
                broom.mixed, # getting estimates from lmer + glmer objects
                performance, # getting R2 from lmer + glmer objects
-               lmerTest
+               #lmerTest
                #mi,      # missing data analysis
                #betareg   # dependance of the above
 )
@@ -250,7 +250,7 @@ The model (`ma_test1`), which included both random factors, had a larger AIC val
 
 We ran intercept models (meta-analyses) with 3 different datasets (`Parafit`, `TreeMap` and both combined; see the explantion of `method` above). Also, we note that we used adjustments for test statistics and confidence intervals (`test = "t"`), which is similar to (but not the same as) those proposed by Kanpp and Hartung (2003); probably this approch is a more conservative approach.
 
-#### Running Multilevel Meta-analytic models with 3 datasets
+### Running Multilevel Meta-analytic models with 3 datasets
 ```{r, cache=TRUE}
 # think about making this into a tibble
 # meta-analysis with Parafit
@@ -356,7 +356,7 @@ dat %<>%
 
 ### Univaraite (Uni-predictor) analyses
 
-#### The type of symbiosis: parasitism vs. mutualism
+### The type of symbiosis: parasitism vs. mutualism
 
 ```{r}
 # meta-regression: mutiple intercepts
@@ -374,9 +374,9 @@ mr_symbiosis2 <- rma.mv(yi = Zr,
                        random = ~ 1 | authors, 
                        data = dat)
 ```
-
 **Supplementary Table 2:**
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiosis`. 
+
 ```{r}
 # getting marginal R2
 r2_symbiosis1 <- R2(mr_symbiosis1)
@@ -435,10 +435,7 @@ fig_symbiosis
 
 **Figure 2b:** The effect XXXXXX
 
-#### 
-
-
-#### The effect of host taxa
+### The effect of host taxa
 
 ```{r}
 # reordering
@@ -540,7 +537,7 @@ fig_host_tax_broad
 
 **Figure 2c:** The effect XXXXXX
 
-#### The effect of symbiont taxa
+### The effect of symbiont taxa
 
 ```{r}
 # reordering
@@ -645,7 +642,7 @@ fig_symbiont_tax_broad
 
 **Figure 2d:** The effect XXXXXX
 
-#### Testing specialization 1: host range
+### Testing specialization 1: host range
 
 ```{r}
 # meta-regression
@@ -711,8 +708,10 @@ fig_host_range_link_ratio <-  dat %>%
 fig_host_range_link_ratio
 ```
 
+**Supplementary Figure 1:**
 
-#### Testing specialization 2: taxomic breadth
+
+### Testing specialization 2: taxomic breadth
 
 ```{r}
 # meta-regression
@@ -774,6 +773,8 @@ fig_host_range_taxonomic_breadth <-  dat %>%
 
 fig_host_range_taxonomic_breadth
 ```
+
+**Supplementary Figure 2:**
 
 ```{r}
 # reordering
@@ -866,7 +867,7 @@ fig_endo_or_ecto
 **Figure 2g:** The effect XXXXXX
 
 
-#### The effect of the model of transmission
+### The effect of the model of transmission
 
 ```{r}
 # meta-regression: mutiple intercepts
@@ -955,7 +956,7 @@ fig_mode_of_transmission_broad
 **Figure 2g:** The effect XXXXXX
 
 
-#### The combined effect of symbiosis and mode of transmission
+### The combined effect of symbiosis and mode of transmission
 
 ```{r}
 # reordering
@@ -1072,7 +1073,7 @@ NOTE!!!
 
 * one-by-one analyses here...
 
-#### The combined effect of host taxa and symbiosis (parasitism vs. mutualism)
+### The combined effect of host taxa and symbiosis (parasitism vs. mutualism)
 
 ```{r}
 # reordering
@@ -1172,7 +1173,9 @@ fig_host_tax_symbiosis <- ggplot(data = res_host_tax_symbiosis1, aes(x = tanh(es
 fig_host_tax_symbiosis
 ```
 
-#### The combined effect of symbiont taxa and symbiosis (parasitism vs. mutualism)
+**Supplementary Figure 3:**
+
+### The combined effect of symbiont taxa and symbiosis (parasitism vs. mutualism)
 
 NOTE - symbiont_tax_symbiosis = 21 combinations
 
@@ -1275,8 +1278,9 @@ fig_symbiont_tax_symbiosis <- ggplot(data = res_symbiont_tax_symbiosis1, aes(x =
 fig_symbiont_tax_symbiosis
 ```
 
+**Supplementary Figure 4:**
 
-#### The combined effect of host and symbiont taxa
+### The combined effect of host and symbiont taxa
 
 NOTE -- host_symbiont_tax - 11 varaibles and 55 combinations!!!!
 
@@ -1383,6 +1387,8 @@ fig_host_symbiont_tax <- ggplot(data = res_host_symbiont_tax1, aes(x = tanh(esti
 fig_host_symbiont_tax
 ```
 
+**Supplementary Figure 4:**
+
 ### Addtional analyses
 
 ### Model selection (Mulit-predictor model)
@@ -1390,7 +1396,7 @@ fig_host_symbiont_tax
 ```{r}
 # creates a new function to run in MuMIn
 updated.rma.mv <- updateable(rma.mv)
-updated.rma.mv
+#updated.rma.mv
 
 # testing the new function 
 # use method = "ML" so that we can compare AIC
@@ -1438,7 +1444,7 @@ coefTable.rma.mv <- function (model, ...)
 
 # testing dredge
 #dredge(full.model, evaluate=F) # show all candidate models
-# n = 32 model exisits
+# n = 32 model exisit
 candidates <- dredge(mr_full)
 
 # displays delta AICc <2
@@ -1464,12 +1470,12 @@ model2 <- rma.mv(yi = Zr, V = VZr, mods = ~  mode_of_transmission_broad + host_t
 # creating a table
 tibble(
   `Model (variable weight)` = c("Model1", "Model2", "(Sum of weights)"),
-  transmission = c(as.character(candidates_aic2$mode_of_transmission_broad),round(importance[1],3) ),
-  host_tax = c(as.character(candidates_aic2$host_tax_broad),round(importance[2], 3)),
-  symbiosis =  c(as.character(candidates_aic2$symbiosis),round(importance[3], 3)),
-  symbiont_tax = c(as.character(candidates_aic2$symbiont_tax_broad),round(importance[4], 3)),
-  endo_or_ecto = c(as.character(candidates_aic2$endo_or_ecto),round(importance[5], 3)),
-  `host_range` = c(as.character(candidates_aic2$`log(host_range_link_ratio)`),round(importance[6], 3)),
+  transmission = c(if_else(candidates_aic2$mode_of_transmission_broad == "+", "$+$", "NA"),round(importance[1],3) ),
+  host_tax = c(if_else(candidates_aic2$host_tax_broad== "+", "$+$", "NA"),round(importance[2], 3)),
+  symbiosis =  c(if_else(candidates_aic2$symbiosis== "+", "$+$", "NA"),round(importance[3], 3)),
+  symbiont_tax = c(if_else(candidates_aic2$symbiont_tax_broad== "+", "$+$", "NA"),round(importance[4], 3)),
+  endo_or_ecto = c(if_else(candidates_aic2$endo_or_ecto== "+", "$+$", "NA"),round(importance[5], 3)),
+  `host_range` = c(if_else(candidates_aic2$`log(host_range_link_ratio)`== "+", "$+$", "NA"),round(importance[6], 3)),
   delta_AICc = c(candidates_aic2$delta, NA),
   Weight = c(candidates_aic2$weight, NA)) %>% 
   kable("html", digits = 3) %>%
@@ -1503,7 +1509,7 @@ tibble(
  ** no of randomzations and limit_rearched
 * Time lag bias
 
-### Residual funnel plot
+### Residual funnel plot 1
 
 ```{r}
 # 
@@ -1516,6 +1522,7 @@ res_funnel_plot <- rma.mv(yi = Zr, V = VZr,
 funnel(res_funnel_plot, yaxis = "seinv")
 ```
 
+**Supplementary Figure 5:**
 
 ### Univaraite Egger regression
 
@@ -1645,6 +1652,26 @@ fit_egger_regression_mul <-  dat %>%
 fit_egger_regression_mul
 ```
 
+**Supplementary Figure 5:**
+
+it is not linear becuase these are 
+
+### Residual funnel plot 2
+
+```{r}
+# 
+res_funnel_plot2 <- rma.mv(yi = Zr, V = VZr, 
+                               mods = ~ sqrt(VZr) +
+                                mode_of_transmission_broad +
+                                 host_tax_broad +
+                                 symbiosis, 
+                               random = ~ 1 | authors, data = dat)
+
+funnel(res_funnel_plot2, yaxis = "seinv")
+```
+
+**Supplementary Figure 6:**
+
 ### Univaraite time-lag bias
 ```{r}
 # 
@@ -1706,6 +1733,8 @@ fit_time_lag_effect <-  dat %>%
 
 fit_time_lag_effect
 ```
+
+**Supplementary Figure 6:**
 
 ### Multivaraite time-lag bias
 ```{r}
@@ -1772,7 +1801,7 @@ fit_time_lag_effect_mul <-  dat %>%
 fit_time_lag_effect_mul
 ```
 
-
+**Supplementary Figure 6:** - not linear
 
 ### Sensitivity test 1: the number of randamizations
 
@@ -1780,7 +1809,7 @@ fit_time_lag_effect_mul
  ** no of randomzations and limit_rearched = if they are different, then, it could lead to bias
  ** limit_reached = if high - more likley to be underestiamted 
  
-#### The type of symbiosis: parasitism vs. mutualism
+### The type of symbiosis: parasitism vs. mutualism
 
 ```{r}
 # 233 --- Yes = 74 (0.3175966%); No = 159
@@ -1793,9 +1822,12 @@ sa_random_symbiosis2<-lmer(log(no_randomizations) ~ symbiosis + (1 | authors), d
 
 ```
 
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+
 ```{r}
 # getting marginal R2
-r2_sa_random_symbiosis <- r2_nakagawa(sa_random_symbiosis)
+r2_sa_random_symbiosis <- r2_nakagawa(sa_random_symbiosis1)
 
 # getting estimates
 
@@ -1818,7 +1850,7 @@ tibble(
   kable_styling("striped", position = "left") 
 ```
 
-#### The effect of host taxa
+### The effect of host taxa
 
 ```{r}
 # host_tax_broad
@@ -1837,6 +1869,8 @@ sa_random_host_tax_broad4<-lmer(log(no_randomizations) ~ relevel(host_tax_broad,
                                   (1 | authors), data = dat)
 ```
 
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 
 ```{r}
 # getting marginal R2
@@ -1873,7 +1907,7 @@ tibble(
 ```
 
 
-#### The effect of the model of transmission
+### The effect of the model of transmission
 
 ```{r}
 # mode_of_transmission_broad
@@ -1890,6 +1924,9 @@ sa_random_mode_of_transmission_broad2<-lmer(log(no_randomizations) ~ mode_of_tra
 sa_random_mode_of_transmission_broad3 <- lmer(log(no_randomizations) ~ relevel(mode_of_transmission_broad, ref = "vertical") + 
                                              (1 | authors), data = dat)
 ```
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 
 ```{r}
 # getting marginal R2
@@ -1924,7 +1961,10 @@ tibble(
 
 ### Sensitivity test 2: reaching the limits
 
-#### The type of symbiosis: parasitism vs. mutualism
+### The type of symbiosis: parasitism vs. mutualism
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 
 ```{r}
 # symbiosis
@@ -1952,7 +1992,10 @@ tibble(
 
 ```
 
-#### The effect of host taxa
+### The effect of host taxa
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 
 ```{r}
 # host_tax_broad
@@ -1981,7 +2024,10 @@ tibble(
 ```
 
 
-#### The effect of the model of transmission
+### The effect of the model of transmission
+
+**Supplementary Table 3:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 
 ```{r}
 # mode_of_transmission_broad
