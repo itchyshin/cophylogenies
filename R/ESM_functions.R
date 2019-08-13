@@ -43,7 +43,7 @@ p_to_Zr <- function(data, pval, N) {
 # General modeling functions 
 # Functions for I2
 
-#' Title
+#' Title Function to obtain total and separate I2 from multilevel-meta-analytic model
 #'
 #' @param model 
 #' @param method 
@@ -87,10 +87,8 @@ I2 <- function(model, method = c("Wolfgang", "Shinichi")){
 # I2(test, method = "Wolfgang")
 # I2(test, method = "Shinichi")
 
-# Functions for R2
-# make a version which provides both R types of R^2
-# Note that this only works for this set of analyses without 
-#' Title
+
+#' Title: R2 based on Nakagawa & Schielzeth 2013
 #'
 #' @param model 
 #'
@@ -116,15 +114,6 @@ R2 <- function(model){
   R2s <- c(R2_marginal = R2m, R2_coditional = R2c)
   return(R2s)
 }
-
-# R2(test)
-
-# functions for taking out estimates (b) and CIs along with the name - the 3 models at the same time (use facet_wrap?)
-
-# function to get estimates etc from rma.mv objects 
-# currently only works when you have one moderator - need to change it more general
-
-#TODO - we should get this to estimate N at this stage for all the levels
 
 
 #' Title: the function to get estimates from rma objects (metafor)
@@ -182,35 +171,3 @@ cont_gen <- function (name) {
   names <- paste(name_dat[ ,1], name_dat[, 2], sep = "-")
   return(names)
 }
-
-# making forest plots
-
-#' Title: the function to plot categorical data 
-#'
-#' @param data 
-#' @param title 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-sum_plot <- function(data, title = "") {
-  ggplot(data, aes(x = name, y = estimate, colour = name)) +
-    geom_pointrange(aes(ymin = lowerCL, ymax = upperCL), size = 1.5) +
-    geom_hline(yintercept = 0, lty = 2, lwd = 1, alpha = 0.5) +
-    labs(x = "", y = "Zr (effect size)", title = title) +
-    #scale_y_continuous(limits = c(-0.2, 1)) + # need to be careful - points will not show if they are not in this range
-    coord_flip() +
-    facet_grid(mdata ~.) +
-    theme(#panel.background = element_rect(fill = "white"),
-      axis.line.x = element_line(size = 2, colour = "black"),
-      axis.ticks.x = element_line(size = 2),
-      axis.ticks.length = unit(0.3,"cm"),
-      axis.text.x = element_text(size = 15),
-      axis.ticks.y = element_line(size = 0, colour = "white"),
-      axis.text.y = element_text(size = 15, face = "plain", colour = "black"),
-      title = element_text(size = 15, face = "italic"),
-      axis.title.x = element_text(size = 15, face = "plain"),
-      legend.position = "none")
-}
-

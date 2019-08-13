@@ -21,8 +21,6 @@ csl: nature.csl
 link-citations: yes
 ---
 
-<!--- Try to add references for this!!!! --->
-
 ```{r setup, include = FALSE}
 #kniter seetting
 knitr::opts_chunk$set(
@@ -57,7 +55,7 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                lme4,   # lmm & glmm (models)
                broom.mixed, # getting estimates from lmer + glmer objects
                performance, # getting R2 from lmer + glmer objects
-               #lmerTest
+               #lmerTest   # more functions for lme4
                #mi,      # missing data analysis
                #betareg   # dependance of the above
 )
@@ -69,8 +67,7 @@ source("../R/ESM_functions.R", chdir = TRUE)
 
 #### Custum functions
 
-NOTE!!!
-We have XX custum functions: ....... 
+We have 5 custum functions named (their functionalites): `I2()`, `R2()`, , and , all of which are used below. 
 
 ## Supplementary Methods and Materials
 
