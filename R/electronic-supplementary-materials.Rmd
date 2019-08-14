@@ -73,6 +73,8 @@ We have 5 custum functions named (their functionalites): `I2()`, `R2()`, , and ,
 
 ### XXXX1
 
+citing - requivalent
+
 ### XXXX2
 
 ## The Cophylogeny Dataset
@@ -141,11 +143,11 @@ V. __no_randomizations__:	The number of phylogenetic randomizations performed du
 
 W. __p_value__:	The p-value reported for the cophylogenetic analysis, representing the likelihood that host and symbtion phylogenies display cospeciation.
 
-X. __method__:	Whether TreeMap or Parafit was used to obtain co-divergence or a p value.
+X. __method__:	Whether TreeMap or ParaFit was used to obtain co-divergence or a p value.
 
 ### Table of sample sizes
 
-We present the number of sample size for two sepreate methods: TreeMap and Parafit (and combined) for effect sizes, papers and different levels of categorical varaibles (factors).   
+We present the number of sample size for two sepreate methods: TreeMap [@page1994parallel] and ParaFit [@legendre2002statistical] (and combined) for effect sizes, papers and different levels of categorical varaibles (factors).   
 
 ```{r}
 # selecting out variables, which we used for our analysis
@@ -210,7 +212,7 @@ dat %>% summarise_all(~sum(is.na(.))) %>% # map(~sum(is.na(.)) # this is an alte
 
 ### Calculating effect sizes
 
-Here, we creatde our effect size (correlation coefficent *r* and its Fisher's z transformaiton *Zr*) from p values and associated sample sizes. We used the sum of `host_tips_linked_corrected` and `symbiont_tips_linked` as our sample size (i.e., the number of both host and symbiont species) for each effect size (an indicator of congruence). Also, we creat a column with unique ID for each observation (i.e. an observation level random effect), termed `observation`, which is required for the `rma.mv` function in `metafor`.
+Here, we creatde our effect size (correlation coefficent *r* and its Fisher's z transformaiton *Zr*) from p values and associated sample sizes [@rosenthal2003requivalent]. We used the sum of `host_tips_linked_corrected` and `symbiont_tips_linked` as our sample size (i.e., the number of both host and symbiont species) for each effect size (an indicator of congruence). Also, we creat a column with unique ID for each observation (i.e. an observation level random effect), termed `observation`, which is required for the `rma.mv` function in `metafor` [@viechtbauer2010conducting].
 
 ```{r}
 dat %<>% 
@@ -221,7 +223,6 @@ dat %<>%
 dat %<>% p_to_Zr(p_value, sample_size) 
 
 ```
-
 
 ### Meta-analytic model: testing Fahrenholz's rule
 
@@ -246,7 +247,7 @@ aic2 <- AIC(ma_test2)
 
 The model (`ma_test1`), which included both random factors, had a larger AIC value (`r round(aic1,2)`) than the model with only one random effect (`r round(aic2, 2)`) . This is becuase `observation` hardly accounted any variance (< 0.0001) compared to `authors` (`r round(ma_test1$sigma2[1], 4)`). Therefore, we only had `authors` as our random factor in subsquent analyses.
 
-We ran intercept models (meta-analyses) with 3 different datasets (`Parafit`, `TreeMap` and both combined; see the explantion of `method` above). Also, we note that we used adjustments for test statistics and confidence intervals (`test = "t"`), which is similar to (but not the same as) those proposed by Kanpp and Hartung (2003)[REF]; probably this approch is a more conservative approach.
+We ran intercept models (meta-analyses) with 3 different datasets (`Parafit`, `TreeMap` and both combined; see the explantion of `method` above). Also, we note that we used adjustments for test statistics and confidence intervals (`test = "t"`), which is similar to (but not the same as) those proposed by Kanpp and Hartung [@knapp2003improved]; probably this approch is a more conservative approach.
 
 #### Running Multilevel Meta-analytic models with 3 datasets
 ```{r, cache=TRUE}
@@ -376,7 +377,7 @@ mr_symbiosis2 <- rma.mv(yi = Zr,
 ```
 
 **Supplementary Table 2:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiosis`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ [@nakagawa2013general] (R2) from the meta-regression with `symbiosis`. 
 
 ```{r}
 # getting marginal R2
@@ -866,7 +867,7 @@ fig_endo_or_ecto <- ggplot(data = res_endo_or_ecto1, aes(x = tanh(estimate), y =
 fig_endo_or_ecto
 ```
 
-**Figure 3e:** The effect XXXXXX
+**Figure 3e:**  A forest plot showing the group-wise means (the categorical varaible `endo_or_ecto`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes. 
 
 
 #### The effect of the model of transmission
@@ -1068,6 +1069,9 @@ fig_symbiosis_transmission
 
 ```{r}
 
+
+
+
 ```
 
 ### Addtional analyses (uni-predictor)
@@ -1177,8 +1181,6 @@ fig_host_tax_symbiosis
 **Supplementary Figure 3:** A forest plot showing the group-wise means (the categorical varaible `host_tax_symbiosis`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.
 
 #### The combined effect of symbiont taxa and symbiosis (parasitism vs. mutualism)
-
-NOTE - symbiont_tax_symbiosis = 21 combinations
 
 ```{r}
 # reordering
@@ -1390,7 +1392,7 @@ fig_host_symbiont_tax
 
 ### Model selection (mulit-predictor model)
 
-Here we build the best model via an AICc based model selection method inplmented in the R pacakge `MuMin`. For the full model, we had 6 varaibles: `symbiosis`, `host_tax_broad`, `symbiont_tax_broad`, `mode_of_transmission_broad`, `endo_or_ecto`, & `log(host_range_link_ratio)`. We did not use `log(host_range_taxonomic_breadth)` as it is colinear with `log(host_range_link_ratio)` and also any of interaction terms. 
+Here we build the best model via an AICc based model selection method inplmented in the R pacakge `MuMin`[@barton2009mumin]. For the full model, we had 6 varaibles: `symbiosis`, `host_tax_broad`, `symbiont_tax_broad`, `mode_of_transmission_broad`, `endo_or_ecto`, & `log(host_range_link_ratio)`. We did not use `log(host_range_taxonomic_breadth)` as it is colinear with `log(host_range_link_ratio)` and also any of interaction terms. 
 
 ```{r}
 # creates a new function to run in MuMIn
