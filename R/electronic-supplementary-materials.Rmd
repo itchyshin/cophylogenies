@@ -67,15 +67,7 @@ source("../R/ESM_functions.R", chdir = TRUE)
 
 #### Custum functions
 
-We have 5 custum functions named (their functionalites): `I2()`, `R2()`, , and , all of which are used below. 
-
-## Supplementary Methods and Materials
-
-### XXXX1
-
-citing - requivalent
-
-### XXXX2
+We have 5 custum functions named : `p_to_Zr()`,`I2()`, `R2()`, `get_est()`, `get_pred()`, and `cont_gen()`, all of which are used later (see below for their functionalites). 
 
 ## The Cophylogeny Dataset
 
@@ -212,7 +204,7 @@ dat %>% summarise_all(~sum(is.na(.))) %>% # map(~sum(is.na(.)) # this is an alte
 
 ### Calculating effect sizes
 
-Here, we creatde our effect size (correlation coefficent *r* and its Fisher's z transformaiton *Zr*) from p values and associated sample sizes [@rosenthal2003requivalent]. We used the sum of `host_tips_linked_corrected` and `symbiont_tips_linked` as our sample size (i.e., the number of both host and symbiont species) for each effect size (an indicator of congruence). Also, we creat a column with unique ID for each observation (i.e. an observation level random effect), termed `observation`, which is required for the `rma.mv` function in `metafor` [@viechtbauer2010conducting].
+Here, we created our effect size (correlation coefficent *r* and its Fisher's z transformaiton *Zr*) from p values and associated sample sizes [@rosenthal2003requivalent]. We used the sum of `host_tips_linked_corrected` and `symbiont_tips_linked` as our sample size (i.e., the number of both host and symbiont species) for each effect size (an indicator of congruence). Also, we creat a column with unique ID for each observation (i.e. an observation level random effect), termed `observation`, which is required for the `rma.mv` function in `metafor` [@viechtbauer2010conducting].
 
 ```{r}
 dat %<>% 
@@ -1501,9 +1493,9 @@ tibble(
   kable_styling("striped", position = "left")
 ```
 
-## Publication Bias and Sensitivity Analysis
+## Publication Bias Analysis
 
-Here, 
+Here, we conducted 2 kinds of publication bias analyses: a type of Egger regression[REF] and funnel plots of results[REF].  Also, types of sensitivity analyses. 
 
 ### Egger regression
 
@@ -1572,10 +1564,9 @@ fit_egger_regression_uni
 **Supplementary Figure 5:**
 A bubble plot showing a predicted regression line for the contenious varaible `log(host_range_link_ratio)` with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
 
-
-
-
 #### Multivaraite Egger regression
+
+We also conducted a Egger regression . 
 
 ```{r}
 # 
@@ -1642,7 +1633,7 @@ fit_egger_regression_mul
 ```
 
 **Supplementary Figure 6:**
-A bubble plot showing a predicted regression line for the contenious varaible `log(host_range_link_ratio)` with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
+A bubble plot showing a predicted loess line for the contenious varaible `log(host_range_link_ratio)` (given the values fo the other 3 varaibles in the model) with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
 
 it is not linear becuase these are 
 
@@ -1690,7 +1681,7 @@ time_lag_effect_uni <- rma.mv(yi = Zr, V = VZr, mods = ~ year, random = ~ 1 | au
 ```
 
 **Supplementary Table 17:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `year`. 
 ```{r}
 # getting marginal R2
 r2_time_lag_effect_uni <- R2(time_lag_effect_uni)
@@ -1744,7 +1735,7 @@ fit_time_lag_effect <-  dat %>%
 fit_time_lag_effect
 ```
 
-**Supplementary Figure 9:**
+**Supplementary Figure 9:** A bubble plot showing a predicted regression line for the contenious varaible `year` with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
 
 #### Multivaraite time-lag bias
 ```{r}
@@ -1759,7 +1750,7 @@ time_lag_effect_mul <- rma.mv(yi = Zr, V = VZr,
 ```
 
 **Supplementary Table 18:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance examplained, *R*^2^~[marginal]~ (R2) from the meta-regression with `year`. 
 ```{r}
 # getting marginal R2
 r2_time_lag_effect_mul <- R2(time_lag_effect_mul)
@@ -1811,9 +1802,14 @@ fit_time_lag_effect_mul <-  dat %>%
 fit_time_lag_effect_mul
 ```
 
-**Supplementary Figure 10:** - not linear
+**Supplementary Figure 10:** A bubble plot showing a predicted loess line for the contenious varaible `year` (given the values fo the other 3 varaibles in the model) with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
+
+## Sensitivity Analysis
+
+The funnel plots above identifed the issue of 
 
 ### Sensitivity test 1: the number of randamizations
+
 
 * boundary problems
  ** no of randomzations and limit_rearched = if they are different, then, it could lead to bias
@@ -2064,10 +2060,19 @@ tibble(
   kable_styling("striped", position = "left") 
 ```
 
-### Recommendation
+### Recommendation based on 
+
 * they need to run more simuations so they do not max out!
 * reanalysis of earlier trees are necessary; getting older or updated trees are required
 * new studies should provide all data avaiable online so that future analysis can incorprate all avaiable data
+
+
+### Sensitivity test 3: the leave-one-out validation
+
+```{r}
+
+```
+
 
 ## Acknowledgement
 
