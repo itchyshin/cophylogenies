@@ -55,6 +55,8 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                lme4,   # lmm & glmm (models)
                broom.mixed, # getting estimates from lmer + glmer objects
                performance, # getting R2 from lmer + glmer objects
+               png,         # reading png files
+               grid,        # graphic layout manipulation
                #lmerTest   # more functions for lme4
                #mi,      # missing data analysis
                #betareg   # dependance of the above
@@ -290,6 +292,12 @@ tibble(
 These models gave all consistant results including heterogeneity. Given these results, we proceeded with only analysing the whole dataset (`All`) from this on.    
 
 ```{r,  fig.width=7, fig.height=2.5}
+# https://stackoverflow.com/questions/41919023/ggplot-adding-image-on-top-right-in-two-plots-with-different-scales
+# how to add png files to the figure (above)
+# reading image
+image_mutualism <- readPNG("../images/mutualism_transparentbg.png")
+image_parasitism <- readPNG("../images/parasitism_transparentbg.png")
+
 # creating a table of results
 pred_ma <- get_pred(ma_all) 
 effect_ma <- get_est(ma_all) %>% left_join(pred_ma) 
@@ -306,15 +314,16 @@ fig_ma <- ggplot(data = effect_ma, aes(x = tanh(estimate), y = "Overall mean")) 
   geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
   # creating dots and different size (bee-swarm and bubbles)
   geom_point(size=3, shape=21, fill = "black") +
-  annotate('text', x = -1, y = "Overall mean", label=paste("italic(k)==", length(dat$Zr)), parse=TRUE, hjust = "left", size=3.5) +
+  annotate('text', x = 0.9, y = 1.1, label=paste("italic(k)==", length(dat$Zr)), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
   theme(legend.direction="horizontal") +
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
-  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) 
-
+  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) +
+  annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 0.85, ymax = 1.15) + 
+  annotation_custom(rasterGrob(image_parasitism), xmin = -0.9, xmax = -0.7, ymin = 0.85, ymax = 1.15)
 #ggsave(plot = fig_ma, filename = "fig_2a.pdf", height = 2, width = 8)
 # ggploty 0 does not work (Error in unique.default(x) : unimplemented type 'expression' in 'HashTableSetup')
 fig_ma
@@ -422,7 +431,10 @@ fig_symbiosis <- ggplot(data = res_symbiosis1, aes(x = tanh(estimate), y = name)
   theme(legend.direction="horizontal") +
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
-  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
+  annotation_custom(rasterGrob(image_mutualism), xmin = -1, xmax = -0.8, ymin = 0.4, ymax = 0.9) + 
+  annotation_custom(rasterGrob(image_parasitism), xmin = -1, xmax = -0.8, ymin = 1.4, ymax = 1.9)
+  
 
 fig_symbiosis
 ```
