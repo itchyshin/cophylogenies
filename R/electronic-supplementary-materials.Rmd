@@ -41,9 +41,10 @@ rm(list=ls())
 
 ```{r}
 # loading packages
+# devtools::install_github("thomasp85/patchwork")
 pacman::p_load(tidyverse, # tidy family and related pacakges below
                kableExtra, 
-               gridExtra, 
+               gridExtra, # may not use this
                purrr,
                magrittr, # extending piping
                pander,   # nice tables
@@ -57,6 +58,7 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                performance, # getting R2 from lmer + glmer objects
                png,         # reading png files
                grid,        # graphic layout manipulation
+               patchwork    # putting ggplots together
                #lmerTest   # more functions for lme4
                #mi,      # missing data analysis
                #betareg   # dependance of the above
@@ -291,7 +293,7 @@ tibble(
 
 These models gave all consistant results including heterogeneity. Given these results, we proceeded with only analysing the whole dataset (`All`) from this on.    
 
-```{r,  fig.width=7, fig.height=2.5}
+```{r,  fig.width=7, fig.height=2}
 # https://stackoverflow.com/questions/41919023/ggplot-adding-image-on-top-right-in-two-plots-with-different-scales
 # how to add png files to the figure (above)
 # reading image
@@ -314,7 +316,7 @@ fig_ma <- ggplot(data = effect_ma, aes(x = tanh(estimate), y = "Overall mean")) 
   geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
   # creating dots and different size (bee-swarm and bubbles)
   geom_point(size=3, shape=21, fill = "black") +
-  annotate('text', x = 0.9, y = 1.1, label=paste("italic(k)==", length(dat$Zr)), parse=TRUE, hjust = "left", size=3.5) +
+  annotate('text', x = 0.93, y = 1.15, label=paste("italic(k)==", length(dat$Zr)), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
@@ -322,11 +324,36 @@ fig_ma <- ggplot(data = effect_ma, aes(x = tanh(estimate), y = "Overall mean")) 
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
   theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) +
-  annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 0.85, ymax = 1.15) + 
-  annotation_custom(rasterGrob(image_parasitism), xmin = -0.9, xmax = -0.7, ymin = 0.85, ymax = 1.15)
+  annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_parasitism), xmin = -0.9, xmax = -0.7, ymin = 0.6, ymax = 1.2)
 #ggsave(plot = fig_ma, filename = "fig_2a.pdf", height = 2, width = 8)
 # ggploty 0 does not work (Error in unique.default(x) : unimplemented type 'expression' in 'HashTableSetup')
 fig_ma
+
+# for Fig 3
+
+a <- ggplot(data = effect_ma, aes(x = tanh(estimate), y = "Overall mean")) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat, aes(x= tanh(Zr), y = "Overall mean", size = (1/VZr) + 3), groupOnX = FALSE, alpha=0.2) + 
+  # precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(size=3, shape=21, fill = "black") +
+  annotate('text', x = 0.93, y = 1.15, label=paste("italic(k)==", length(dat$Zr)), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = "", y = "", size = expression(paste(italic(n), " (# of species)")) ,tag = "a") +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) +
+  annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_parasitism), xmin = -0.9, xmax = -0.7, ymin = 0.6, ymax = 1.2)
+
 ```
 
 **Figure 3a:** A forest plot showing the meta-analytic mean (mean effect size) with its 95% confidence interval (thick line) and 95% prediction interval (thin line) with observed effect sizes based on various sample sizes.  
@@ -423,7 +450,7 @@ fig_symbiosis <- ggplot(data = res_symbiosis1, aes(x = tanh(estimate), y = name)
   # setting colours
   scale_color_manual(values = c("Mutualist" = "#E69F00", "Parasite" = "#56B4E9")) +
   scale_fill_manual(values = c("Mutualist" = "#E69F00", "Parasite" = "#56B4E9")) +
-  annotate('text', x = -1, y = res_symbiosis1$name, label= paste("italic(k)==", res_symbiosis1$n), parse=TRUE, hjust = "left", size=3.5) +
+  annotate('text', x = 0.93, y = c(1.15, 2.15), label= paste("italic(k)==", res_symbiosis1$n), parse = TRUE, hjust = "left", size = 3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
@@ -432,11 +459,37 @@ fig_symbiosis <- ggplot(data = res_symbiosis1, aes(x = tanh(estimate), y = name)
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
   theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
-  annotation_custom(rasterGrob(image_mutualism), xmin = -1, xmax = -0.8, ymin = 0.4, ymax = 0.9) + 
-  annotation_custom(rasterGrob(image_parasitism), xmin = -1, xmax = -0.8, ymin = 1.4, ymax = 1.9)
-  
+  # putting pictures in
+  annotation_custom(rasterGrob(image_mutualism), xmin = -1, xmax = -0.8, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_parasitism), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2)
 
 fig_symbiosis
+
+# fig 3
+
+b <- ggplot(data = res_symbiosis1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(symbiosis)), 
+                   aes(x= tanh(Zr), y = symbiosis, size = ((1/VZr) + 3), colour = symbiosis), groupOnX = FALSE, alpha=0.2) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values = c("Mutualist" = "#E69F00", "Parasite" = "#56B4E9")) +
+  scale_fill_manual(values = c("Mutualist" = "#E69F00", "Parasite" = "#56B4E9")) +
+  annotate('text', x = 0.93, y = c(1.15, 2.15), label= paste("italic(k)==", res_symbiosis1$n), parse = TRUE, hjust = "left", size = 3.5) +
+  labs(x = "", y = "", tag = "b") +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position="none") +
+  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) +
+  # putting pictures in
+  annotation_custom(rasterGrob(image_mutualism), xmin = -1, xmax = -0.8, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_parasitism), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2)
 ```
 
 **Figure 3b:** A forest plot showing the group-wise means (the categorical varaible `symbiosis`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.  
@@ -506,6 +559,12 @@ tibble(
 ```
 
 ```{r, fig.width=7, fig.height= 4}
+# getting images
+image_invertebrate_host <- readPNG("../images/invertebrate_host_transparentbg.png")
+image_microbe_host <- readPNG("../images/microbe_host_transparentbg.png")
+image_vertebrate_host <- readPNG("../images/vertebrate_host_transparentbg.png")
+image_plant_host <- readPNG("../images/plant_host_transparentbg.png")
+
 # adding sample size (k) for each category
 k_host_tax_broad <- dat %>% group_by(host_tax_broad) %>% count()
 # getting estimates and predicitons
@@ -528,7 +587,7 @@ fig_host_tax_broad <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate),
   scale_color_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
   scale_fill_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
   scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
-  annotate('text', x = -1, y = res_host_tax_broad1$name, label= paste("italic(k)==", res_host_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
+  annotate('text', x = 0.93, y = 1:4 + 0.15, label= paste("italic(k)==", res_host_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
@@ -536,9 +595,42 @@ fig_host_tax_broad <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate),
   theme(legend.direction="horizontal") +
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
-  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
+  # putting pictures in
+  annotation_custom(rasterGrob(image_microbe_host), xmin = -1, xmax = -0.8, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_plant_host), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_invertebrate_host), xmin = -1, xmax = -0.8, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_vertebrate_host), xmin = -1, xmax = -0.8, ymin = 3.6, ymax = 4.2)
 
 fig_host_tax_broad
+
+# fig 3c
+c <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(host_tax_broad)), 
+                   aes(x= tanh(Zr), y = host_tax_broad, size = ((1/VZr) + 3), colour = host_tax_broad), groupOnX = FALSE, alpha=0.4) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
+  scale_fill_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
+  scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
+  annotate('text', x = 0.93, y = 1:4 + 0.15, label= paste("italic(k)==", res_host_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = "", y = "", size = expression(paste(italic(n), " (# of species)")) , tag = "c") +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position="none") +
+  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) +
+  # putting pictures in
+  annotation_custom(rasterGrob(image_microbe_host), xmin = -1, xmax = -0.8, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_plant_host), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_invertebrate_host), xmin = -1, xmax = -0.8, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_vertebrate_host), xmin = -1, xmax = -0.8, ymin = 3.6, ymax = 4.2)
 ```
 
 **Figure 3c:** A forest plot showing the group-wise means (the categorical varaible `host_tax_broad`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.  
@@ -611,6 +703,12 @@ tibble(
 ```
 
 ```{r, fig.width=7, fig.height= 4}
+# getting images
+image_invertebrate_parasite <- readPNG("../images/invertebrate_parasite_transparentbg.png")
+image_microbe_parasite <- readPNG("../images/microbe_parasite_transparentbg.png")
+image_vertebrate_parasite <- readPNG("../images/vertebrate_parasite_transparentbg.png")
+image_plant_parasite <- readPNG("../images/plant_parasite_transparentbg.png")
+
 # adding sample size (k) for each category
 k_symbiont_tax_broad <- dat %>% group_by(symbiont_tax_broad) %>% count()
 # getting estimates and predicitons
@@ -633,7 +731,7 @@ fig_symbiont_tax_broad <- ggplot(data = res_symbiont_tax_broad1, aes(x = tanh(es
   scale_color_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00" )) +
   scale_fill_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
   scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
-  annotate('text', x = -1, y = res_symbiont_tax_broad1$name, label= paste("italic(k)==", res_symbiont_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
+  annotate('text', x = 0.93, y = 1:4 + 0.15, label= paste("italic(k)==", res_symbiont_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
@@ -641,9 +739,43 @@ fig_symbiont_tax_broad <- ggplot(data = res_symbiont_tax_broad1, aes(x = tanh(es
   theme(legend.direction="horizontal") +
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
-  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
+  # putting pictures in
+  annotation_custom(rasterGrob(image_microbe_parasite), xmin = -1, xmax = -0.8, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_plant_parasite), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_invertebrate_parasite), xmin = -1, xmax = -0.8, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_vertebrate_parasite), xmin = -1, xmax = -0.8, ymin = 3.6, ymax = 4.2)
 
 fig_symbiont_tax_broad
+
+# fig 3d
+d <- ggplot(data = res_symbiont_tax_broad1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(symbiont_tax_broad)), 
+                   aes(x= tanh(Zr), y = symbiont_tax_broad, size = ((1/VZr) + 3), colour = symbiont_tax_broad), groupOnX = FALSE, alpha=0.4) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00" )) +
+  scale_fill_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
+  scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
+  annotate('text', x = 0.93, y = 1:4 + 0.15, label= paste("italic(k)==", res_symbiont_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")), tag = "d") +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position="none") +
+  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) +
+  # putting pictures in
+  annotation_custom(rasterGrob(image_microbe_parasite), xmin = -1, xmax = -0.8, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_plant_parasite), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_invertebrate_parasite), xmin = -1, xmax = -0.8, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_vertebrate_parasite), xmin = -1, xmax = -0.8, ymin = 3.6, ymax = 4.2)
+
 ```
 
 **Figure 2d:** A forest plot showing the group-wise means (the categorical varaible `symbiont_tax_broad`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.  
@@ -783,6 +915,9 @@ fig_host_range_taxonomic_breadth
 **Supplementary Figure 2:**
 A bubble plot showing a predicted regression line for the contenious varaible `log(log(host_range_taxonomic_breadth)` with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
 
+
+#### The place of symbiosis: ednosymbiosis vs. ectosymbiosis
+
 ```{r}
 # reordering
 dat$endo_or_ecto <- factor(dat$endo_or_ecto, levels = c("Endo/Ecto", "Endo", "Ecto"))
@@ -836,6 +971,10 @@ tibble(
 ```
 
 ```{r, fig.width=7, fig.height= 4}
+# getting images
+image_endoparasite <- readPNG("../images/endoparasite_transparentbg.png")
+image_ectoparasite <- readPNG("../images/ectoparasite_transparentbg.png")
+
 # adding sample size (k) for each category
 k_endo_or_ecto <- dat %>% group_by(endo_or_ecto) %>% count()
 # getting estimates and predicitons
@@ -858,7 +997,7 @@ fig_endo_or_ecto <- ggplot(data = res_endo_or_ecto1, aes(x = tanh(estimate), y =
   scale_color_manual(values = c("Endo/Ecto" = "#0072B2",  "Endo" = "#D55E00",  "Ecto"= "#CC79A7")) +
   scale_fill_manual(values = c("Endo/Ecto" = "#0072B2",  "Endo" = "#D55E00",  "Ecto"= "#CC79A7")) +
   scale_y_discrete(labels = c("Endo/Ecto" = "Both",  "Endo" = "Endosymbiosis",  "Ecto"= "Ectosymbiosis")) +
-  annotate('text', x = -1, y = res_endo_or_ecto1$name, label= paste("italic(k)==", res_endo_or_ecto1$n), parse=TRUE, hjust = "left", size=3.5) +
+  annotate('text', x = 0.93, y = 1:3 + 0.15, label= paste("italic(k)==", res_endo_or_ecto1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
@@ -866,9 +1005,43 @@ fig_endo_or_ecto <- ggplot(data = res_endo_or_ecto1, aes(x = tanh(estimate), y =
   theme(legend.direction = "horizontal") +
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
-  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
+  # adding images
+  annotation_custom(rasterGrob(image_endoparasite), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_ectoparasite), xmin = -1, xmax = -0.8, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_ectoparasite), xmin = -1.1, xmax = -0.9, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_endoparasite), xmin = -0.9, xmax = -0.7, ymin = 0.6, ymax = 1.2)
 
 fig_endo_or_ecto
+
+# fig 3e
+
+e <- ggplot(data = res_endo_or_ecto1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(endo_or_ecto)), 
+                   aes(x= tanh(Zr), y = endo_or_ecto, size = ((1/VZr) + 3), colour = endo_or_ecto), groupOnX = FALSE, alpha=0.4) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values = c("Endo/Ecto" = "#0072B2",  "Endo" = "#D55E00",  "Ecto"= "#CC79A7")) +
+  scale_fill_manual(values = c("Endo/Ecto" = "#0072B2",  "Endo" = "#D55E00",  "Ecto"= "#CC79A7")) +
+  scale_y_discrete(labels = c("Endo/Ecto" = "Both",  "Endo" = "Endosymbiosis",  "Ecto"= "Ectosymbiosis")) +
+  annotate('text', x = 0.93, y = 1:3 + 0.15, label= paste("italic(k)==", res_endo_or_ecto1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = "", y = "", size = expression(paste(italic(n), " (# of species)")), tag = "e" ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position="none") +
+  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) +
+  # adding images
+  annotation_custom(rasterGrob(image_endoparasite), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_ectoparasite), xmin = -1, xmax = -0.8, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_ectoparasite), xmin = -1.1, xmax = -0.9, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_endoparasite), xmin = -0.9, xmax = -0.7, ymin = 0.6, ymax = 1.2)
 ```
 
 **Figure 3e:**  A forest plot showing the group-wise means (the categorical varaible `endo_or_ecto`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes. 
@@ -925,6 +1098,10 @@ tibble(
 ```
 
 ```{r, fig.width=7, fig.height= 3.5}
+# getting images
+image_horizontal <- readPNG("../images/horizontal_transparentbg.png")
+image_vertical <- readPNG("../images/vertical_transparentbg.png")
+image_both <- readPNG("../images/horizontal_vertical_transparentbg.png")
 # adding sample size (k) for each category
 k_mode_of_transmission_broad <- dat %>% group_by(mode_of_transmission_broad) %>% count()
 # getting estimates and predicitons
@@ -947,7 +1124,7 @@ fig_mode_of_transmission_broad <- ggplot(data = res_mode_of_transmission_broad1,
   scale_color_manual(values = c("both" = "#0072B2",  "horizontal" = "#D55E00",  "vertical"= "#CC79A7")) +
   scale_fill_manual(values = c("both" = "#0072B2",  "horizontal" = "#D55E00",  "vertical"= "#CC79A7")) +
   scale_y_discrete(labels = c("both" = "Both",  "horizontal" = "Horizontal",  "vertical"= "Vertical")) +
-  annotate('text', x = -1, y = res_mode_of_transmission_broad1$name, label= paste("italic(k)==", res_mode_of_transmission_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
+  annotate('text', x = 0.93, y = (1:3 + 0.15), label= paste("italic(k)==", res_mode_of_transmission_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
@@ -955,9 +1132,43 @@ fig_mode_of_transmission_broad <- ggplot(data = res_mode_of_transmission_broad1,
   theme(legend.direction = "horizontal") +
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
-  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
+  # adding images
+  annotation_custom(rasterGrob(image_horizontal), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_vertical), xmin = -1, xmax = -0.8, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_both), xmin = -1, xmax = -0.8, ymin = 0.6, ymax = 1.2) 
 
 fig_mode_of_transmission_broad
+
+# fig 3f
+
+f <- ggplot(data = res_mode_of_transmission_broad1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(mode_of_transmission_broad)), 
+                   aes(x= tanh(Zr), y = mode_of_transmission_broad, size = ((1/VZr) + 3), colour = mode_of_transmission_broad), groupOnX = FALSE, alpha=0.4) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values = c("both" = "#0072B2",  "horizontal" = "#D55E00",  "vertical"= "#CC79A7")) +
+  scale_fill_manual(values = c("both" = "#0072B2",  "horizontal" = "#D55E00",  "vertical"= "#CC79A7")) +
+  scale_y_discrete(labels = c("both" = "Both",  "horizontal" = "Horizontal",  "vertical"= "Vertical")) +
+  annotate('text', x = 0.93, y = (1:3 + 0.15), label= paste("italic(k)==", res_mode_of_transmission_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = "", y = "", size = expression(paste(italic(n), " (# of species)")), tag = "f" ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position="none") +
+  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) +
+  # adding images
+  annotation_custom(rasterGrob(image_horizontal), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_vertical), xmin = -1, xmax = -0.8, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_both), xmin = -1, xmax = -0.8, ymin = 0.6, ymax = 1.2) 
+
+
 ```
 
 **Figure 2f:** A forest plot showing the group-wise means (the categorical varaible `mode_of_transmission_broad`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.
@@ -1054,7 +1265,7 @@ fig_symbiosis_transmission <- ggplot(data = res_symbiosis_transmission1, aes(x =
   scale_color_manual(values =   c("MutualistBoth"= colour_ls[1], "MutualistHorizontal"= colour_ls[2], "MutualistVertical" = colour_ls[3],"ParasiteBoth"= colour_ls[4], "ParasiteHorizontal" = colour_ls[5])) +
   scale_fill_manual(values = c("MutualistBoth"= colour_ls[1], "MutualistHorizontal"= colour_ls[2], "MutualistVertical" = colour_ls[3],"ParasiteBoth"= colour_ls[4], "ParasiteHorizontal" = colour_ls[5])) +
   scale_y_discrete(labels = c("MutualistBoth" = "Mutualist-\nBoth", "MutualistHorizontal" = "Mutualist-\nHorizontal","MutualistVertical" = "Mutualist-\nVertical", "ParasiteBoth" = "Parasite-\nBoth", "ParasiteHorizontal" = "Parasite-\nHorizontal")) +
-  annotate('text', x = -1, y = res_symbiosis_transmission1$name, label= paste("italic(k)==", res_symbiosis_transmission1$n), parse=TRUE, hjust = "left", size=3.5) +
+  annotate('text', x = 0.93, y = 1:5 + 0.15, label= paste("italic(k)==", res_symbiosis_transmission1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
@@ -1062,21 +1273,76 @@ fig_symbiosis_transmission <- ggplot(data = res_symbiosis_transmission1, aes(x =
   theme(legend.direction="horizontal") +
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
-  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
+  # putting pictures in
+  annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_both), xmin = -0.9, xmax = -0.7, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_horizontal),xmin = -0.9, xmax = -0.7, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_vertical), xmin = -0.9, xmax = -0.7, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_parasitism), xmin = -1.1, xmax = -0.9, ymin = 3.6, ymax = 4.2) +
+  annotation_custom(rasterGrob(image_both), xmin = -0.9, xmax = -0.7, ymin = 3.6, ymax = 4.2) +
+  annotation_custom(rasterGrob(image_parasitism), xmin = -1.1, xmax = -0.9, ymin = 4.6, ymax = 5.2) +
+  annotation_custom(rasterGrob(image_horizontal), xmin = -0.9, xmax = -0.7, ymin = 4.6, ymax = 5.2)
 
 fig_symbiosis_transmission
+
+## fig 3
+g <- ggplot(data = res_symbiosis_transmission1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(symbiosis_transmission)), 
+                   aes(x= tanh(Zr), y = symbiosis_transmission, size = ((1/VZr) + 3), colour = symbiosis_transmission), groupOnX = FALSE, alpha=0.4) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values =   c("MutualistBoth"= colour_ls[1], "MutualistHorizontal"= colour_ls[2], "MutualistVertical" = colour_ls[3],"ParasiteBoth"= colour_ls[4], "ParasiteHorizontal" = colour_ls[5])) +
+  scale_fill_manual(values = c("MutualistBoth"= colour_ls[1], "MutualistHorizontal"= colour_ls[2], "MutualistVertical" = colour_ls[3],"ParasiteBoth"= colour_ls[4], "ParasiteHorizontal" = colour_ls[5])) +
+  scale_y_discrete(labels = c("MutualistBoth" = "Mutualist-\nBoth", "MutualistHorizontal" = "Mutualist-\nHorizontal","MutualistVertical" = "Mutualist-\nVertical", "ParasiteBoth" = "Parasite-\nBoth", "ParasiteHorizontal" = "Parasite-\nHorizontal")) +
+  annotate('text', x = 0.93, y = 1:5 + 0.15, label= paste("italic(k)==", res_symbiosis_transmission1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ,tag = "g" ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position="none") +
+  theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) +
+  # putting pictures in
+  annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_both), xmin = -0.9, xmax = -0.7, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_horizontal),xmin = -0.9, xmax = -0.7, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_vertical), xmin = -0.9, xmax = -0.7, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_parasitism), xmin = -1.1, xmax = -0.9, ymin = 3.6, ymax = 4.2) +
+  annotation_custom(rasterGrob(image_both), xmin = -0.9, xmax = -0.7, ymin = 3.6, ymax = 4.2) +
+  annotation_custom(rasterGrob(image_parasitism), xmin = -1.1, xmax = -0.9, ymin = 4.6, ymax = 5.2) +
+  annotation_custom(rasterGrob(image_horizontal), xmin = -0.9, xmax = -0.7, ymin = 4.6, ymax = 5.2)
+
 ```
 
 **Figure 3g:** A forest plot showing the group-wise means (the categorical varaible `symbiosis_transmission`) with tehir 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.
 
 #### Putting together Figure 3
 
-```{r}
+```{r, fig.width=15, fig.height= 15}
+#f (for above)
+# creating a forest plot
 
 
+# building fig 3 using patchwork
+fig3 <- (a / b / c / d + plot_layout(heights = c(1.6, 2, 3.7, 3.7))) | 
+  (e / f / g + plot_layout(heights = c(2.8, 2.8, 4.4))) #+ plot_annotation(tag_levels = 'a', tag_suffix = ')')
+ 
+fig3
 
-
+#ggsave("../figs/fig3.png", width = 15, height = 15)
+#ggsave("../figs/fig3.pdf", width = 15, height = 15)
 ```
+**Figure 3:** putting all 7 panels together: Figure 3a - Figure 3g (see the main text)
 
 ### Addtional analyses (uni-predictor)
 
@@ -1169,7 +1435,7 @@ fig_host_tax_symbiosis <- ggplot(data = res_host_tax_symbiosis1, aes(x = tanh(es
   scale_color_manual(values =   c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertMutualist"= colour_ls[7],     "VertParasite"= colour_ls[8] )) +
   scale_fill_manual(values = c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertMutualist"= colour_ls[7],     "VertParasite"= colour_ls[8] )) +
   scale_y_discrete(labels = c("MicrobeMutualist"= "Microbe-\nMutualist", "MicrobeParasite"= "Microbe-\nParasite",  "PlantMutualist" = "Plant-\nMutualist", "PlantParasite"="Plant-\nParasite", "InvertMutualist" = "Invertebrate-\nMutualist",   "InvertParasite"= "Invertebrate-\nParasite", "VertMutualist"= "Vertebrate-\nMutualist",  "VertParasite"= "Vertebrate-\nParasite" )) +
-  annotate('text', x = -1, y = res_host_tax_symbiosis1$name, label= paste("italic(k)==", res_host_tax_symbiosis1$n), parse=TRUE, hjust = "left", size=3.5) +
+  annotate('text', x = 0.93, y = 1:8 + 0.15, label= paste("italic(k)==", res_host_tax_symbiosis1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
@@ -1177,7 +1443,24 @@ fig_host_tax_symbiosis <- ggplot(data = res_host_tax_symbiosis1, aes(x = tanh(es
   theme(legend.direction="horizontal") +
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
-  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
+  # putting pictures in
+  annotation_custom(rasterGrob(image_microbe_host), xmin = -1.1, xmax = -0.9, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_mutualism), xmin = -0.9, xmax = -0.7, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_microbe_host), xmin = -1.1, xmax = -0.9, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_parasitism),xmin = -0.9, xmax = -0.7, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_plant_host), xmin = -1.1, xmax = -0.9, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_mutualism), xmin = -0.9, xmax = -0.7, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_plant_host), xmin = -1.1, xmax = -0.9, ymin = 3.6, ymax = 4.2) +
+  annotation_custom(rasterGrob(image_parasitism), xmin = -0.9, xmax = -0.7, ymin = 3.6, ymax = 4.2) +
+  annotation_custom(rasterGrob(image_invertebrate_host), xmin = -1.1, xmax = -0.9, ymin = 4.6, ymax = 5.2) +
+  annotation_custom(rasterGrob(image_mutualism), xmin = -0.9, xmax = -0.7, ymin = 4.6, ymax = 5.2) +
+  annotation_custom(rasterGrob(image_invertebrate_host), xmin = -1.1, xmax = -0.9, ymin = 5.6, ymax = 6.2) + 
+  annotation_custom(rasterGrob(image_parasitism), xmin = -0.9, xmax = -0.7, ymin = 5.6, ymax = 6.2) + 
+  annotation_custom(rasterGrob(image_vertebrate_host), xmin = -1.1, xmax = -0.9, ymin = 6.6, ymax = 7.2) +
+  annotation_custom(rasterGrob(image_mutualism), xmin = -0.9, xmax = -0.7, ymin = 6.6, ymax = 7.2) +
+  annotation_custom(rasterGrob(image_vertebrate_host), xmin = -1.1, xmax = -0.9, ymin = 7.6, ymax = 8.2) +
+  annotation_custom(rasterGrob(image_parasitism), xmin = -0.9, xmax = -0.7, ymin = 7.6, ymax = 8.2)
 
 fig_host_tax_symbiosis
 ```
@@ -1272,7 +1555,7 @@ fig_symbiont_tax_symbiosis <- ggplot(data = res_symbiont_tax_symbiosis1, aes(x =
   scale_color_manual(values =   c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertParasite"= colour_ls[8] )) +
   scale_fill_manual(values = c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertParasite"= colour_ls[8] )) +
   scale_y_discrete(labels = c("MicrobeMutualist"= "Microbe-\nMutualist", "MicrobeParasite"= "Microbe-\nParasite",  "PlantMutualist" = "Plant-\nMutualist", "PlantParasite"="Plant-\nParasite", "InvertMutualist" = "Invertebrate-\nMutualist",   "InvertParasite"= "Invertebrate-\nParasite",  "VertParasite"= "Vertebrate-\nParasite" )) +
-  annotate('text', x = -1, y = res_symbiont_tax_symbiosis1$name, label= paste("italic(k)==", res_symbiont_tax_symbiosis1$n), parse=TRUE, hjust = "left", size=3.5) +
+  annotate('text', x = 0.93, y = 1:7 + 0.15, label= paste("italic(k)==", res_symbiont_tax_symbiosis1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
@@ -1280,7 +1563,22 @@ fig_symbiont_tax_symbiosis <- ggplot(data = res_symbiont_tax_symbiosis1, aes(x =
   theme(legend.direction="horizontal") +
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
-  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
+    # putting pictures in
+  annotation_custom(rasterGrob(image_microbe_parasite), xmin = -1.1, xmax = -0.9, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_mutualism), xmin = -0.9, xmax = -0.7, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_microbe_parasite), xmin = -1.1, xmax = -0.9, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_parasitism),xmin = -0.9, xmax = -0.7, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_plant_parasite), xmin = -1.1, xmax = -0.9, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_mutualism), xmin = -0.9, xmax = -0.7, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_plant_parasite), xmin = -1.1, xmax = -0.9, ymin = 3.6, ymax = 4.2) +
+  annotation_custom(rasterGrob(image_parasitism), xmin = -0.9, xmax = -0.7, ymin = 3.6, ymax = 4.2) +
+  annotation_custom(rasterGrob(image_invertebrate_parasite), xmin = -1.1, xmax = -0.9, ymin = 4.6, ymax = 5.2) +
+  annotation_custom(rasterGrob(image_mutualism), xmin = -0.9, xmax = -0.7, ymin = 4.6, ymax = 5.2) +
+  annotation_custom(rasterGrob(image_invertebrate_parasite), xmin = -1.1, xmax = -0.9, ymin = 5.6, ymax = 6.2) + 
+  annotation_custom(rasterGrob(image_parasitism), xmin = -0.9, xmax = -0.7, ymin = 5.6, ymax = 6.2) + 
+  annotation_custom(rasterGrob(image_vertebrate_parasite), xmin = -1.1, xmax = -0.9, ymin = 6.6, ymax = 7.2) +
+  annotation_custom(rasterGrob(image_parasitism), xmin = -0.9, xmax = -0.7, ymin = 6.6, ymax = 7.2) 
 
 fig_symbiont_tax_symbiosis
 ```
@@ -1379,7 +1677,7 @@ fig_host_symbiont_tax <- ggplot(data = res_host_symbiont_tax1, aes(x = tanh(esti
   scale_color_manual(values =  c("MicrobeInvert" = colour_ls[1],  "MicrobeMicrobe"= colour_ls[2], "MicrobePlant" = colour_ls[3], "PlantInvert" = colour_ls[4],"PlantMicrobe" = colour_ls[5], "InvertInvert"  = colour_ls[6],  "InvertMicrobe" = colour_ls[7], "InvertPlant" = colour_ls[8],"VertInvert"  = colour_ls[9], "VertMicrobe"= colour_ls[10],"VertVert"  = colour_ls[11])) +
   scale_fill_manual(values = c("MicrobeInvert" = colour_ls[1],  "MicrobeMicrobe"= colour_ls[2], "MicrobePlant" = colour_ls[3], "PlantInvert" = colour_ls[4],"PlantMicrobe" = colour_ls[5], "InvertInvert"  = colour_ls[6],  "InvertMicrobe" = colour_ls[7], "InvertPlant" = colour_ls[8],"VertInvert"  = colour_ls[9], "VertMicrobe"= colour_ls[10],"VertVert"  = colour_ls[11])) +
   scale_y_discrete(labels = c("MicrobeInvert" = "Microbe-\nInvertebrate",  "MicrobeMicrobe"= "Microbe-\nMicrobe", "MicrobePlant" = "Microbe-\nPlant", "PlantInvert" = "Plant-\nInvertebrate","PlantMicrobe" = "Plant-\nMicrobe", "InvertInvert"  = "Invertebrate\nInvertebrate",  "InvertMicrobe" = "Invertebrate-\nMicrobe", "InvertPlant" = "Invertebrate-\nPlant","VertInvert"  = "Vertebrate-\nInvertebrate", "VertMicrobe"= "Vertebrate-\nMicrobe", "VertVert"  = "Vertebrate-\nVertebrate")) +
-  annotate('text', x = -1, y = res_host_symbiont_tax1$name, label= paste("italic(k)==", res_host_symbiont_tax1$n), parse=TRUE, hjust = "left", size=3.5) +
+  annotate('text', x = 0.93, y = 1:11 + 0.15, label= paste("italic(k)==", res_host_symbiont_tax1$n), parse=TRUE, hjust = "left", size=3.5) +
   labs(x = expression(paste(italic(r), " (correlaton)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
@@ -1387,7 +1685,34 @@ fig_host_symbiont_tax <- ggplot(data = res_host_symbiont_tax1, aes(x = tanh(esti
   theme(legend.direction="horizontal") +
   #theme(legend.background = element_rect(fill = "white", colour = "black")) +
   theme(legend.background = element_blank()) +
-  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) 
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
+    # putting pictures in
+  annotation_custom(rasterGrob(image_microbe_host), xmin = -1.1, xmax = -0.9, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_invertebrate_parasite), xmin = -0.9, xmax = -0.7, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_microbe_host), xmin = -1.1, xmax = -0.9, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_microbe_parasite),xmin = -0.9, xmax = -0.7, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_microbe_host), xmin = -1.1, xmax = -0.9, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_plant_parasite), xmin = -0.9, xmax = -0.7, ymin = 2.6, ymax = 3.2) + 
+  #
+  annotation_custom(rasterGrob(image_plant_host), xmin = -1.1, xmax = -0.9, ymin = 3.6, ymax = 4.2) +
+  annotation_custom(rasterGrob(image_invertebrate_parasite), xmin = -0.9, xmax = -0.7, ymin = 3.6, ymax = 4.2) +
+  annotation_custom(rasterGrob(image_plant_host), xmin = -1.1, xmax = -0.9, ymin = 4.6, ymax = 5.2) +
+  annotation_custom(rasterGrob(image_microbe_parasite), xmin = -0.9, xmax = -0.7, ymin = 4.6, ymax = 5.2) +
+  #
+  annotation_custom(rasterGrob(image_invertebrate_host), xmin = -1.1, xmax = -0.9, ymin = 5.6, ymax = 6.2) + 
+  annotation_custom(rasterGrob(image_invertebrate_parasite), xmin = -0.9, xmax = -0.7, ymin = 5.6, ymax = 6.2) + 
+  annotation_custom(rasterGrob(image_invertebrate_host), xmin = -1.1, xmax = -0.9, ymin = 6.6, ymax = 7.2) +
+  annotation_custom(rasterGrob(image_microbe_parasite), xmin = -0.9, xmax = -0.7, ymin = 6.6, ymax = 7.2) +
+  annotation_custom(rasterGrob(image_invertebrate_host), xmin = -1.1, xmax = -0.9, ymin = 7.6, ymax = 8.2) +
+  annotation_custom(rasterGrob(image_plant_parasite), xmin = -0.9, xmax = -0.7, ymin = 7.6, ymax = 8.2) +
+  #
+  annotation_custom(rasterGrob(image_vertebrate_host), xmin = -1.1, xmax = -0.9, ymin = 8.6, ymax = 9.2) + 
+  annotation_custom(rasterGrob(image_invertebrate_parasite), xmin = -0.9, xmax = -0.7, ymin = 8.6, ymax = 9.2) + 
+  annotation_custom(rasterGrob(image_vertebrate_host), xmin = -1.1, xmax = -0.9, ymin = 9.6, ymax = 10.2) +
+  annotation_custom(rasterGrob(image_microbe_parasite), xmin = -0.9, xmax = -0.7, ymin = 9.6, ymax = 10.2) +
+  annotation_custom(rasterGrob(image_vertebrate_host), xmin = -1.1, xmax = -0.9, ymin = 10.6, ymax = 11.2) +
+  annotation_custom(rasterGrob(image_vertebrate_parasite), xmin = -0.9, xmax = -0.7, ymin = 10.6, ymax = 11.2)
+
 
 fig_host_symbiont_tax
 ```
