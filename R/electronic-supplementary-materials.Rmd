@@ -1828,11 +1828,55 @@ tibble(
 
 ## Publication Bias Analysis
 
-Here, we conducted 2 kinds of publication bias analyses: a type of Egger regression[REF] and funnel plots of results[REF].  Also, types of sensitivity analyses. 
+Here, we conducted 3 kinds of publication bias analyses: 1) countour-enhanced funnel plots [@peters2008contour] of residuals [@egger1997bias; @nakagawa2012methodological], 2) a type of Egger regression [@egger1997bias; @moreno2009assessment], and 3) a regression-based time-lag bias test [@nakagawa2012methodological]. 
+
+### Funnel plot 
+
+A normal funnel plot assumes the homogeneity (i.e., *I*^2^ = 0). therefore, we controlled for important moderators (i.e., `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`).
+
+#### Residual funnel plot 1
+
+It is not normal skewness that we see in our enhanced-counter funnel plot (**Supplementary Figure 5**). This funnel asymmetry is different from one cased by publication bias[@peters2008contour], but it is mainly caused by the boundary created (see "Sensitivity Analysis" section where we deal with this skewness).
+
+```{r}
+# 
+res_funnel_plot <- rma.mv(yi = Zr, V = VZr, 
+                               mods = ~ mode_of_transmission_broad +
+                                 host_tax_broad +
+                                 symbiosis, 
+                               random = ~ 1 | authors, data = dat)
+
+funnel(res_funnel_plot, yaxis = "seinv", level=c(90, 95, 99), shade=c("white", "gray55", "gray75"), refline=0, legend=TRUE)
+```
+
+**Supplementary Figure 5:**
+
+
+#### Residual funnel plot 2
+
+Further, Egger regression analyses (see below) showed `sqrt(VZr)` (sampling errors [SE] for effect sizes) accounts much heteroegenity so that we added to our model. The funnel asymmetry we see in **Supplementary Figure 6** (if any) is much less sever than that in **Supplementary Figure 5**. 
+
+```{r}
+# 
+res_funnel_plot2 <- rma.mv(yi = Zr, V = VZr, 
+                               mods = ~ sqrt(VZr) +
+                                mode_of_transmission_broad +
+                                 host_tax_broad +
+                                 symbiosis, 
+                               random = ~ 1 | authors, data = dat)
+
+funnel(res_funnel_plot2, yaxis = "seinv", level=c(90, 95, 99), shade=c("white", "gray55", "gray75"), refline=0, legend=TRUE)
+```
+
+**Supplementary Figure 6:**
 
 ### Egger regression
 
+Egger regression tests whether funnel asymmetries we see in funnel plots are statsitical signficant or not. 
+
 #### Univaraite Egger regression
+
+The test (or `sqrt(VZr)`) is signficant. However, as mentioned above, this is due to the boundary created by the number of randamisations; this boundary can be seen in **Supplementary Figure 7**
 
 ```{r}
 # 
@@ -1894,12 +1938,12 @@ fit_egger_regression_uni <-  dat %>%
 fit_egger_regression_uni
 ```
 
-**Supplementary Figure 5:**
+**Supplementary Figure 7:**
 A bubble plot showing a predicted regression line for the contenious varaible `log(host_range_link_ratio)` with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
 
 #### Multivaraite Egger regression
 
-We also conducted a Egger regression . 
+We also conducted a Egger regression controlling other important moderators (i.e., `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`). After controlling for these variables, `sqrt(VZr)` stays signficant.
 
 ```{r}
 # 
@@ -1965,46 +2009,12 @@ fit_egger_regression_mul <-  dat %>%
 fit_egger_regression_mul
 ```
 
-**Supplementary Figure 6:**
-A bubble plot showing a predicted loess line for the contenious varaible `log(host_range_link_ratio)` (given the values fo the other 3 varaibles in the model) with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
-
-it is not linear becuase these are 
-
-### Funnel plot 
-
-#### Residual funnel plot 1
-
-```{r}
-# 
-res_funnel_plot <- rma.mv(yi = Zr, V = VZr, 
-                               mods = ~ mode_of_transmission_broad +
-                                 host_tax_broad +
-                                 symbiosis, 
-                               random = ~ 1 | authors, data = dat)
-
-funnel(res_funnel_plot, yaxis = "seinv")
-```
-
-**Supplementary Figure 7:**
-
-
-#### Residual funnel plot 2
-
-```{r}
-# 
-res_funnel_plot2 <- rma.mv(yi = Zr, V = VZr, 
-                               mods = ~ sqrt(VZr) +
-                                mode_of_transmission_broad +
-                                 host_tax_broad +
-                                 symbiosis, 
-                               random = ~ 1 | authors, data = dat)
-
-funnel(res_funnel_plot2, yaxis = "seinv")
-```
-
 **Supplementary Figure 8:**
+A bubble plot showing a predicted loess line for the contenious varaible `log(host_range_link_ratio)` (given the values fo the other 3 varaibles in the model) with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. Note that the lines are not linear as these are based on multivraite predctions of the data points. 
 
 ### Time-lag bias
+
+We do not find any evidence of the time-lag effect (a decline in the magnitude of the effect over time) in both the univaraite and multivariate models (**Supplementary Figure 9** and **Supplementary Figure 10**).
 
 #### Univaraite time-lag bias
 ```{r}
@@ -2135,18 +2145,19 @@ fit_time_lag_effect_mul <-  dat %>%
 fit_time_lag_effect_mul
 ```
 
-**Supplementary Figure 10:** A bubble plot showing a predicted loess line for the contenious varaible `year` (given the values fo the other 3 varaibles in the model) with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
+**Supplementary Figure 10:** A bubble plot showing a predicted loess line for the contenious varaible `year` (given the values fo the other 3 varaibles in the model) with tehir 95% confidences regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. Note that the lines are not linear as these are based on multivraite predctions of the data points. 
 
 ## Sensitivity Analysis
 
-The funnel plots above identifed the issue of 
+The funnel plots above identifed the issue of upper bounds of this effect size given a sample size (a upper limite of a p value given the number of randomaizations). There are two analyses, we can do to confirm that this boundary is not affecting our overall results. First, 
 
-### Sensitivity test 1: the number of randamizations
-
+important moderators (i.e., `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`)
 
 * boundary problems
  ** no of randomzations and limit_rearched = if they are different, then, it could lead to bias
  ** limit_reached = if high - more likley to be underestiamted 
+
+### Sensitivity test 1: the number of randamizations
  
 #### The type of symbiosis: parasitism vs. mutualism
 
@@ -2393,23 +2404,17 @@ tibble(
   kable_styling("striped", position = "left") 
 ```
 
-### Recommendation based on 
+### Recommendations based on our sensitivity analysis
 
-* they need to run more simuations so they do not max out!
-* reanalysis of earlier trees are necessary; getting older or updated trees are required
-* new studies should provide all data avaiable online so that future analysis can incorprate all avaiable data
+We have 3 recommendations for future (and past) co-divergence work using TreeMap and ParaFit. 
 
-
-### Sensitivity test 3: the leave-one-out validation
-
-```{r}
-
-```
-
+* Researchers need to set the number of randamizations much higher to obtain more accurate p value. 
+* If possible, the reanalysis of earlier trees are necessary; also, analysis using updated trees will be desierable.
+* New studies should provide all data avaiable online so that a future meta-analysis can incorprate all avaiable data.
 
 ## Acknowledgement
 
-Many coding materials have been borrowed from Luke's and Rose's
+Many coding materials have been borrowed from Luke's paper. 
 
 ## R Session Information
 
