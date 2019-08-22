@@ -1,5 +1,5 @@
 ---
-title: "Testing the generality of host-symbiont cophylogeny"
+title: "A Broadscale Test of Host-Symbiont Cophylogeny Reveals Widespread Phylogenetic Congruence"
 author: "Alexander Hayward, Robert Poulin & Shinichi Nakagawa"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
@@ -224,7 +224,7 @@ dat %<>% p_to_Zr(p_value, sample_size)
 
 ### Meta-analytic model: testing Fahrenholz's rule
 
-First, we checked what random effects should be put into the main model to do this we fitted two random effects, `authors` and `observation`; the former term was added to account for non-independence of effect sizes originating from the same papers (i.e., `authors`). 
+First, we checked what random effects should be put into the main model to do this we fitted two random effects, `authors` (i.e. study IDs) and `observation`; the former term was added to account for non-independence of effect sizes originating from the same papers (i.e., `authors`). 
 
 ```{r, cache=TRUE}
 # 2 random effects & model AIC 
@@ -1136,9 +1136,9 @@ fig_mode_of_transmission_broad <- ggplot(data = res_mode_of_transmission_broad1,
   theme(legend.background = element_blank()) +
   theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
   # adding images
-  annotation_custom(rasterGrob(image_horizontal), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2) +
-  annotation_custom(rasterGrob(image_vertical), xmin = -1, xmax = -0.8, ymin = 2.6, ymax = 3.2) + 
-  annotation_custom(rasterGrob(image_both), xmin = -1, xmax = -0.8, ymin = 0.6, ymax = 1.2) 
+  annotation_custom(rasterGrob(image_horizontal), xmin = -1, xmax = -0.7, ymin = 1.4, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_vertical), xmin = -1, xmax = -0.7, ymin = 2.4, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_both), xmin = -1, xmax = -0.7, ymin = 0.4, ymax = 1.2) 
 
 fig_mode_of_transmission_broad
 
@@ -1166,9 +1166,9 @@ f <- ggplot(data = res_mode_of_transmission_broad1, aes(x = tanh(estimate), y = 
   theme(legend.position="none") +
   theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) +
   # adding images
-  annotation_custom(rasterGrob(image_horizontal), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2) +
-  annotation_custom(rasterGrob(image_vertical), xmin = -1, xmax = -0.8, ymin = 2.6, ymax = 3.2) + 
-  annotation_custom(rasterGrob(image_both), xmin = -1, xmax = -0.8, ymin = 0.6, ymax = 1.2) 
+  annotation_custom(rasterGrob(image_horizontal), xmin = -1, xmax = -0.7, ymin = 1.4, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_vertical), xmin = -1, xmax = -0.7, ymin = 2.4, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_both), xmin = -1, xmax = -0.7, ymin = 0.4, ymax = 1.2) 
 
 
 ```
@@ -1278,15 +1278,15 @@ fig_symbiosis_transmission <- ggplot(data = res_symbiosis_transmission1, aes(x =
   theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
   # putting pictures in
   annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 0.6, ymax = 1.2) + 
-  annotation_custom(rasterGrob(image_both), xmin = -0.9, xmax = -0.7, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_both), xmin = -0.9, xmax = -0.6, ymin = 0.4, ymax = 1.2) + 
   annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 1.6, ymax = 2.2) +
-  annotation_custom(rasterGrob(image_horizontal),xmin = -0.9, xmax = -0.7, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_horizontal),xmin = -0.9, xmax = -0.6, ymin = 1.4, ymax = 2.2) +
   annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 2.6, ymax = 3.2) + 
-  annotation_custom(rasterGrob(image_vertical), xmin = -0.9, xmax = -0.7, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_vertical), xmin = -0.9, xmax = -0.6, ymin = 2.4, ymax = 3.2) + 
   annotation_custom(rasterGrob(image_parasitism), xmin = -1.1, xmax = -0.9, ymin = 3.6, ymax = 4.2) +
-  annotation_custom(rasterGrob(image_both), xmin = -0.9, xmax = -0.7, ymin = 3.6, ymax = 4.2) +
+  annotation_custom(rasterGrob(image_both), xmin = -0.9, xmax = -0.6, ymin = 3.4, ymax = 4.2) +
   annotation_custom(rasterGrob(image_parasitism), xmin = -1.1, xmax = -0.9, ymin = 4.6, ymax = 5.2) +
-  annotation_custom(rasterGrob(image_horizontal), xmin = -0.9, xmax = -0.7, ymin = 4.6, ymax = 5.2)
+  annotation_custom(rasterGrob(image_horizontal), xmin = -0.9, xmax = -0.6, ymin = 4.4, ymax = 5.2)
 
 fig_symbiosis_transmission
 
@@ -1314,15 +1314,15 @@ g <- ggplot(data = res_symbiosis_transmission1, aes(x = tanh(estimate), y = name
   theme(axis.text.y = element_text(size = 10, colour ="black",hjust = 0.5, angle = 90)) +
   # putting pictures in
   annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 0.6, ymax = 1.2) + 
-  annotation_custom(rasterGrob(image_both), xmin = -0.9, xmax = -0.7, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_both), xmin = -0.9, xmax = -0.6, ymin = 0.4, ymax = 1.2) + 
   annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 1.6, ymax = 2.2) +
-  annotation_custom(rasterGrob(image_horizontal),xmin = -0.9, xmax = -0.7, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_horizontal),xmin = -0.9, xmax = -0.6, ymin = 1.4, ymax = 2.2) +
   annotation_custom(rasterGrob(image_mutualism), xmin = -1.1, xmax = -0.9, ymin = 2.6, ymax = 3.2) + 
-  annotation_custom(rasterGrob(image_vertical), xmin = -0.9, xmax = -0.7, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_vertical), xmin = -0.9, xmax = -0.6, ymin = 2.4, ymax = 3.2) + 
   annotation_custom(rasterGrob(image_parasitism), xmin = -1.1, xmax = -0.9, ymin = 3.6, ymax = 4.2) +
-  annotation_custom(rasterGrob(image_both), xmin = -0.9, xmax = -0.7, ymin = 3.6, ymax = 4.2) +
+  annotation_custom(rasterGrob(image_both), xmin = -0.9, xmax = -0.6, ymin = 3.4, ymax = 4.2) +
   annotation_custom(rasterGrob(image_parasitism), xmin = -1.1, xmax = -0.9, ymin = 4.6, ymax = 5.2) +
-  annotation_custom(rasterGrob(image_horizontal), xmin = -0.9, xmax = -0.7, ymin = 4.6, ymax = 5.2)
+  annotation_custom(rasterGrob(image_horizontal), xmin = -0.9, xmax = -0.6, ymin = 4.4, ymax = 5.2)
 
 ```
 
@@ -1330,15 +1330,15 @@ g <- ggplot(data = res_symbiosis_transmission1, aes(x = tanh(estimate), y = name
 
 #### Putting together Figure 3
 
-```{r, fig.width=15, fig.height= 15}
+```{r, fig.width=14, fig.height= 14}
 # building fig 3 using patchwork
 fig3 <- (a / b / c / d + plot_layout(heights = c(1.6, 2, 3.7, 3.7))) | 
   (e / f / g + plot_layout(heights = c(2.8, 2.8, 4.4))) #+ plot_annotation(tag_levels = 'a', tag_suffix = ')')
  
 fig3
 
-#ggsave("../figs/fig3.png", width = 15, height = 15)
-#ggsave("../figs/fig3.pdf", width = 15, height = 15)
+#ggsave("../figs/fig3.png", width = 14, height = 14)
+#ggsave("../figs/fig3.pdf", width = 14, height = 14)
 ```
 **Figure 3:** putting all 7 panels together: Figure 3a - Figure 3g (see the main text)
 
@@ -1465,6 +1465,8 @@ fig_host_tax_symbiosis
 
 **Supplementary Figure 3:** A forest plot showing the group-wise means (the categorical variable `host_tax_symbiosis`) with their 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.
 
+Splitting host taxonomy by mode of symbiosis revealed that the observed higher phylogenetic congruence of host-symbiont cophylogenies involving a microbial host is driven primarily by greater congruence between microbial hosts and mutualist symbionts. Congruence is also relatively high for invertebrate hosts that harbour a mutualistic symbiont, while congruence appears to be lowest for plant hosts that harbour a parasitic symbiont. 
+
 #### The combined effect of symbiont taxa and symbiosis (parasitism vs. mutualism)
 
 ```{r}
@@ -1582,6 +1584,8 @@ fig_symbiont_tax_symbiosis
 ```
 
 **Supplementary Figure 4:** A forest plot showing the group-wise means (the categorical variable `symbiont_tax_symbiosis`) with their 95% confidences interval (thick lines) and 95% prediction intervals (thin lines) with observed effect sizes based on various sample sizes.
+
+Splitting symbiont taxonomy by mode of symbiosis revealed much less variation, except for higher congruence exhibited by cophylogenies involving a plant symbiont (which are relatively rare), and the finding that cophylogenies involving a microbial mutualist symbiont are slightly more congruent than the remaining categories.
 
 #### The combined effect of host and symbiont taxa
 
@@ -2414,7 +2418,7 @@ We have 3 recommendations for future (and past) co-divergence work using TreeMap
 
 ## Acknowledgement
 
-Many coding materials have been borrowed from these paper [@cally2019meta; @odea2018developmental].
+Many coding materials have been borrowed from these paper [@cally2019meta; @odea2018developmental]. We thank Losia Lagisz for preparing small icons and cartoons used in the figures. 
 
 ## R Session Information
 
