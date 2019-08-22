@@ -866,7 +866,7 @@ Regression coefficients (Estimate), 95% confidence intervals (CIs), variance com
 r2_host_range_taxonomic_breadth <- R2(mr_host_range_taxonomic_breadth)
 
 # getting estimates: name does not work for slopes
-res_host_range_taxonomic_breadth <- get_est(mr_host_range_link_ratio, mod = "log(host_range_link_ratio)")
+res_host_range_taxonomic_breadth <- get_est(mr_host_range_taxonomic_breadth, mod = "log(host_range_taxonomic_breadth)")
 
 # creating a table
 tibble(
@@ -1225,16 +1225,16 @@ res_symbiosis_transmission <- map(mr_symbiosis_transmission, ~ get_est(.x, mod =
 contra_list <- Map(seq, from=1, to=1:4)
 
 # you need to flatten twice: first to make it a list and make it a vector
-estiamtes <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
+estimates <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
 lowerCLs <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"lowerCL"]) %>% flatten() %>% flatten_dbl()
 upperCLs <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"upperCL"]) %>% flatten() %>% flatten_dbl()
 
 # creating a table
 tibble(
   `Fixed effect` = c(as.character(res_symbiosis_transmission1$name), cont_gen(res_symbiosis_transmission1$name)),
-  Estimate = c(res_symbiosis_transmission1$estimate, estiamtes),
+  Estimate = c(res_symbiosis_transmission1$estimate, estimates),
   `Lower CI [0.025]` = c(res_symbiosis_transmission1$lowerCL,lowerCLs),
-  `Upper CI  [0.975]` = c(res_symbiosis_transmission1$upperCL,lowerCLs),
+  `Upper CI  [0.975]` = c(res_symbiosis_transmission1$upperCL,upperCLs),
   `V[authors]` = c(mr_symbiosis_transmission1$sigma2,  rep(NA, (5 + choose(5,2))- 1)),
   `R2` = c(r2_symbiosis_transmission1[1], rep(NA, (5 + choose(5, 2))- 1))) %>% kable("html",  digits = 3) %>%
   kable_styling("striped", position = "left") %>%
@@ -1394,16 +1394,16 @@ res_host_tax_symbiosis <- map(mr_host_tax_symbiosis, ~ get_est(.x, mod = "host_t
 contra_list <- Map(seq, from=1, to=1:7)
 
 # you need to flatten twice: first to make it a list and make it a vector
-estiamtes <- map2(res_host_tax_symbiosis, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
+estimates <- map2(res_host_tax_symbiosis, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
 lowerCLs <- map2(res_host_tax_symbiosis, contra_list, ~.x[-(.y),"lowerCL"]) %>% flatten() %>% flatten_dbl()
 upperCLs <- map2(res_host_tax_symbiosis, contra_list, ~.x[-(.y),"upperCL"]) %>% flatten() %>% flatten_dbl()
 
 # creating a table
 tibble(
   `Fixed effect` = c(as.character(res_host_tax_symbiosis1$name), cont_gen(res_host_tax_symbiosis1$name)),
-  Estimate = c(res_host_tax_symbiosis1$estimate, estiamtes),
+  Estimate = c(res_host_tax_symbiosis1$estimate, estimates),
   `Lower CI [0.025]` = c(res_host_tax_symbiosis1$lowerCL,lowerCLs),
-  `Upper CI  [0.975]` = c(res_host_tax_symbiosis1$upperCL,lowerCLs),
+  `Upper CI  [0.975]` = c(res_host_tax_symbiosis1$upperCL,upperCLs),
   `V[authors]` = c(mr_host_tax_symbiosis1$sigma2,  rep(NA, (8 + choose(8,2))- 1)),
   `R2` = c(r2_host_tax_symbiosis1[1], rep(NA, (8 + choose(8, 2))- 1))) %>% kable("html",  digits = 3) %>%
   kable_styling("striped", position = "left") %>%
@@ -1515,16 +1515,16 @@ res_symbiont_tax_symbiosis <- map(mr_symbiont_tax_symbiosis, ~ get_est(.x, mod =
 contra_list <- Map(seq, from=1, to=1:6)
 
 # you need to flatten twice: first to make it a list and make it a vector
-estiamtes <- map2(res_symbiont_tax_symbiosis, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
+estimates <- map2(res_symbiont_tax_symbiosis, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
 lowerCLs <- map2(res_symbiont_tax_symbiosis, contra_list, ~.x[-(.y),"lowerCL"]) %>% flatten() %>% flatten_dbl()
 upperCLs <- map2(res_symbiont_tax_symbiosis, contra_list, ~.x[-(.y),"upperCL"]) %>% flatten() %>% flatten_dbl()
 
 # creating a table
 tibble(
   `Fixed effect` = c(as.character(res_symbiont_tax_symbiosis1$name), cont_gen(res_symbiont_tax_symbiosis1$name)),
-  Estimate = c(res_symbiont_tax_symbiosis1$estimate, estiamtes),
+  Estimate = c(res_symbiont_tax_symbiosis1$estimate, estimates),
   `Lower CI [0.025]` = c(res_symbiont_tax_symbiosis1$lowerCL,lowerCLs),
-  `Upper CI  [0.975]` = c(res_symbiont_tax_symbiosis1$upperCL,lowerCLs),
+  `Upper CI  [0.975]` = c(res_symbiont_tax_symbiosis1$upperCL,upperCLs),
   `V[authors]` = c(mr_symbiont_tax_symbiosis1$sigma2,  rep(NA, (7 + choose(7,2))- 1)),
   `R2` = c(r2_symbiont_tax_symbiosis1[1], rep(NA, (7 + choose(7, 2))- 1))) %>% kable("html",  digits = 3) %>%
   kable_styling("striped", position = "left") %>%
@@ -1635,7 +1635,7 @@ res_host_symbiont_tax <- map(mr_host_symbiont_tax, ~ get_est(.x, mod = "host_sym
 contra_list <- Map(seq, from=1, to=1:10)
 
 # you need to flatten twice: first to make it a list and make it a vector
-estiamtes <- map2(res_host_symbiont_tax, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
+estimates <- map2(res_host_symbiont_tax, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
 
 lowerCLs <- map2(res_host_symbiont_tax, contra_list, ~.x[-(.y),"lowerCL"]) %>% flatten() %>% flatten_dbl()
 
@@ -1644,9 +1644,9 @@ upperCLs <- map2(res_host_symbiont_tax, contra_list, ~.x[-(.y),"upperCL"]) %>% f
 # creating a table
 tibble(
   `Fixed effect` = c(as.character(res_host_symbiont_tax1$name), cont_gen(res_host_symbiont_tax1$name)),
-  Estimate = c(res_host_symbiont_tax1$estimate, estiamtes),
+  Estimate = c(res_host_symbiont_tax1$estimate, estimates),
   `Lower CI [0.025]` = c(res_host_symbiont_tax1$lowerCL,lowerCLs),
-  `Upper CI  [0.975]` = c(res_host_symbiont_tax1$upperCL,lowerCLs),
+  `Upper CI  [0.975]` = c(res_host_symbiont_tax1$upperCL,upperCLs),
   `V[authors]` = c(mr_host_tax_symbiosis1$sigma2,  rep(NA, (11 + choose(11,2))- 1)),
   `R2` = c(r2_host_symbiont_tax1[1], rep(NA, (11 + choose(11, 2))- 1))) %>% kable("html",  digits = 3) %>%
   kable_styling("striped", position = "left") %>%
