@@ -2322,7 +2322,7 @@ Regression coefficients (Estimate), 95% confidence intervals (CIs), variance com
 
 ```{r}
 # symbiosis
-sa_limit_symbiosis1<-glmer(limit_rearched ~ symbiosis - 1 + (1 | authors), family = "binomial", data = dat)
+sa_limit_symbiosis1 <- glmer(limit_rearched ~ symbiosis - 1 + (1 | authors), family = "binomial", data = dat)
 
 # getting marginal R2
 r2_sa_limit_symbiosis <- r2_nakagawa(sa_limit_symbiosis1)
@@ -2385,7 +2385,7 @@ Regression coefficients (Estimate), 95% confidence intervals (CIs), variance com
 
 ```{r}
 # mode_of_transmission_broad
-sa_limit_mode_of_transmission_broad1<-glmer(limit_rearched ~ mode_of_transmission_broad - 1 + (1 | authors), family = "binomial", data = dat)
+sa_limit_mode_of_transmission_broad1 <- glmer(limit_rearched ~ mode_of_transmission_broad - 1 + (1 | authors), family = "binomial", data = dat)
 
 # getting marginal R2
 r2_sa_limit_mode_of_transmission_broad <- r2_nakagawa(sa_limit_mode_of_transmission_broad1)
