@@ -2175,7 +2175,7 @@ sa_random_symbiosis2<-lmer(log(no_randomizations) ~ symbiosis + (1 | authors), d
 ```
 
 **Supplementary Table 19:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiosis`. 
 
 ```{r}
 # getting marginal R2
@@ -2222,7 +2222,7 @@ sa_random_host_tax_broad4<-lmer(log(no_randomizations) ~ relevel(host_tax_broad,
 ```
 
 **Supplementary Table 20:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
 
 ```{r}
 # getting marginal R2
@@ -2278,7 +2278,7 @@ sa_random_mode_of_transmission_broad3 <- lmer(log(no_randomizations) ~ relevel(m
 ```
 
 **Supplementary Table 21:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `mode_of_transmission_broad`. 
 
 ```{r}
 # getting marginal R2
@@ -2318,7 +2318,7 @@ Below, we showed that categorizes with higher effect sizes were more likely to h
 #### The type of symbiosis: parasitism vs. mutualism
 
 **Supplementary Table 22:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiosis` (compare the effect estiamtes in **Supplementary Table 2** with the corresponding values in this table). 
 
 ```{r}
 # symbiosis
@@ -2349,7 +2349,7 @@ tibble(
 #### The effect of host taxa
 
 **Supplementary Table 23:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`(compare the effect estiamtes in **Supplementary Table 3** with the corresponding values in this table). 
 
 ```{r}
 # host_tax_broad
@@ -2381,7 +2381,7 @@ tibble(
 #### The effect of the model of transmission
 
 **Supplementary Table 24:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `mode_of_transmission_broad` (compare the effect estiamtes in **Supplementary Table 8** with the corresponding values in this table).. 
 
 ```{r}
 # mode_of_transmission_broad
