@@ -1,0 +1,10 @@
+﻿Method,Paper,No. citations
+**TreeMap**,Page RDM. 1994. Parallel phylogenies: reconstructing the history of host–parasite assemblages. Cladistics 10: 155–173.,385
+Brooks Parsimony Analysis (BPA),Brooks DR. 1981. Hennig’s parasitological method: a proposed solution. Systematic Zoology 30: 229–249.,362
+**ParaFit**,"Legendre P, Desdevises Y, Bazin E. 2002. A statistical test for host–parasite coevolution. Systematic Biology 51: 217–234. ",344
+JANE,"Conow C, Fielder D, Ovadia Y, Libeskind-Hadas R. 2010. Jane: a new tool for the cophylogeny reconstruction problem. Algorithms for Molecular Biology 5: 16. ",249
+TREEFITTER,Ronquist F. 1995. Reconstructing the history of host–parasite associations using generalised parsimony. Cladistics 11: 73–89. ,124
+PACO,"Balbuena JA, Míguez-Lozano R, Blasco-Costa I. 2013. PACo: a novel procrustes application to cophylogenetic analysis. PloS one. 8(4):e61048.",103
+TARZAN,"Merkle D, Middendorf M. 2005. Reconstruction of the cophylogenetic history of related phylogenetic trees with divergence timing information. Theory in Biosciences 123: 277–299.",72
+COALA,"Baudet C, Donati B, Sinaimeri B, Crescenzi P, Gautier C, Matias C, Sagot MF 2014. Cophylogeny reconstruction via an approximate Bayesian computation. Systematic biology, 64(3), 416-431.",23
+COMPONENT,"Page RDM. 1993. User’s manual for component, version 2.0. London, UK: The Natural History Museum.",13

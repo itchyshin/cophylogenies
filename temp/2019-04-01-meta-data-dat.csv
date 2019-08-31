@@ -1,0 +1,25 @@
+Variable,Explanation
+authors,The authors of the study and the date (citation form)
+year,Year of publication of the study
+host_tax_broad,"Separation of the host group according to broader taxonomic units (e.g. vertebrate, invertebrate, microbe, plant)"
+host_tax_fine,"Separation of the host group according to narrower taxonomic units (e.g. fish, tetrapod, bird, invertebrate, protist, bacterium, plant, fungus)"
+symbiont_tax_broad,"Separation of the symbiont group according to broader taxonomic units (e.g. vertebrate, invertebrate, microbe, plant)"
+symbiont_tax_fine,"Separation of the symbiont group according to narrower taxonomic units (e.g. invertebrate, protist, virus, bacterium, fungus, plant, bird)"
+symbiont_euk,"Whether the symbiont is eukaryotic (state ='yes'), or prokaryotic (state='no')"
+symbiosis,The type of symbiont (e.g. parasite or mutualist). For this we followed the definition used by the authors of the study
+endo_or_ecto,"Whether the symbiont lives outside the host (i.e. is an ectosymbiont), or inside the host (i.e. is an endosymbiont)"
+mode_of_transmission_broad,"Whether the symbiont is transmitted vertically, horizontally, or both. For this, we followed the route of transmission specified by the authors of the study"
+mode_of_transmission_fine,"A finer-scale description of the mode of transmission of the symbiont (e.g. contact, vector, bodily fluid, vertical, trophic)"
+symbiont,Shorthand description of the type of symbiont
+Visiting_symbiont?,"Whether the symbiont is resident on the host (resident), or makes visits to the host or hosts (visitor)"
+host_tips_linked,The number of individual host taxa included in the cophylogenetic analysis
+host_tips_linked_corrected,"The same measure as for column N, 'host_tips_linked', but reduced to only include one member of each host species. This is included because some authors include multiple individuals of the same host species. Without correction, this artificially increases the apparent number of host species included in the study."
+host_genera,A count of the number of host genera included in the cophylogenetic analysis
+total_host_symbioint_links,"The total number of links between host and symbiont taxa recorded in a study. If all symbionts were strict specialists, this would equal the number of symbionts included in the study. However, because symbionts are often associated with more than one host, this value is often higher than the total number of symbionts included in the study"
+host_range_link_ratio,"An estimation of symbiont host specificity, calculated by dividing the total number of links between hosts and symbionts (i.e. 'total_host_symbiont_links', column Q), by the total number of symbionts included in the study (i.e. 'symbiont_tips_linked', column T)"
+host_range_taxonomic_breadth,"An alternative estimation of symbiont host specificity, calculated by first summing the number of host taxonomic ranks linked to each symbiont (i.e. single host species = 1, multiple host species in the same genera = 2, multiple host genera = 3, multiple host familes = 4, multiple host orders = 5), and dividing by the total number of symbionts included in the study (i.e. 'symbiont_tips_linked', column T)"
+symbiont_tips_linked,The number of individual symbiont taxa included in the cophylogenetic analysis
+symbiont_genera,A count of the number of symbiont genera included in the cophylogenetic analysis
+no_randomizations,The number of phylogenetic randomizations performed during the cophylogenetic analysis
+p_value,"The p-value reported for the cophylogenetic analysis, representing the likelihood that host and symbtion phylogenies display cospeciation"
+method,Whether TreeMap or was used to obtain codivergence or a p value
