@@ -58,7 +58,7 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                performance, # getting R2 from lmer + glmer objects
                png,         # reading png files
                grid,        # graphic layout manipulation
-               patchwork    # putting ggplots together
+               patchwork    # putting ggplots together - you need to install via devtool
                #lmerTest   # more functions for lme4
                #mi,      # missing data analysis
                #betareg   # dependance of the above
@@ -199,7 +199,7 @@ n_table2 %>% as_tibble(rownames = "Number") %>%
   scroll_box(width = "100%", height = "250px")
   #pander(split.cell = 40, split.table = Inf) # not as nice as kable
 ```
-Note that for the numbers of analyses and papers does not add up (TreeMap + ParaFit $\neq$ Combined), because `r sum(n_table2[3,]) - length(unique(dat$authors))` analyses and `r sum(n_table2[3,]) - length(unique(dat$authors))`  papers used both the TreeMap and ParaFit methods (the term "papers" here is our variable `authors`)
+Note that for the numbers of analyses and papers does not add up (TreeMap + ParaFit $\neq$ Combined), because `r sum(n_table2[2,]) - length(unique(dat$authors))` analyses and `r sum(n_table2[3,]) - length(unique(dat$authors))`  papers used both the TreeMap and ParaFit methods (the term "papers" here is our variable `authors`)
 
 ### Missing data patterns
 
