@@ -402,7 +402,10 @@ We created our effect size (correlation coefficient *r* and its Fisher's z trans
 ```{r}
 dat %<>% 
   # getting sample size & observation level random effect
-  mutate(., sample_size = host_tips_linked_corrected + symbiont_tips_linked, observation = factor(1:nrow(.)))  
+  mutate(., sample_size = host_tips_linked_corrected + symbiont_tips_linked, 
+         observation = factor(1:nrow(.)),
+         analysis = factor(paste0(dat$authors, dat$host_tax_broad, dat$symbiont_tax_broad, dat$method))
+         )  
 # calcuating effect size 
 # somehow it did not run by piping with above (not recognising the first aurgument)  
 dat %<>% p_to_Zr(p_value, sample_size) 
