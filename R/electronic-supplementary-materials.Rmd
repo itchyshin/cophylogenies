@@ -362,7 +362,8 @@ dat %>% group_by(method) %>%
 
 # transposing the table and creating that table and adding a correct number of the papers for `Combined`
 n_authors <- n_distinct(dat$authors) # the total number of papers
-n_analyses <- n_distinct(paste0(dat$authors, dat$host_tax_broad, dat$symbiont_tax_broad, dat$method))
+dat$analyses <- paste0(dat$authors, dat$host_tax_fine, dat$symbiont_tax_fine, dat$total_host_symbioint_links) # the number of analyses (studies)
+n_analyses <- n_distinct(dat$analyses)
 n_table2 <-t(n_table1[,-1])
 colnames(n_table2) <- n_table1$method
 n_table2 %>% as_tibble(rownames = "Number") %>% 
@@ -372,7 +373,7 @@ n_table2 %>% as_tibble(rownames = "Number") %>%
   scroll_box(width = "100%", height = "250px")
   #pander(split.cell = 40, split.table = Inf) # not as nice as kable
 ```
-Note that for the numbers of analyses and papers does not add up (TreeMap + ParaFit $\neq$ Combined), because `r sum(n_table2[2,]) - length(unique(dat$authors))` analyses and `r sum(n_table2[3,]) - length(unique(dat$authors))`  papers used both the TreeMap and ParaFit methods (the term "papers" here is our variable `authors`)
+Note that for the numbers of analyses and papers does not add up (TreeMap + ParaFit $\neq$ Combined), because `r sum(n_table2[2,]) - length(unique(dat$analyses))` analyses and `r sum(n_table2[3,]) - length(unique(dat$authors))`  papers used both the TreeMap and ParaFit methods (the term "papers" here is our variable `authors`)
 
 ### Missing data patterns
 
@@ -403,13 +404,13 @@ We created our effect size (correlation coefficient *r* and its Fisher's z trans
 dat %<>% 
   # getting sample size & observation level random effect
   mutate(., sample_size = host_tips_linked_corrected + symbiont_tips_linked, 
-         observation = factor(1:nrow(.)),
-         analysis = factor(paste0(dat$authors, dat$host_tax_broad, dat$symbiont_tax_broad, dat$method))
-         )  
+         observation = factor(1:nrow(.)))  
 # calcuating effect size 
 # somehow it did not run by piping with above (not recognising the first aurgument)  
 dat %<>% p_to_Zr(p_value, sample_size) 
 
+# getting sample size for spp
+# sum(dat$sample_size[match(unique(dat$analyses), dat$analyses)])
 ```
 
 ### Meta-analytic model: testing Fahrenholz's rule
