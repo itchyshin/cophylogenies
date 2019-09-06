@@ -1,5 +1,5 @@
 ---
-title: "A Broadscale Test of Host-Symbiont Cophylogeny Reveals Widespread Phylogenetic Congruence"
+title: "Broadscale Test of Host-Symbiont Cophylogeny Reveals Key Drivers of Phylogenetic Congruence"
 author: "Alexander Hayward, Robert Poulin & Shinichi Nakagawa"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
