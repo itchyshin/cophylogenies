@@ -3,6 +3,8 @@ title: "Broadscale Test of Host-Symbiont Cophylogeny Reveals Key Drivers of Phyl
 author: "Alexander Hayward, Robert Poulin & Shinichi Nakagawa"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
+  pdf_document:
+    toc: yes
   html_document:
     code_download: true
     code_folding: hide
@@ -12,8 +14,6 @@ output:
     toc: yes
     toc_float: yes
     toc_depth: 4
-  pdf_document:
-    toc: yes
 subtitle: Electronic Supplementary Material
 bibliography: references.bib
 #biblio-style: "apalike"
