@@ -2624,6 +2624,7 @@ Many coding materials have been borrowed from these papers [@cally2019meta; @ode
 ## R Session Information
 
 ```{r}
+# pander for making it look nicer
 sessionInfo() %>% pander()
 ```
 
