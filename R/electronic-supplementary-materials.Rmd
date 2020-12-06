@@ -298,7 +298,7 @@ H. __symbiosis__:	The type of symbiont (e.g. parasite or mutualist). For this we
 
 I. __endo_or_ecto__:	Whether the symbiont lives outside the host (i.e. is an ectosymbiont), or inside the host (i.e. is an endosymbiont).
 
-J. __mode_of_transmission_broad__:	Whether the symbiont is transmitted vertically, horizontally, or both. For this, we followed the route of transmission specified by the authors of the study
+J. __mode_of_transmission_broad__:	Whether the symbiont is transmitted vertically, horizontally, or both. For this, we followed the route of transmission specified by the authors of the study.
 
 K. __mode_of_transmission_fine__*:	A finer-scale description of the mode of transmission of the symbiont (e.g. contact, vector, bodily fluid, vertical, trophic).
 
@@ -310,13 +310,13 @@ N. __host_tips_linked__:	The number of individual host taxa included in the coph
 
 O. __host_tips_linked_corrected__	The same measure as for column N, 'host_tips_linked', but reduced to only include one member of each host species. This is included because some authors include multiple individuals of the same host species. Without correction, this artificially increases the apparent number of host species included in the study.
 
-P. __host_genera__:	A count of the number of host genera included in the cophylogenetic analysis
+P. __host_genera__:	A count of the number of host genera included in the cophylogenetic analysis.
 
 Q. __total_host_symbioint_links__	The total number of links between host and symbiont taxa recorded in a study. If all symbionts were strict specialists, this would equal the number of symbionts included in the study. However, because symbionts are often associated with more than one host, this value is often higher than the total number of symbionts included in the study.
 
 R. __host_range_link_ratio__:	An estimation of symbiont host specificity, calculated by dividing the total number of links between hosts and symbionts (i.e. 'total_host_symbiont_links', column Q), by the total number of symbionts included in the study (i.e. 'symbiont_tips_linked', column T).
 
-S. __host_range_taxonomic_breadth__:	An alternative estimation of symbiont host specificity, calculated by first summing the number of host taxonomic ranks linked to each symbiont (i.e. single host species = 1, multiple host species in the same genera = 2, multiple host genera = 3, multiple host families = 4, multiple host orders = 5), and dividing by the total number of symbionts included in the study (i.e. 'symbiont_tips_linked', column T)
+S. __host_range_taxonomic_breadth__:	An alternative estimation of symbiont host specificity, calculated by first summing the number of host taxonomic ranks linked to each symbiont (i.e. single host species = 1, multiple host species in the same genera = 2, multiple host genera = 3, multiple host families = 4, multiple host orders = 5), and dividing by the total number of symbionts included in the study (i.e. 'symbiont_tips_linked', column T).
 
 T. __symbiont_tips_linked__	The number of individual symbiont taxa included in the cophylogenetic analysis.
 
@@ -570,7 +570,7 @@ dat %<>%
          # symbiosis*mode_of_transmission_broad (symbiosis_transmission)
          symbiosis_transmission  = factor(str_c(symbiosis, mode_of_transmission_broad)),
          # whether p values were the smallest value given the number of randamization - limit_researched (Yes = 1, No = 0)
-         limit_rearched = if_else(abs((1/p_value) - no_randomizations) <= 1, 1, 0))
+         limit_reached = if_else(abs((1/p_value) - no_randomizations) <= 1, 1, 0))
 
 ```
 
@@ -2351,7 +2351,7 @@ fit_time_lag_effect_mul
 
 ## Sensitivity Analysis
 
-The funnel plots above identified the issue of upper bounds for the effect size given a sample size (an upper limit of a *p* value given the number of randomizations). This boundary would influence our estimates of mean effect sizes and contrasts (i.e., comparing two groups), often making our overall conclusions too conservative. To demonstrate this, we conducted two analyses to show: 1)  the number of randomizations do not differ between categories in the 3 important categorical moderators (`mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`), and, 2) categories with high effect sizes would include "bounded" effect sizes (i.e., from *p* = 0.01, 0.001, or 0.0001) in the 3 moderators.
+The funnel plots above identified the issue of upper bounds for the effect size given a sample size (an upper limit of a *p* value given the number of randomizations). This boundary would influence our estimates of mean effect sizes and contrasts (i.e., comparing two groups), often making our overall conclusions too conservative. To demonstrate this, we conducted two analyses to show: 1)  the number of randomizations (`log(no_randomizations)`) do not differ between categories in the 3 important categorical moderators (`mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`), and, 2) categories with high effect sizes would include "bounded" effect sizes (i.e., from *p* = 0.01, 0.001, or 0.0001; `limit_reached`) in the 3 moderators.
 
 ### Sensitivity test 1: the number of randomizations
 
@@ -2371,7 +2371,7 @@ sa_random_symbiosis2<-lmer(log(no_randomizations) ~ symbiosis + (1 | authors), d
 ```
 
 **Supplementary Table 19:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2), from the meta-regression with `symbiosis`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2), from the regression with `symbiosis` on `log(no_randomizations)`. 
 
 ```{r}
 # getting marginal R2
@@ -2418,7 +2418,7 @@ sa_random_host_tax_broad4<-lmer(log(no_randomizations) ~ relevel(host_tax_broad,
 ```
 
 **Supplementary Table 20:**
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `host_tax_broad` on `log(no_randomizations)`. 
 
 ```{r}
 # getting marginal R2
@@ -2474,7 +2474,7 @@ sa_random_mode_of_transmission_broad3 <- lmer(log(no_randomizations) ~ relevel(m
 ```
 
 **Supplementary Table 21:**
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `mode_of_transmission_broad`. 
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `mode_of_transmission_broad` on `log(no_randomizations)`. 
 
 ```{r}
 # getting marginal R2
@@ -2509,17 +2509,17 @@ tibble(
 
 ### Sensitivity test 2: reaching the limits
 
-Below, we show that categories with higher effect sizes were more likely to have "bounded" effect sizes (`limit_rearched`) in all `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`. This indicates that the higher the estimate of mean effect size is, the more underestimated the mean effect size is. This is true for differences between two categories; the larger the difference between two, the more underestimated the difference is. 
+Below, we show that categories with higher effect sizes were more likely to have "bounded" effect sizes (`limit_reached`) in all `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`. This indicates that the higher the estimate of mean effect size is, the more underestimated the mean effect size is. This is true for differences between two categories; the larger the difference between two, the more underestimated the difference is. 
 
 
 #### The type of symbiosis: parasitism vs. mutualism
 
 **Supplementary Table 22:**
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiosis` (compare the effect estimates in **Supplementary Table 2** with the corresponding values in this table). 
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `symbiosis` on `limit_reached` (compare the effect estimates in **Supplementary Table 2** with the corresponding values in this table). 
 
 ```{r}
 # symbiosis
-sa_limit_symbiosis1 <- glmer(limit_rearched ~ symbiosis - 1 + (1 | authors), family = "binomial", data = dat)
+sa_limit_symbiosis1 <- glmer(limit_reached ~ symbiosis - 1 + (1 | authors), family = "binomial", data = dat)
 
 # getting marginal R2
 r2_sa_limit_symbiosis <- r2_nakagawa(sa_limit_symbiosis1)
@@ -2546,11 +2546,11 @@ tibble(
 #### The effect of host taxa
 
 **Supplementary Table 23:**
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`(compare the effect estiamtes in **Supplementary Table 3** with the corresponding values in this table). 
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `host_tax_broad` on `limit_reached` (compare the effect estimates in **Supplementary Table 3** with the corresponding values in this table). 
 
 ```{r}
 # host_tax_broad
-sa_limit_host_tax_broad1<-glmer(limit_rearched ~ host_tax_broad - 1  + (1 | authors), family = "binomial", data = dat)
+sa_limit_host_tax_broad1<-glmer(limit_reached ~ host_tax_broad - 1  + (1 | authors), family = "binomial", data = dat)
 
 # getting marginal R2
 r2_sa_limit_host_tax_broad <- r2_nakagawa(sa_limit_host_tax_broad1)
@@ -2578,11 +2578,11 @@ tibble(
 #### The effect of the model of transmission
 
 **Supplementary Table 24:**
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `mode_of_transmission_broad` (compare the effect estimates in **Supplementary Table 8** with the corresponding values in this table).
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `mode_of_transmission_broad` on `limit_reached` (compare the effect estimates in **Supplementary Table 8** with the corresponding values in this table).
 
 ```{r}
 # mode_of_transmission_broad
-sa_limit_mode_of_transmission_broad1 <- glmer(limit_rearched ~ mode_of_transmission_broad - 1 + (1 | authors), family = "binomial", data = dat)
+sa_limit_mode_of_transmission_broad1 <- glmer(limit_reached ~ mode_of_transmission_broad - 1 + (1 | authors), family = "binomial", data = dat)
 
 # getting marginal R2
 r2_sa_limit_mode_of_transmission_broad <- r2_nakagawa(sa_limit_mode_of_transmission_broad1)
