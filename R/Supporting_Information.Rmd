@@ -58,10 +58,11 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                performance, # getting R2 from lmer + glmer objects
                png,         # reading png files
                grid,        # graphic layout manipulation
-               patchwork    # putting ggplots together - you need to install via devtool
-               #lmerTest   # more functions for lme4
+               patchwork,   # putting ggplots together - you need to install via devtool
+               here         # making reading files easy
+               #lmerTest,   # more functions for lme4
                #mi,      # missing data analysis
-               #betareg   # dependance of the above
+               #betareg   # dependence of the above
 )
 ```
 
@@ -255,7 +256,7 @@ Citations for papers describing the main methods of cophylogeny analysis, based 
 
 ```{r}
 # getting the data and formating some variables (turning chraracter vectors to factors)
-read_csv("../data/lit_search.csv", na = "NA") %>% 
+read_csv(here("data/lit_search.csv"), na = "NA") %>% 
    mutate_if(is.character, as.factor) %>%  kable("html") %>%
   kable_styling("striped", position = "left")
 ```
@@ -271,7 +272,7 @@ The meta-analytic dataset of this study.
 
 ```{r}
 # getting the data and formating some variables (turning chraracter vectors to factors)
-full_data <- read_csv("../data/2019-23-07-source-data-dat.csv", na = "NA") %>% 
+full_data <- read_csv(here("data/2019-23-07-source-data-dat.csv"), na = "NA") %>% 
    mutate_if(is.character, as.factor)
 
 # making a scrollable table
@@ -302,31 +303,29 @@ J. __mode_of_transmission_broad__:	Whether the symbiont is transmitted verticall
 
 K. __mode_of_transmission_fine__*:	A finer-scale description of the mode of transmission of the symbiont (e.g. contact, vector, bodily fluid, vertical, trophic).
 
-L. __symbiont__*:	Shorthand description of the type of symbiont.
+L. __Visiting_symbiont?__*	Whether the symbiont is resident on the host (resident), or makes visits to the host or hosts (visitor).
 
-M. __Visiting_symbiont?__*	Whether the symbiont is resident on the host (resident), or makes visits to the host or hosts (visitor).
+M. __host_tips_linked__:	The number of individual host taxa included in the cophylogenetic analysis.
 
-N. __host_tips_linked__:	The number of individual host taxa included in the cophylogenetic analysis.
+N. __host_tips_linked_corrected__	The same measure as for column N, 'host_tips_linked', but reduced to only include one member of each host species. This is included because some authors include multiple individuals of the same host species. Without correction, this artificially increases the apparent number of host species included in the study.
 
-O. __host_tips_linked_corrected__	The same measure as for column N, 'host_tips_linked', but reduced to only include one member of each host species. This is included because some authors include multiple individuals of the same host species. Without correction, this artificially increases the apparent number of host species included in the study.
+O. __host_genera__:	A count of the number of host genera included in the cophylogenetic analysis.
 
-P. __host_genera__:	A count of the number of host genera included in the cophylogenetic analysis.
+P. __total_host_symbioint_links__	The total number of links between host and symbiont taxa recorded in a study. If all symbionts were strict specialists, this would equal the number of symbionts included in the study. However, because symbionts are often associated with more than one host, this value is often higher than the total number of symbionts included in the study.
 
-Q. __total_host_symbioint_links__	The total number of links between host and symbiont taxa recorded in a study. If all symbionts were strict specialists, this would equal the number of symbionts included in the study. However, because symbionts are often associated with more than one host, this value is often higher than the total number of symbionts included in the study.
+Q. __host_range_link_ratio__:	An estimation of symbiont host specificity, calculated by dividing the total number of links between hosts and symbionts (i.e. 'total_host_symbiont_links', column Q), by the total number of symbionts included in the study (i.e. 'symbiont_tips_linked', column T).
 
-R. __host_range_link_ratio__:	An estimation of symbiont host specificity, calculated by dividing the total number of links between hosts and symbionts (i.e. 'total_host_symbiont_links', column Q), by the total number of symbionts included in the study (i.e. 'symbiont_tips_linked', column T).
+R. __host_range_taxonomic_breadth__:	An alternative estimation of symbiont host specificity, calculated by first summing the number of host taxonomic ranks linked to each symbiont (i.e. single host species = 1, multiple host species in the same genera = 2, multiple host genera = 3, multiple host families = 4, multiple host orders = 5), and dividing by the total number of symbionts included in the study (i.e. 'symbiont_tips_linked', column T).
 
-S. __host_range_taxonomic_breadth__:	An alternative estimation of symbiont host specificity, calculated by first summing the number of host taxonomic ranks linked to each symbiont (i.e. single host species = 1, multiple host species in the same genera = 2, multiple host genera = 3, multiple host families = 4, multiple host orders = 5), and dividing by the total number of symbionts included in the study (i.e. 'symbiont_tips_linked', column T).
+S. __symbiont_tips_linked__	The number of individual symbiont taxa included in the cophylogenetic analysis.
 
-T. __symbiont_tips_linked__	The number of individual symbiont taxa included in the cophylogenetic analysis.
+T. __symbiont_genera__:	A count of the number of symbiont genera included in the cophylogenetic analysis.
 
-U. __symbiont_genera__:	A count of the number of symbiont genera included in the cophylogenetic analysis.
+U. __no_randomizations__:	The number of phylogenetic randomizations performed during the cophylogenetic analysis.
 
-V. __no_randomizations__:	The number of phylogenetic randomizations performed during the cophylogenetic analysis.
+V. __p_value__:	The p-value reported for the cophylogenetic analysis, representing the likelihood that host and symbiont phylogenies display cospeciation.
 
-W. __p_value__:	The p-value reported for the cophylogenetic analysis, representing the likelihood that host and symbiont phylogenies display cospeciation.
-
-X. __method__:	Whether TreeMap or ParaFit was used to obtain the reported p value.
+W. __method__:	Whether TreeMap or ParaFit was used to obtain the reported p value.
 
 ### Table of sample sizes
 
@@ -398,12 +397,12 @@ dat %>% summarise_all(~sum(is.na(.))) %>% # map(~sum(is.na(.)) # this is an alte
 
 ### Calculating effect sizes
 
-We created our effect size (correlation coefficient *r* and its Fisher's z transformation *Zr*) from p values and associated sample sizes [@rosenthal2003requivalent]. We used the sum of `host_tips_linked_corrected` and `symbiont_tips_linked` as our sample size (i.e., the number of both host and symbiont species) for each effect size (an indicator of congruence). Also, we created a column with a unique ID for each observation (i.e. an observation level random effect), termed `observation`, which is required for the `rma.mv` function in `metafor` [@viechtbauer2010conducting].
+We created our effect size (correlation coefficient *r* and its Fisher's z transformation *Zr*) from p values and associated sample sizes [@rosenthal2003requivalent]. We used the smaller sample size of either `host_tips_linked_corrected` or `symbiont_tips_linked` as our sample size (i.e., the number of both host and symbiont species) for each effect size (an indicator of congruence). Also, we created a column with a unique ID for each observation (i.e. an observation level random effect), termed `observation`, which is required for the `rma.mv` function in `metafor` [@viechtbauer2010conducting].
 
 ```{r}
 dat %<>% 
   # getting sample size & observation level random effect
-  mutate(., sample_size = host_tips_linked_corrected + symbiont_tips_linked, 
+  mutate(., sample_size = if_else(host_tips_linked_corrected >= symbiont_tips_linked, symbiont_tips_linked, host_tips_linked_corrected),
          observation = factor(1:nrow(.)))  
 # calcuating effect size 
 # somehow it did not run by piping with above (not recognising the first aurgument)  
