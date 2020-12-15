@@ -272,7 +272,12 @@ The meta-analytic dataset of this study.
 
 ```{r}
 # getting the data and formating some variables (turning chraracter vectors to factors)
-full_data <- read_csv(here("data/2019-23-07-source-data-dat.csv"), na = "NA") %>% 
+full_data <- read_csv(here("data/2020-08-12-source-data-dat.csv"), na = "NA") %>% 
+   mutate_if(is.character, as.factor)
+
+# dataset to compare the same cophylogenies between the two methods
+
+full_pair <- read_csv(here("data/2020-08-12-paried.csv"), na = "NA") %>% 
    mutate_if(is.character, as.factor)
 
 # making a scrollable table
@@ -333,7 +338,8 @@ Below we present our sample sizes for the two separate methods: TreeMap [@page19
 
 ```{r}
 # selecting out variables, which we used for our analysis
-dat <- full_data %>% select(-symbiont_euk, -mode_of_transmission_fine, -symbiont, -`Visiting_symbiont?`)
+dat <- full_data %>% select(-symbiont_euk, -mode_of_transmission_fine, -`Visiting_symbiont?`)
+pair <- full_pair %>% select(-symbiont_euk, -mode_of_transmission_fine, -`Visiting_symbiont?`)
 
 # making a table of sample sizes for different variables
 dat %>% group_by(method) %>% 
@@ -403,14 +409,65 @@ We created our effect size (correlation coefficient *r* and its Fisher's z trans
 dat %<>% 
   # getting sample size & observation level random effect
   mutate(., sample_size = if_else(host_tips_linked_corrected >= symbiont_tips_linked, symbiont_tips_linked, host_tips_linked_corrected),
-         observation = factor(1:nrow(.)))  
-# calcuating effect size 
-# somehow it did not run by piping with above (not recognising the first aurgument)  
-dat %<>% p_to_Zr(p_value, sample_size) 
+         observation = factor(1:nrow(.))) 
+
+# making p = 1 to p = (no_randomization - 1)/no_randomization as p = 1 produces t value = Inf
+dat$p_value <- ifelse(dat$p_value != 1, dat$p_value, (dat$no_randomizations - 1)/dat$no_randomizations) 
+
+# calculating effect size 
+dat %>% p_to_Zr(p_value, sample_size) 
 
 # getting sample size for spp
 # sum(dat$sample_size[match(unique(dat$studies), dat$studies)])
+
+# getting effect sizes for pair data
+pair %<>% 
+  # getting sample size & observation level random effect
+  mutate(., sample_size = if_else(host_tips_linked_corrected >= symbiont_tips_linked, symbiont_tips_linked, host_tips_linked_corrected),
+         observation = factor(1:nrow(.)))  
+ 
+# making p = 1 to p = (no_randomization - 1)/no_randomization as p = 1 produces t value = Inf
+pair$p_value_tree <- ifelse(pair$p_value_tree == 1, 0.999, pair$p_value_tree)  
+# calculating effect size   
+pair %<>% p_to_Zr(p_value_para, sample_size) %>% 
+  rename(rval_para = rval, Zr_para = Zr, VZr_para = VZr) %>% 
+  p_to_Zr(p_value_tree, sample_size) %>% 
+  rename(rval_tree = rval, Zr_tree = Zr, VZr_tree = VZr) 
+
 ```
+
+### Correlating two methods of the same cophylogenetic data
+
+In 16 studies, authors used both `ParaFit` and `TreeMap` on the same cophylogeny dataset, but some of these studies, they used different numbers of randomization between the two methods. Among these 16, 11 studies used `ParaFit` and `TreeMap` with the same or similar number of randomization (e.g., 999 and 1,000). We here correlated effect sizes (Zr) between these two methods. In the following analyses, we assume the p-value based effect size, Zr~equivalent (or just Zr) is equivalent for both methods. In such a case, we would require a tight correlation between the method.
+
+```{r}
+
+# plotting  correlations but not displayed
+# A)
+cor_1 <- round(with(pair, cor(Zr_para, Zr_tree)), 3)
+cor_t1 <- with(pair, cor.test(Zr_para, Zr_tree))
+               
+all_plot <- ggplot(pair, aes(Zr_para, Zr_tree)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+    labs(x = "Zr (ParaFit)", y = "Zr (TreeMap)") + 
+    annotate("text", x = 1, y = -1, label = paste("r = ", cor_1))
+
+# B)
+cor_2 <- round(with(pair[pair$match == "y", ], cor(Zr_para, Zr_tree)), 3)
+cor_t2 <- with(pair[pair$match == "y", ], cor.test(Zr_para, Zr_tree))
+
+part_plot <- ggplot(pair[pair$match == "y", ], aes(Zr_para, Zr_tree)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") +
+   labs(x = "Zr (ParaFit)", y = "Zr (TreeMap)") + 
+    annotate("text", x = 1, y = -1, label = paste("r = ", cor_2))
+
+comb_plot <- all_plot + part_plot + plot_annotation(tag_levels = "A", tag_suffix = ")")
+#comb_plot
+```
+
+There are strong and significant correlations in effect sizes (Zr) between `ParaFit` and `TreeMap` (for all the 16 studies, r = `r `, t = , df = , p = and for the 11 perfectly matching studies, r = r , t = , df = , p = ). Therefore, we have made an assumption that effect sizes based on p values from these two methods can be equated in our analyses below. 
 
 ### Meta-analytic model: testing Fahrenholz's rule
 
