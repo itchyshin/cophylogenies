@@ -3,8 +3,6 @@ title: "Broadscale Test of Host-Symbiont Cophylogeny Reveals Key Drivers of Phyl
 author: "Alexander Hayward, Robert Poulin & Shinichi Nakagawa"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
-  pdf_document:
-    toc: yes
   html_document:
     code_download: true
     code_folding: hide
@@ -14,11 +12,14 @@ output:
     toc: yes
     toc_float: yes
     toc_depth: 4
+  pdf_document:
+    toc: yes
 subtitle: Supplementary Material
 bibliography: references.bib
 #biblio-style: "apalike"
 csl: ecol_lett.csl
 link-citations: yes
+#always_allow_html: true
 ---
 
 ```{r setup, include = FALSE}
@@ -415,7 +416,7 @@ dat %<>%
 dat$p_value <- ifelse(dat$p_value != 1, dat$p_value, (dat$no_randomizations - 1)/dat$no_randomizations) 
 
 # calculating effect size 
-dat %>% p_to_Zr(p_value, sample_size) 
+dat %<>% p_to_Zr(p_value, sample_size) 
 
 # getting sample size for spp
 # sum(dat$sample_size[match(unique(dat$studies), dat$studies)])
@@ -467,7 +468,7 @@ comb_plot <- all_plot + part_plot + plot_annotation(tag_levels = "A", tag_suffix
 #comb_plot
 ```
 
-There are strong and significant correlations in effect sizes (Zr) between `ParaFit` and `TreeMap` (for all the 16 studies, r = `r `, t = , df = , p = and for the 11 perfectly matching studies, r = r , t = , df = , p = ). Therefore, we have made an assumption that effect sizes based on p values from these two methods can be equated in our analyses below. 
+There are strong and significant correlations in effect sizes (Zr) between `ParaFit` and `TreeMap` (for all the 16 studies, r = `r cor_1`, t = `r round(cor_t1$statistic , 3)`, df = `r as.numeric(cor_t1$parameter)`, p = `r round(cor_t1$p.value,4)`, and for the 11 perfectly matching studies, r = `r cor_2`, t = `r round(cor_t2$statistic , 3)`, df = `r as.numeric(cor_t2$parameter)`, p = `r round(cor_t2$p.value,4)`). Therefore, we have made an assumption that effect sizes based on p values from these two methods can be equated in our analyses below. 
 
 ### Meta-analytic model: testing Fahrenholz's rule
 
@@ -546,8 +547,8 @@ These models all gave consistent results including heterogeneity. Given these re
 # https://stackoverflow.com/questions/41919023/ggplot-adding-image-on-top-right-in-two-plots-with-different-scales
 # how to add png files to the figure (above)
 # reading image
-image_mutualism <- readPNG("../images/mutualism_transparentbg.png")
-image_parasitism <- readPNG("../images/parasitism_transparentbg.png")
+image_mutualism <- readPNG(here("images/mutualism_transparentbg.png"))
+image_parasitism <- readPNG(here("images/parasitism_transparentbg.png"))
 
 # creating a table of results
 pred_ma <- get_pred(ma_all) 
@@ -566,7 +567,7 @@ fig_ma <- ggplot(data = effect_ma, aes(x = tanh(estimate), y = "Overall mean")) 
   # creating dots and different size (bee-swarm and bubbles)
   geom_point(size=3, shape=21, fill = "black") +
   annotate('text', x = 0.93, y = 1.15, label=paste("italic(k)==", length(dat$Zr)), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pair)")) ) +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
   theme(legend.direction="horizontal") +
@@ -593,7 +594,7 @@ a <- ggplot(data = effect_ma, aes(x = tanh(estimate), y = "Overall mean")) +
   # creating dots and different size (bee-swarm and bubbles)
   geom_point(size=3, shape=21, fill = "black") +
   annotate('text', x = 0.93, y = 1.15, label=paste("italic(k)==", length(dat$Zr)), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = "", y = "", size = expression(paste(italic(n), " (# of species)")) ,tag = "a") +
+  labs(x = "", y = "", size = expression(paste(italic(n), " (# of species pairs)")) ,tag = "a") +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
   theme(legend.direction="horizontal") +
@@ -700,7 +701,7 @@ fig_symbiosis <- ggplot(data = res_symbiosis1, aes(x = tanh(estimate), y = name)
   scale_color_manual(values = c("Mutualist" = "#E69F00", "Parasite" = "#56B4E9")) +
   scale_fill_manual(values = c("Mutualist" = "#E69F00", "Parasite" = "#56B4E9")) +
   annotate('text', x = 0.93, y = c(1.15, 2.15), label= paste("italic(k)==", res_symbiosis1$n), parse = TRUE, hjust = "left", size = 3.5) +
-  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
@@ -810,10 +811,10 @@ tibble(
 
 ```{r, fig.width=7, fig.height= 4}
 # getting images
-image_invertebrate_host <- readPNG("../images/invertebrate_host_transparentbg.png")
-image_microbe_host <- readPNG("../images/microbe_host_transparentbg.png")
-image_vertebrate_host <- readPNG("../images/vertebrate_host_transparentbg.png")
-image_plant_host <- readPNG("../images/plant_host_transparentbg.png")
+image_invertebrate_host <- readPNG(here("images/invertebrate_host_transparentbg.png"))
+image_microbe_host <- readPNG(here("images/microbe_host_transparentbg.png"))
+image_vertebrate_host <- readPNG(here("images/vertebrate_host_transparentbg.png"))
+image_plant_host <- readPNG(here("images/plant_host_transparentbg.png"))
 
 # adding sample size (k) for each category
 k_host_tax_broad <- dat %>% group_by(host_tax_broad) %>% count()
@@ -838,7 +839,7 @@ fig_host_tax_broad <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate),
   scale_fill_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
   scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
   annotate('text', x = 0.93, y = 1:4 + 0.15, label= paste("italic(k)==", res_host_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
@@ -871,7 +872,7 @@ c <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate), y = name)) +
   scale_fill_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
   scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
   annotate('text', x = 0.93, y = 1:4 + 0.15, label= paste("italic(k)==", res_host_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = "", y = "", size = expression(paste(italic(n), " (# of species)")) , tag = "c") +
+  labs(x = "", y = "", size = expression(paste(italic(n), " (# of species pairs)")) , tag = "c") +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position="none") +
@@ -954,10 +955,10 @@ tibble(
 
 ```{r, fig.width=7, fig.height= 4}
 # getting images
-image_invertebrate_parasite <- readPNG("../images/invertebrate_parasite_transparentbg.png")
-image_microbe_parasite <- readPNG("../images/microbe_parasite_transparentbg.png")
-image_vertebrate_parasite <- readPNG("../images/vertebrate_parasite_transparentbg.png")
-image_plant_parasite <- readPNG("../images/plant_parasite_transparentbg.png")
+image_invertebrate_parasite <- readPNG(here("images/invertebrate_parasite_transparentbg.png"))
+image_microbe_parasite <- readPNG(here("images/microbe_parasite_transparentbg.png"))
+image_vertebrate_parasite <- readPNG(here("images/vertebrate_parasite_transparentbg.png"))
+image_plant_parasite <- readPNG(here("images/plant_parasite_transparentbg.png"))
 
 # adding sample size (k) for each category
 k_symbiont_tax_broad <- dat %>% group_by(symbiont_tax_broad) %>% count()
@@ -982,7 +983,7 @@ fig_symbiont_tax_broad <- ggplot(data = res_symbiont_tax_broad1, aes(x = tanh(es
   scale_fill_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
   scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
   annotate('text', x = 0.93, y = 1:4 + 0.15, label= paste("italic(k)==", res_symbiont_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
@@ -1015,7 +1016,7 @@ d <- ggplot(data = res_symbiont_tax_broad1, aes(x = tanh(estimate), y = name)) +
   scale_fill_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
   scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
   annotate('text', x = 0.93, y = 1:4 + 0.15, label= paste("italic(k)==", res_symbiont_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species)")), tag = "d") +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")), tag = "d") +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position="none") +
@@ -1083,7 +1084,7 @@ fig_host_range_link_ratio <-  dat %>%
   geom_smooth(aes(y = pred), method =  "loess", se = FALSE, lty ="dashed", lwd = 0.5, colour ="black") +  
   ylim(-1, 2) + xlim(-0.05, 2) +
   #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
-  labs(x = "ln(host range link ratio)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
+  labs(x = "ln(host range link ratio)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species pairs)"))) +
   guides(fill = "none", colour = "none") +
   # themses
   theme_bw() +
@@ -1150,7 +1151,7 @@ fig_host_range_taxonomic_breadth <-  dat %>%
   geom_smooth(aes(y = pred), method =  "loess", se = FALSE, lty ="dashed", lwd = 0.5, colour ="black") +  
   ylim(-1, 2) + xlim(0, 1.5) +
   #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
-  labs(x = "ln(host range taxonomic breadth)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
+  labs(x = "ln(host range taxonomic breadth)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species pairs)"))) +
   guides(fill = "none", colour = "none") +
   # themses
   theme_bw() +
@@ -1223,8 +1224,8 @@ tibble(
 
 ```{r, fig.width=7, fig.height= 4}
 # getting images
-image_endoparasite <- readPNG("../images/endoparasite_transparentbg.png")
-image_ectoparasite <- readPNG("../images/ectoparasite_transparentbg.png")
+image_endoparasite <- readPNG(here("images/endoparasite_transparentbg.png"))
+image_ectoparasite <- readPNG(here("images/ectoparasite_transparentbg.png"))
 
 # adding sample size (k) for each category
 k_endo_or_ecto <- dat %>% group_by(endo_or_ecto) %>% count()
@@ -1249,7 +1250,7 @@ fig_endo_or_ecto <- ggplot(data = res_endo_or_ecto1, aes(x = tanh(estimate), y =
   scale_fill_manual(values = c("Endo/Ecto" = "#0072B2",  "Endo" = "#D55E00",  "Ecto"= "#CC79A7")) +
   scale_y_discrete(labels = c("Endo/Ecto" = "Both",  "Endo" = "Endosymbiosis",  "Ecto"= "Ectosymbiosis")) +
   annotate('text', x = 0.93, y = 1:3 + 0.15, label= paste("italic(k)==", res_endo_or_ecto1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
@@ -1283,7 +1284,7 @@ e <- ggplot(data = res_endo_or_ecto1, aes(x = tanh(estimate), y = name)) +
   scale_fill_manual(values = c("Endo/Ecto" = "#0072B2",  "Endo" = "#D55E00",  "Ecto"= "#CC79A7")) +
   scale_y_discrete(labels = c("Endo/Ecto" = "Both",  "Endo" = "Endosymbiosis",  "Ecto"= "Ectosymbiosis")) +
   annotate('text', x = 0.93, y = 1:3 + 0.15, label= paste("italic(k)==", res_endo_or_ecto1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = "", y = "", size = expression(paste(italic(n), " (# of species)")), tag = "e" ) +
+  labs(x = "", y = "", size = expression(paste(italic(n), " (# of species pairs)")), tag = "e" ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position="none") +
@@ -1350,9 +1351,9 @@ tibble(
 
 ```{r, fig.width=7, fig.height= 3.5}
 # getting images
-image_horizontal <- readPNG("../images/horizontal_transparentbg.png")
-image_vertical <- readPNG("../images/vertical_transparentbg.png")
-image_both <- readPNG("../images/horizontal_vertical_transparentbg.png")
+image_horizontal <- readPNG(here("images/horizontal_transparentbg.png"))
+image_vertical <- readPNG(here("images/vertical_transparentbg.png"))
+image_both <- readPNG(here("images/horizontal_vertical_transparentbg.png"))
 # adding sample size (k) for each category
 k_mode_of_transmission_broad <- dat %>% group_by(mode_of_transmission_broad) %>% count()
 # getting estimates and predicitons
@@ -1376,7 +1377,7 @@ fig_mode_of_transmission_broad <- ggplot(data = res_mode_of_transmission_broad1,
   scale_fill_manual(values = c("both" = "#0072B2",  "horizontal" = "#D55E00",  "vertical"= "#CC79A7")) +
   scale_y_discrete(labels = c("both" = "Both",  "horizontal" = "Horizontal",  "vertical"= "Vertical")) +
   annotate('text', x = 0.93, y = (1:3 + 0.15), label= paste("italic(k)==", res_mode_of_transmission_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
@@ -1409,7 +1410,7 @@ f <- ggplot(data = res_mode_of_transmission_broad1, aes(x = tanh(estimate), y = 
   scale_fill_manual(values = c("both" = "#0072B2",  "horizontal" = "#D55E00",  "vertical"= "#CC79A7")) +
   scale_y_discrete(labels = c("both" = "Both",  "horizontal" = "Horizontal",  "vertical"= "Vertical")) +
   annotate('text', x = 0.93, y = (1:3 + 0.15), label= paste("italic(k)==", res_mode_of_transmission_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = "", y = "", size = expression(paste(italic(n), " (# of species)")), tag = "f" ) +
+  labs(x = "", y = "", size = expression(paste(italic(n), " (# of species pairs)")), tag = "f" ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position="none") +
@@ -1517,7 +1518,7 @@ fig_symbiosis_transmission <- ggplot(data = res_symbiosis_transmission1, aes(x =
   scale_fill_manual(values = c("MutualistBoth"= colour_ls[1], "MutualistHorizontal"= colour_ls[2], "MutualistVertical" = colour_ls[3],"ParasiteBoth"= colour_ls[4], "ParasiteHorizontal" = colour_ls[5])) +
   scale_y_discrete(labels = c("MutualistBoth" = "Mutualist-\nBoth", "MutualistHorizontal" = "Mutualist-\nHorizontal","MutualistVertical" = "Mutualist-\nVertical", "ParasiteBoth" = "Parasite-\nBoth", "ParasiteHorizontal" = "Parasite-\nHorizontal")) +
   annotate('text', x = 0.93, y = 1:5 + 0.15, label= paste("italic(k)==", res_symbiosis_transmission1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
@@ -1556,7 +1557,7 @@ g <- ggplot(data = res_symbiosis_transmission1, aes(x = tanh(estimate), y = name
   scale_fill_manual(values = c("MutualistBoth"= colour_ls[1], "MutualistHorizontal"= colour_ls[2], "MutualistVertical" = colour_ls[3],"ParasiteBoth"= colour_ls[4], "ParasiteHorizontal" = colour_ls[5])) +
   scale_y_discrete(labels = c("MutualistBoth" = "Mutualist-\nBoth", "MutualistHorizontal" = "Mutualist-\nHorizontal","MutualistVertical" = "Mutualist-\nVertical", "ParasiteBoth" = "Parasite-\nBoth", "ParasiteHorizontal" = "Parasite-\nHorizontal")) +
   annotate('text', x = 0.93, y = 1:5 + 0.15, label= paste("italic(k)==", res_symbiosis_transmission1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species)")) ,tag = "g" ) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ,tag = "g" ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position="none") +
@@ -1683,7 +1684,7 @@ fig_host_tax_symbiosis <- ggplot(data = res_host_tax_symbiosis1, aes(x = tanh(es
   scale_fill_manual(values = c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertMutualist"= colour_ls[7],     "VertParasite"= colour_ls[8] )) +
   scale_y_discrete(labels = c("MicrobeMutualist"= "Microbe-\nMutualist", "MicrobeParasite"= "Microbe-\nParasite",  "PlantMutualist" = "Plant-\nMutualist", "PlantParasite"="Plant-\nParasite", "InvertMutualist" = "Invertebrate-\nMutualist",   "InvertParasite"= "Invertebrate-\nParasite", "VertMutualist"= "Vertebrate-\nMutualist",  "VertParasite"= "Vertebrate-\nParasite" )) +
   annotate('text', x = 0.93, y = 1:8 + 0.15, label= paste("italic(k)==", res_host_tax_symbiosis1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
@@ -1805,7 +1806,7 @@ fig_symbiont_tax_symbiosis <- ggplot(data = res_symbiont_tax_symbiosis1, aes(x =
   scale_fill_manual(values = c("MicrobeMutualist"= colour_ls[1], "MicrobeParasite"= colour_ls[2],  "PlantMutualist"= colour_ls[3], "PlantParasite"= colour_ls[4], "InvertMutualist" = colour_ls[5],  "InvertParasite"= colour_ls[6], "VertParasite"= colour_ls[8] )) +
   scale_y_discrete(labels = c("MicrobeMutualist"= "Microbe-\nMutualist", "MicrobeParasite"= "Microbe-\nParasite",  "PlantMutualist" = "Plant-\nMutualist", "PlantParasite"="Plant-\nParasite", "InvertMutualist" = "Invertebrate-\nMutualist",   "InvertParasite"= "Invertebrate-\nParasite",  "VertParasite"= "Vertebrate-\nParasite" )) +
   annotate('text', x = 0.93, y = 1:7 + 0.15, label= paste("italic(k)==", res_symbiont_tax_symbiosis1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0, 1)) +
@@ -1930,7 +1931,7 @@ fig_host_symbiont_tax <- ggplot(data = res_host_symbiont_tax1, aes(x = tanh(esti
   scale_fill_manual(values = c("MicrobeInvert" = colour_ls[1],  "MicrobeMicrobe"= colour_ls[2], "MicrobePlant" = colour_ls[3], "PlantInvert" = colour_ls[4],"PlantMicrobe" = colour_ls[5], "InvertInvert"  = colour_ls[6],  "InvertMicrobe" = colour_ls[7], "InvertPlant" = colour_ls[8],"VertInvert"  = colour_ls[9], "VertMicrobe"= colour_ls[10],"VertVert"  = colour_ls[11])) +
   scale_y_discrete(labels = c("MicrobeInvert" = "Microbe-\nInvertebrate",  "MicrobeMicrobe"= "Microbe-\nMicrobe", "MicrobePlant" = "Microbe-\nPlant", "PlantInvert" = "Plant-\nInvertebrate","PlantMicrobe" = "Plant-\nMicrobe", "InvertInvert"  = "Invertebrate\nInvertebrate",  "InvertMicrobe" = "Invertebrate-\nMicrobe", "InvertPlant" = "Invertebrate-\nPlant","VertInvert"  = "Vertebrate-\nInvertebrate", "VertMicrobe"= "Vertebrate-\nMicrobe", "VertVert"  = "Vertebrate-\nVertebrate")) +
   annotate('text', x = 0.93, y = 1:11 + 0.15, label= paste("italic(k)==", res_host_symbiont_tax1$n), parse=TRUE, hjust = "left", size=3.5) +
-  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species)")) ) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ) +
   guides(fill = "none", colour = "none") +
   theme_bw() +
   theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
@@ -2032,11 +2033,14 @@ mr_averaged_aic2 <- summary(model.avg(candidates,  delta < 2))
 importance <- importance(candidates)
 
 # use REML if not for model comparision
-model1 <- rma.mv(yi = Zr, V = VZr, mods = ~  mode_of_transmission_broad + host_tax_broad, test = "t",
+model1 <- rma.mv(yi = Zr, V = VZr, mods = ~  host_tax_broad + log(host_range_link_ratio) + mode_of_transmission_broad + symbiosis, test = "t",
                  random = ~ 1 | authors, method="REML", data = dat)
-model2 <- rma.mv(yi = Zr, V = VZr, mods = ~  mode_of_transmission_broad + host_tax_broad + symbiosis, test = "t",
+model2 <- rma.mv(yi = Zr, V = VZr, mods = ~  host_tax_broad + log(host_range_link_ratio) + mode_of_transmission_broad, test = "t",
                  random = ~ 1 | authors, method="REML", data = dat)
-
+model3 <- rma.mv(yi = Zr, V = VZr, mods = ~  host_tax_broad + mode_of_transmission_broad + symbiosis, test = "t",
+                 random = ~ 1 | authors, method="REML", data = dat)
+model4 <- rma.mv(yi = Zr, V = VZr, mods = ~  host_tax_broad + mode_of_transmission_broad, test = "t",
+                 random = ~ 1 | authors, method="REML", data = dat)
 ```
 
 **Supplementary Table 13:**
@@ -2045,13 +2049,13 @@ The top 2 models (out of 32 possible models) within the $\Delta$AIC difference o
 ```{r}
 # creating a table
 tibble(
-  `Model (variable weight)` = c("Model1", "Model2", "(Sum of weights)"),
+  `Model (variable weight)` = c("Model1", "Model2", "Model3", "Model4","(Sum of weights)"),
   transmission = c(if_else(candidates_aic2$mode_of_transmission_broad == "+", "$+$", "NA"),round(importance[1],3) ),
   host_tax = c(if_else(candidates_aic2$host_tax_broad== "+", "$+$", "NA"),round(importance[2], 3)),
   symbiosis =  c(if_else(candidates_aic2$symbiosis== "+", "$+$", "NA"),round(importance[3], 3)),
-  symbiont_tax = c(if_else(candidates_aic2$symbiont_tax_broad== "+", "$+$", "NA"),round(importance[4], 3)),
-  endo_or_ecto = c(if_else(candidates_aic2$endo_or_ecto== "+", "$+$", "NA"),round(importance[5], 3)),
-  `host_range` = c(if_else(candidates_aic2$`log(host_range_link_ratio)`== "+", "$+$", "NA"),round(importance[6], 3)),
+  `host_range` = c(if_else(candidates_aic2$`log(host_range_link_ratio)` >= 0, "$+$", "NA"),round(importance[4], 3)),
+  symbiont_tax = c(if_else(candidates_aic2$symbiont_tax_broad== "+", "$+$", "NA"),round(importance[5], 3)),
+  endo_or_ecto = c(if_else(candidates_aic2$endo_or_ecto== "+", "$+$", "NA"),round(importance[6], 3)),
   delta_AICc = c(candidates_aic2$delta, NA),
   Weight = c(candidates_aic2$weight, NA)) %>% 
   kable("html", digits = 3) %>%
@@ -2065,19 +2069,19 @@ The average estimates for regression coefficients (Estimate), 95% confidence int
 ```{r}
 
 # getting averaged R2 and variance components not provided by the MuMIn package
-average_sigma2 <- weighted.mean(x = c(model1$sigma2, model2$sigma2), w = candidates_aic2$weight)
-average_R2 <- weighted.mean(x = c(R2(model1)[1], R2(model2)[1])  ,w = candidates_aic2$weight)
+average_sigma2 <- weighted.mean(x = c(model1$sigma2, model2$sigma2, model3$sigma2, model4$sigma2), w = candidates_aic2$weight)
+average_R2 <- weighted.mean(x = c(R2(model1)[1], R2(model2)[1], R2(model3)[1], R2(model4)[1]) , w = candidates_aic2$weight)
 
 # creating a table
 tibble(
   `Fixed effect` = c("Intercept (both-Microbe-Mutulist)",
-                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", 
+                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", "host_range",
                      "both-horizontal", "both-vertical", "Mutulist-Parasite"),
   Estimate = mr_averaged_aic2$coefmat.full[,1],
   `Lower CI [0.025]` =  mr_averaged_aic2$coefmat.full[,1] - mr_averaged_aic2$coefmat.full[,2]*qnorm(0.975),
   `Upper CI  [0.975]` =  mr_averaged_aic2$coefmat.full[,1] + mr_averaged_aic2$coefmat.full[,2]*qnorm(0.975),
-  `V[authors]` = c(average_sigma2, rep(NA,6)),
-  `R2` = c(average_R2, rep(NA,6))) %>% 
+  `V[authors]` = c(average_sigma2, rep(NA,7)),
+  `R2` = c(average_R2, rep(NA,7))) %>% 
   kable("html", digits = 3) %>%
   kable_styling("striped", position = "left")
 ```
@@ -2088,17 +2092,17 @@ Here, we conducted 3 kinds of publication bias analyses: 1) contour-enhanced fun
 
 ### Funnel plot 
 
-A normal funnel plot assumes homogeneity (i.e., *I*^2^ = 0). Therefore, we controlled for important moderators (i.e., `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`).
+A normal funnel plot assumes homogeneity (i.e., *I*^2^ = 0). Therefore, we controlled for important moderators (i.e., `mode_of_transmission_broad`, `host_tax_broad`, `log(host_range_link_ratio)`, & `symbiosis`).
 
 #### Residual funnel plot 1
 
-We do not observe normal skewness in our enhanced-counter funnel plot (**Supplementary Figure 5**). This funnel asymmetry seems different from one cased by publication bias[@peters2008contour]; we do not expect a "hollow" in the region with high precision or i.e. inverse standard error (4.5-6) and relative high effect sizes (*Zr* = 0.2-0.7).  The funnel asymmetry is mainly caused by the boundary created by the number of randomizations (see the "Sensitivity Analysis" section where we deal with this skewness).
+We do not observe normal skewness in our enhanced-counter funnel plot (**Supplementary Figure 5**). This funnel asymmetry seems different from one cased by publication bias[@peters2008contour]; we do not expect a "hollow" in the region with high precision or i.e. inverse standard error (2.4-4) and relative high effect sizes (*Zr* = 0.5-1.0).  The funnel asymmetry is mainly caused by the boundary created by the number of randomizations (see the "Sensitivity Analysis" section where we deal with this skewness).
 
 ```{r}
 # 
 res_funnel_plot <- rma.mv(yi = Zr, V = VZr, 
                                mods = ~ mode_of_transmission_broad +
-                                 host_tax_broad +
+                                 host_tax_broad + log(host_range_link_ratio) +
                                  symbiosis, 
                                random = ~ 1 | authors, data = dat)
 
@@ -2117,14 +2121,15 @@ Further, Egger regression analyses (see below) showed that `sqrt(VZr)` (sampling
 res_funnel_plot2 <- rma.mv(yi = Zr, V = VZr, 
                                mods = ~ sqrt(VZr) +
                                 mode_of_transmission_broad +
-                                 host_tax_broad +
-                                 symbiosis, 
+                                host_tax_broad +
+                                log(host_range_link_ratio) +
+                                symbiosis, 
                                random = ~ 1 | authors, data = dat)
 
 funnel(res_funnel_plot2, yaxis = "seinv", level=c(90, 95, 99), shade=c("white", "gray55", "gray75"), refline=0, legend=TRUE)
 ```
 
-**Supplementary Figure 6:** A residual funnel plot from the meta-regression model with `sqrt(VZr)`, `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`; 'residual value' is on *Zr* and 'inverse standard error' is precision `1/sqrt(VZr)`.
+**Supplementary Figure 6:** A residual funnel plot from the meta-regression model with `sqrt(VZr)`, `mode_of_transmission_broad`, `host_tax_broad`, `log(host_range_link_ratio)`, & `symbiosis`; 'residual value' is on *Zr* and 'inverse standard error' is precision `1/sqrt(VZr)`.
 
 ### Egger regression
 
@@ -2141,7 +2146,7 @@ egger_regression_uni <- rma.mv(yi = Zr, V = VZr, mods = ~ sqrt(VZr), random = ~ 
 ```
 
 **Supplementary Table 15:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `sqrt(VZr)`. 
 ```{r}
 # getting marginal R2
 r2_egger_regression_uni <- R2(egger_regression_uni)
@@ -2181,7 +2186,7 @@ fit_egger_regression_uni <-  dat %>%
   geom_smooth(aes(y = pred), method =  "loess", se = FALSE, lty ="dashed", lwd = 0.5, colour ="black") +  
   ylim(-1, 2) + xlim(0.05, 0.45) +
   #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
-  labs(x = "sqrt(sampling variance)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
+  labs(x = "sqrt(sampling variance)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species pairs)"))) +
   guides(fill = "none", colour = "none") +
   # themses
   theme_bw() +
@@ -2195,12 +2200,12 @@ fit_egger_regression_uni
 ```
 
 **Supplementary Figure 7:**
-A bubble plot showing a predicted regression line for the contentious variable `log(host_range_link_ratio)`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines), with observed effect sizes based on various sample sizes. 
+A bubble plot showing a predicted regression line for the contentious variable `sqrt(VZr)`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines), with observed effect sizes based on various sample sizes. 
 
 
 #### Multivariate Egger regression
 
-We also conducted a Egger regression controlling other important moderators (i.e., `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`). After controlling for these variables, `sqrt(VZr)` stays significant.
+We also conducted a Egger regression controlling other important moderators (i.e., `mode_of_transmission_broad`, `host_tax_broad`, `log(host_range_link_ratio)`, & `symbiosis`). After controlling for these variables, `sqrt(VZr)` stays significant.
 
 ```{r}
 # 
@@ -2208,13 +2213,14 @@ egger_regression_mul <- rma.mv(yi = Zr, V = VZr,
                                mods = ~ sqrt(VZr) +
                                  mode_of_transmission_broad +
                                  host_tax_broad +
+                                 log(host_range_link_ratio) +
                                  symbiosis, 
                                random = ~ 1 | authors, data = dat)
 
 ```
 
 **Supplementary Table 16:**
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `sqrt(VZr)`. 
 ```{r}
 # getting marginal R2
 r2_egger_regression_mul <- R2(egger_regression_mul)
@@ -2222,12 +2228,12 @@ r2_egger_regression_mul <- R2(egger_regression_mul)
 # creating a table
 tibble(
   `Fixed effect` = c("Intercept (both-Microbe-Mutulist)", "sqrt(VZr)", "both-horizontal", "both-vertical", 
-                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", "Mutulist-Parasite"),
+                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", "host_range", "Mutulist-Parasite"),
   Estimate = c(egger_regression_mul$b),
   `Lower CI [0.025]` = c(egger_regression_mul$ci.lb),
   `Upper CI  [0.975]` = c(egger_regression_mul$ci.ub),
-  `V[authors]` = c(egger_regression_mul$sigma2, rep(NA,7)),
-  `R2` = c(r2_egger_regression_mul[1], rep(NA,7))) %>% kable("html", digits = 3) %>%
+  `V[authors]` = c(egger_regression_mul$sigma2, rep(NA,8)),
+  `R2` = c(r2_egger_regression_mul[1], rep(NA,8))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left")
 ```
 
@@ -2237,7 +2243,7 @@ pred_egger_regression_mul <-predict.rma(egger_regression_mul)
 # plotting
 
 fit_egger_regression_mul <-  dat %>% 
-  filter(!is.na(mode_of_transmission_broad) & !is.na(host_tax_broad) & !is.na(symbiosis))  %>% # getting ride of NA values
+  filter(!is.na(mode_of_transmission_broad) & !is.na(host_tax_broad) & !is.na(symbiosis) & !is.na(host_range_link_ratio))  %>% # getting ride of NA values
   mutate(ymin = pred_egger_regression_mul$ci.lb, 
          ymax = pred_egger_regression_mul$ci.ub,
          ymin2 = pred_egger_regression_mul$cr.lb,
@@ -2253,7 +2259,7 @@ fit_egger_regression_mul <-  dat %>%
   geom_smooth(aes(y = pred), method =  "loess", se = FALSE, lty ="dashed", lwd = 0.5, colour ="black") +  
   ylim(-1, 2) + xlim(0.05, 0.45) +
   #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
-  labs(x = "sqrt(sampling variance)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
+  labs(x = "sqrt(sampling variance)", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species pairs)"))) +
   guides(fill = "none", colour = "none") +
   # themses
   theme_bw() +
@@ -2267,7 +2273,7 @@ fit_egger_regression_mul
 ```
 
 **Supplementary Figure 8:**
-A bubble plot showing a predicted loess line for the contentious variable `log(host_range_link_ratio)` (given the values of the other 3 variables in the model), with their 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. Note that the lines are not linear as these are based on multivariate predictions of the data points. 
+A bubble plot showing a predicted loess line for the contentious variable `sqrt(VZr)` (given the values of the other 3 variables in the model), with their 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. Note that the lines are not linear as these are based on multivariate predictions of the data points. 
 
 ### Time-lag bias
 
@@ -2323,7 +2329,7 @@ fit_time_lag_effect <-  dat %>%
   ylim(-1, 2) + xlim(1994,2019) +
   scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015, 2020)) + 
   #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
-  labs(x = "Year", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
+  labs(x = "Year", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species pairs)"))) +
   guides(fill = "none", colour = "none") +
   # themses
   theme_bw() +
@@ -2345,6 +2351,7 @@ time_lag_effect_mul <- rma.mv(yi = Zr, V = VZr,
                               mods = ~ year +
                                 mode_of_transmission_broad +
                                 host_tax_broad +
+                                log(host_range_link_ratio) +
                                 symbiosis,
                               random = ~ 1 | authors, data = dat)
 
@@ -2359,12 +2366,12 @@ r2_time_lag_effect_mul <- R2(time_lag_effect_mul)
 # creating a table
 tibble(
   `Fixed effect` = c("Intercept (both-Microbe-Mutulist)", "Year", "both-horizontal", "both-vertical", 
-                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", "Mutulist-Parasite"),
+                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", "host_range", "Mutulist-Parasite"),
   Estimate = c(time_lag_effect_mul$b),
   `Lower CI [0.025]` = c(time_lag_effect_mul$ci.lb),
   `Upper CI  [0.975]` = c(time_lag_effect_mul$ci.ub),
-  `V[authors]` = c(time_lag_effect_mul$sigma2, rep(NA,7)),
-  `R2` = c(r2_time_lag_effect_mul[1], rep(NA,7))) %>% kable("html", digits = 3) %>%
+  `V[authors]` = c(time_lag_effect_mul$sigma2, rep(NA,8)),
+  `R2` = c(r2_time_lag_effect_mul[1], rep(NA,8))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left")
 ```
 
@@ -2373,7 +2380,7 @@ pred_time_lag_effect_mul <-predict.rma(time_lag_effect_mul)
 
 # plotting
 fit_time_lag_effect_mul <-  dat %>% 
-  filter(!is.na(mode_of_transmission_broad) & !is.na(host_tax_broad) & !is.na(symbiosis))  %>% 
+  filter(!is.na(mode_of_transmission_broad) & !is.na(host_tax_broad) & !is.na(symbiosis) & !is.na(host_range_link_ratio))  %>% 
   mutate(ymin = pred_time_lag_effect_mul$ci.lb, 
          ymax = pred_time_lag_effect_mul$ci.ub,
          ymin2 = pred_time_lag_effect_mul$cr.lb,
@@ -2390,7 +2397,7 @@ fit_time_lag_effect_mul <-  dat %>%
   ylim(-1, 2) + xlim(1994,2019) +
   scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015, 2020)) + 
   #geom_abline(intercept = mr_host_range_link_ratio$beta[[1]], slope = mr_host_range_link_ratio$beta[[2]], alpha = 0.7, linetype = "dashed", size = 0.5) +
-  labs(x = "Year", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species)"))) +
+  labs(x = "Year", y = expression(paste(italic(Zr), " (effect size)")), size = expression(paste(italic(n), " (# of species pairs)"))) +
   guides(fill = "none", colour = "none") +
   # themses
   theme_bw() +
