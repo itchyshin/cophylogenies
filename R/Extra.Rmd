@@ -1,0 +1,580 @@
+---
+title: "A Broadscale Test of Host-Symbiont Cophylogeny Reveals the Drivers of Phylogenetic Congruence (Extra)"
+author: "Alexander Hayward, Robert Poulin & Shinichi Nakagawa"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    code_download: true
+    code_folding: hide
+    depth: 4
+    number_sections: no
+    theme:  cosmo # “default”, “cerulean”, “journal”, “flatly”, “darkly”, “readable”, “spacelab”, “united”, “cosmo”, “lumen”, “paper”, “sandstone”, “simplex”, “yeti”
+    toc: yes
+    toc_float: yes
+    toc_depth: 4
+  pdf_document:
+    toc: yes
+subtitle: Supplementary Material 2
+bibliography: references.bib
+#biblio-style: "apalike"
+csl: ecol_lett.csl
+link-citations: yes
+#always_allow_html: true
+---
+
+```{r setup, include = FALSE}
+#kniter seetting
+knitr::opts_chunk$set(
+message = FALSE,
+warning = FALSE, # no warnings
+cache = TRUE,# Cacheing to save time when kniting
+tidy = TRUE
+#fig.width = 9
+)
+
+# clearning up
+rm(list=ls())
+```
+
+## Setups
+
+### Loading packages and custom functions
+
+```{r}
+# loading packages
+# devtools::install_github("thomasp85/patchwork")
+pacman::p_load(tidyverse, # tidy family and related pacakges below
+               kableExtra, 
+               gridExtra, # may not use this
+               purrr,
+               magrittr, # extending piping
+               pander,   # nice tables
+               metafor,  # package for meta-analysis
+               MCMCglmm,  # Bayeisan mixed model package
+               ggbeeswarm, # making bee-swarm plots possible
+               plotly,     # interactive plots using ggplot2
+               MuMIn,  # multi-model inference
+               lme4,   # lmm & glmm (models)
+               broom.mixed, # getting estimates from lmer + glmer objects
+               performance, # getting R2 from lmer + glmer objects
+               png,         # reading png files
+               grid,        # graphic layout manipulation
+               patchwork,   # putting ggplots together - you need to install via devtool
+               here         # making reading files easy
+               #lmerTest,   # more functions for lme4
+               #mi,      # missing data analysis
+               #betareg   # dependence of the above
+)
+```
+
+#### Custom functions
+
+We have 5 custom functions named : `p_to_Zr()`,`I2()`, `R2()`, `get_est()`, `get_pred()`, and `cont_gen()`, all of which are used later (see below for their functionality) and the code are included here. 
+
+```{r}
+# coustm functions
+
+#' Title: getting Zr and its sampling variance from p value 
+#'
+#' @param data: data frame 
+#' @param pval: p value
+#' @param N: sample size (N: the number of species ) and the degrees of freedom df = N - 2
+#'
+#' @return
+#' @export
+#'
+#' @examples
+p_to_Zr <- function(data, pval, N) {
+  
+  # turning them into strings
+  pval <- data[[deparse(substitute(pval))]]
+  N <- data[[deparse(substitute(N))]]
+  
+  # getting t values 
+  tval<- -qt(pval, N - 2) 
+  rval <- tval / sqrt((tval^2) + (N - 2))
+  
+  # define Zr function
+  # Zr <- 0.5*(log(1 + rval) - log(1 - rval)); the same as below
+  # r <-tanh(Zr) # turning Zr to r
+  Zr <- atanh(rval)
+  
+  # getting Var(Zr)
+  VZr <- 1 / (N - 3)
+  
+  # putting all together
+  Zrs <- tibble(rval, Zr, VZr)
+  data <- bind_cols(data, Zrs)
+}
+
+# coverting back Zr to r
+# Just use "psych" pacakge - fisherz2r(z) - <http://personality-project.org/r/psych/help/fisherz.html>
+# or this will do : r to Zr is tanh(r)!!
+
+# Functions for processing
+
+
+# General modeling functions 
+# Functions for I2
+
+#' Title Function to obtain total and separate I2 from multilevel-meta-analytic model
+#'
+#' @param model 
+#' @param method 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+I2 <- function(model, method = c("Wolfgang", "Shinichi")){
+  
+  ## evaluate choices
+  method <- match.arg(method)
+  
+  # Wolfgang's method
+  if(method == "Wolfgang"){
+    W <- solve(model$V) 
+    X <- model.matrix(model)
+    P <- W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+    I2_total <- sum(model$sigma2) / (sum(model$sigma2) + (model$k - model$p) / sum(diag(P)))
+    I2_each  <- model$sigma2 / (sum(model$sigma2) + (model$k - model$p) / sum(diag(P)))
+    names(I2_each) = paste0("I2_", model$s.names)
+    
+    # putting all together
+    I2s <- c(I2_total = I2_total, I2_each)
+    
+    # or my way
+  } else {
+    # sigma2_v = typical sampling error variance
+    sigma2_v <- sum(1/model$vi) * (model$k-1) / (sum(1/model$vi)^2 - sum((1/model$vi)^2)) 
+    I2_total <- sum(model$sigma2) / (sum(model$sigma2) + sigma2_v) #s^2_t = total variance
+    I2_each  <- model$sigma2 / (sum(model$sigma2) + sigma2_v)
+    names(I2_each) = paste0("I2_", model$s.names)
+    
+    # putting all together
+    I2s <- c(I2_total = I2_total, I2_each)
+  }
+  return(I2s)
+}
+
+# test <- dataset$fit4.1[[3]]
+# I2(test, method = "Wolfgang")
+# I2(test, method = "Shinichi")
+
+
+#' Title: R2 based on Nakagawa & Schielzeth 2013
+#'
+#' @param model 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+R2 <- function(model){
+  warning("Conditional R2 is not meaningful and the same as marginal R2\n")
+  
+  # fixed effect variance
+  fix <- var(as.numeric(as.vector(model$b) %*% t(as.matrix(model$X))))
+  
+  # marginal
+  R2m <- fix / (fix + sum(model$sigma2))
+  R2
+  #Rm <- round(100*R2m, 3)
+  
+  # conditional
+  R2c <- (fix + sum(model$sigma2) - model$sigma2[length(model$sigma2)]) / 
+    (fix + sum(model$sigma2))
+  
+  R2s <- c(R2_marginal = R2m, R2_coditional = R2c)
+  return(R2s)
+}
+
+
+#' Title: the function to get estimates from rma objects (metafor)
+#'
+#' @param model: rma.mv object 
+#' @param mod: the name of a moderator 
+get_est <- function (model, mod = " ") {
+  
+  name <- as.factor(str_replace(row.names(model$beta), mod, ""))
+  estimate <- as.numeric(model$beta)
+  lowerCL <- model$ci.lb
+  upperCL <- model$ci.ub 
+  
+  table <- tibble(name = name, estimate = estimate, lowerCL = lowerCL, upperCL = upperCL)
+}
+
+
+#' Title: the function to get prediction intervals (crediblity intervals) from rma objects (metafor)
+#'
+#' @param model: rma.mv object 
+#' @param mod: the name of a moderator 
+get_pred <- function (model, mod = " ") {
+  name <- as.factor(str_replace(row.names(model$beta), mod, ""))
+  len <- length(name)
+  
+  if(len != 1){
+  newdata <- matrix(NA, ncol = len, nrow = len)
+  for(i in 1:len) {
+    # getting the position of unique case from X (design matrix)
+    pos <- which(model$X[,i] == 1)[[1]]
+    newdata[, i] <- model$X[pos,]
+    }
+  pred <- predict.rma(model, newmods = newdata)
+  }
+  else {
+    pred <- predict.rma(model)
+    }
+  lowerPR <- pred$cr.lb
+  upperPR <- pred$cr.ub 
+  
+  table <- tibble(name = name, lowerPR = lowerPR, upperPR = upperPR)
+}
+
+#Here are links for how to do confidence regions for rma.mv regression lines
+#https://www.rdocumentation.org/packages/metafor/versions/1.9-9/topics/predict.rma
+#https://stackoverflow.com/questions/50804464/out-of-sample-prediction-for-rma-object-in-metafor
+
+
+#' Title: Contrast name geneator
+#'
+#' @param name: a vector of character strings
+cont_gen <- function (name) {
+  combination <- combn(name,2)
+  name_dat <- t(combination)
+  names <- paste(name_dat[ ,1], name_dat[, 2], sep = "-")
+  return(names)
+}
+```
+
+#### loading data
+
+```{r}
+# getting the data and formating some variables (turning chraracter vectors to factors)
+full_data <- read_csv(here("data/2020-08-12-source-data-dat.csv"), na = "NA") %>% 
+   mutate_if(is.character, as.factor)
+
+# selecting out variables, which we used for our analysis
+dat <- full_data %>% select(-symbiont_euk, -mode_of_transmission_fine, -`Visiting_symbiont?`)
+```
+
+#### Calcuating effect size
+
+```{r}
+dat %<>% 
+  # getting sample size & observation level random effect
+  mutate(., sample_size = if_else(host_tips_linked_corrected >= symbiont_tips_linked, symbiont_tips_linked, host_tips_linked_corrected),
+         observation = factor(1:nrow(.)), signficance = if_else(p_value <= 0.05, "y", "n") ) 
+
+# making p = 1 to p = (no_randomization - 1)/no_randomization as p = 1 produces t value = Inf
+dat$p_value <- ifelse(dat$p_value != 1, dat$p_value, (dat$no_randomizations - 1)/dat$no_randomizations) 
+
+# calculating effect size 
+dat %<>% p_to_Zr(p_value, sample_size) 
+
+```
+
+### Extra analyses
+
+### Sensitivity test 3: using only signficant results
+
+Here we use effect size calculated from only significant original results (*p* = 0.005 or less); this makes our data set from 233 effect sizes to 162 effect sizes.
+
+#### The type of symbiosis: parasitism vs. mutualism
+
+```{r}
+
+dat2 <- dat[dat$signficance == "y" , ]
+
+
+# meta-regression: mutiple intercepts
+mr_symbiosis1 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ symbiosis - 1, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat2)
+# meta-regression: contrast
+mr_symbiosis2 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ symbiosis, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat2)
+```
+
+**Supplementary Table X:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ [@nakagawa2013general] (R2) from the meta-regression with `symbiosis`. 
+
+```{r}
+# getting marginal R2
+r2_symbiosis1 <- R2(mr_symbiosis1)
+
+# getting estimates
+res_symbiosis1 <- get_est(mr_symbiosis1, mod = "symbiosis")
+res_symbiosis2 <- get_est(mr_symbiosis2, mod = "symbiosis")
+
+# creating a table
+tibble(
+  `Fixed effect` = c(as.character(res_symbiosis1$name), cont_gen(res_symbiosis1$name)),
+  Estimate = c(res_symbiosis1$estimate, res_symbiosis2$estimate[2]),
+  `Lower CI [0.025]` = c(res_symbiosis1$lowerCL, res_symbiosis2$lowerCL[2]),
+  `Upper CI  [0.975]` = c(res_symbiosis1$upperCL, res_symbiosis2$upperCL[2]),
+  `V[authors]` = c(mr_symbiosis1$sigma2,  rep(NA, 2)),
+  `R2` = c(r2_symbiosis1[1], rep(NA, 2))) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left") 
+```
+
+```{r, fig.width=7, fig.height=2.5}
+
+# reading image
+image_mutualism <- readPNG(here("images/mutualism_transparentbg.png"))
+image_parasitism <- readPNG(here("images/parasitism_transparentbg.png"))
+
+# adding sample size (k) for each category
+k_symbiosis <- dat2 %>% group_by(symbiosis) %>% count()
+# getting estimates and predicitons
+pred_symbiosis <- get_pred(mr_symbiosis1, mod = "symbiosis") 
+res_symbiosis1 <- left_join(res_symbiosis1, k_symbiosis, by =  c("name" = "symbiosis"))  %>% left_join(pred_symbiosis)
+#res_symbiosis1 
+# drawing a funnel plot - fig 2b
+fig_symbiosis <- ggplot(data = res_symbiosis1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat2 %>% filter(!is.na(symbiosis)), 
+                   aes(x= tanh(Zr), y = symbiosis, size = ((1/VZr) + 3), colour = symbiosis), groupOnX = FALSE, alpha=0.2) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values = c("Mutualist" = "#E69F00", "Parasite" = "#56B4E9")) +
+  scale_fill_manual(values = c("Mutualist" = "#E69F00", "Parasite" = "#56B4E9")) +
+  annotate('text', x = 0.93, y = c(1.15, 2.15), label= paste("italic(k)==", res_symbiosis1$n), parse = TRUE, hjust = "left", size = 3.5) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
+  # putting pictures in
+  annotation_custom(rasterGrob(image_mutualism), xmin = -1, xmax = -0.8, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_parasitism), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2)
+
+fig_symbiosis
+
+```
+
+#### The effect of the mode of transmission
+
+```{r}
+# meta-regression: mutiple intercepts
+mr_mode_of_transmission_broad1 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ mode_of_transmission_broad - 1, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat2)
+
+# meta-regression: contrast 1
+mr_mode_of_transmission_broad2 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ mode_of_transmission_broad, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat2)
+
+# meta-regression: contrast 2
+mr_mode_of_transmission_broad3 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(mode_of_transmission_broad, ref = "vertical"), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat2)
+```
+
+**Supplementary Table 8:**
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `mode_of_transmission_broad`. 
+```{r}
+# getting marginal R2
+r2_mode_of_transmission_broad1 <- R2(mr_mode_of_transmission_broad1)
+
+# getting estimates
+res_mode_of_transmission_broad1 <- get_est(mr_mode_of_transmission_broad1, mod = "mode_of_transmission_broad")
+res_mode_of_transmission_broad2 <- get_est(mr_mode_of_transmission_broad2, mod = "mode_of_transmission_broad")
+res_mode_of_transmission_broad3 <- get_est(mr_mode_of_transmission_broad3, mod = "mode_of_transmission_broad")
+
+# creating a table
+tibble(
+  `Fixed effect` = c(as.character(res_mode_of_transmission_broad1$name), cont_gen(res_mode_of_transmission_broad1$name)),
+  Estimate = c(res_mode_of_transmission_broad1$estimate, res_mode_of_transmission_broad2$estimate[-1],  res_mode_of_transmission_broad3$estimate[-(1:2)]),
+  `Lower CI [0.025]` = c(res_mode_of_transmission_broad1$lowerCL, res_mode_of_transmission_broad2$lowerCL[-1], res_mode_of_transmission_broad3$lowerCL[-(1:2)]),
+  `Upper CI  [0.975]` = c(res_mode_of_transmission_broad1$upperCL, res_mode_of_transmission_broad2$upperCL[-1], res_mode_of_transmission_broad3$upperCL[-(1:2)]),
+  `V[authors]` = c(mr_mode_of_transmission_broad1$sigma2,  rep(NA, 5)),
+  `R2` = c(r2_mode_of_transmission_broad1[1], rep(NA, 5))) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left") 
+```
+
+
+```{r, fig.width=7, fig.height= 3.5}
+# getting images
+image_horizontal <- readPNG(here("images/horizontal_transparentbg.png"))
+image_vertical <- readPNG(here("images/vertical_transparentbg.png"))
+image_both <- readPNG(here("images/horizontal_vertical_transparentbg.png"))
+# adding sample size (k) for each category
+k_mode_of_transmission_broad <- dat2 %>% group_by(mode_of_transmission_broad) %>% count()
+# getting estimates and predicitons
+pred_mode_of_transmission_broad <- get_pred(mr_mode_of_transmission_broad1, mod = "mode_of_transmission_broad") 
+res_mode_of_transmission_broad1 <- left_join(res_mode_of_transmission_broad1, k_mode_of_transmission_broad, by =  c("name" = "mode_of_transmission_broad"))  %>% left_join(pred_mode_of_transmission_broad)
+#res_symbiosis1 
+# drawing a funnel plot - fig 2b
+fig_mode_of_transmission_broad <- ggplot(data = res_mode_of_transmission_broad1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat2 %>% filter(!is.na(mode_of_transmission_broad)), 
+                   aes(x= tanh(Zr), y = mode_of_transmission_broad, size = ((1/VZr) + 3), colour = mode_of_transmission_broad), groupOnX = FALSE, alpha=0.4) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values = c("both" = "#0072B2",  "horizontal" = "#D55E00",  "vertical"= "#CC79A7")) +
+  scale_fill_manual(values = c("both" = "#0072B2",  "horizontal" = "#D55E00",  "vertical"= "#CC79A7")) +
+  scale_y_discrete(labels = c("both" = "Both",  "horizontal" = "Horizontal",  "vertical"= "Vertical")) +
+  annotate('text', x = 0.93, y = (1:3 + 0.15), label= paste("italic(k)==", res_mode_of_transmission_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction = "horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
+  # adding images
+  annotation_custom(rasterGrob(image_horizontal), xmin = -1, xmax = -0.7, ymin = 1.4, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_vertical), xmin = -1, xmax = -0.7, ymin = 2.4, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_both), xmin = -1, xmax = -0.7, ymin = 0.4, ymax = 1.2) 
+
+fig_mode_of_transmission_broad
+
+
+```
+
+
+#### The effect of host taxa
+
+```{r}
+# reordering
+dat$host_tax_broad <- factor(dat$host_tax_broad, levels = c("Microbe", "Plant", "Invert", "Vert"))
+
+# meta-regression: mutiple intercepts
+mr_host_tax_broad1 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ host_tax_broad - 1, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat2)
+
+# meta-regression: contrast 1
+mr_host_tax_broad2 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ host_tax_broad, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat2)
+
+# meta-regression: contrast 2
+mr_host_tax_broad3 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(host_tax_broad, ref = "Plant"), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat2)
+
+# meta-regression: contrast 3
+mr_host_tax_broad4 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(host_tax_broad, ref = "Invert"), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat2)
+```
+
+**Supplementary Table 3:**
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
+```{r}
+# getting marginal R2
+r2_host_tax_broad1 <- R2(mr_host_tax_broad1)
+
+# getting estimates
+res_host_tax_broad1 <- get_est(mr_host_tax_broad1, mod = "host_tax_broad")
+res_host_tax_broad2 <- get_est(mr_host_tax_broad2, mod = "host_tax_broad")
+# the name bit does not work if relevel....
+res_host_tax_broad3 <- get_est(mr_host_tax_broad3, mod = "host_tax_broad")
+res_host_tax_broad4 <- get_est(mr_host_tax_broad4, mod = "host_tax_broad")
+
+# creating a table
+tibble(
+  `Fixed effect` = c(as.character(res_host_tax_broad1$name), cont_gen(res_host_tax_broad1$name)),
+  Estimate = c(res_host_tax_broad1$estimate, res_host_tax_broad2$estimate[-1],  res_host_tax_broad3$estimate[-(1:2)], res_host_tax_broad4$estimate[-(1:3)]),
+  `Lower CI [0.025]` = c(res_host_tax_broad1$lowerCL, res_host_tax_broad2$lowerCL[-1], res_host_tax_broad3$lowerCL[-(1:2)], res_host_tax_broad4$lowerCL[-(1:3)]),
+  `Upper CI  [0.975]` = c(res_host_tax_broad1$upperCL, res_host_tax_broad2$upperCL[-1], res_host_tax_broad3$upperCL[-(1:2)], res_host_tax_broad4$upperCL[-(1:3)]),
+  `V[authors]` = c(mr_host_tax_broad1$sigma2,  rep(NA, 9)),
+  `R2` = c(r2_host_tax_broad1[1], rep(NA, 9))) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left") %>%
+  scroll_box(width = "100%", height = "300px")
+```
+
+```{r, fig.width=7, fig.height= 4}
+# getting images
+image_invertebrate_host <- readPNG(here("images/invertebrate_host_transparentbg.png"))
+image_microbe_host <- readPNG(here("images/microbe_host_transparentbg.png"))
+image_vertebrate_host <- readPNG(here("images/vertebrate_host_transparentbg.png"))
+image_plant_host <- readPNG(here("images/plant_host_transparentbg.png"))
+
+# adding sample size (k) for each category
+k_host_tax_broad <- dat2 %>% group_by(host_tax_broad) %>% count()
+# getting estimates and predicitons
+pred_host_tax_broad <- get_pred(mr_host_tax_broad1, mod = "host_tax_broad") 
+res_host_tax_broad1 <- left_join(res_host_tax_broad1, k_host_tax_broad, by =  c("name" = "host_tax_broad"))  %>% left_join(pred_host_tax_broad)
+#res_symbiosis1 
+# drawing a funnel plot - fig 2b
+fig_host_tax_broad <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat2 %>% filter(!is.na(host_tax_broad)), 
+                   aes(x= tanh(Zr), y = host_tax_broad, size = ((1/VZr) + 3), colour = host_tax_broad), groupOnX = FALSE, alpha=0.4) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
+  scale_fill_manual(values = c("Microbe" = "#009E73",  "Plant" = "#F0E422",  "Invert"= "#0072B2",  "Vert" = "#D55E00")) +
+  scale_y_discrete(labels = c("Microbe" = "Microbe",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Vert" = "Vertebrate")) +
+  annotate('text', x = 0.93, y = 1:4 + 0.15, label= paste("italic(k)==", res_host_tax_broad1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 90)) +
+  # putting pictures in
+  annotation_custom(rasterGrob(image_microbe_host), xmin = -1, xmax = -0.8, ymin = 0.6, ymax = 1.2) + 
+  annotation_custom(rasterGrob(image_plant_host), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2) +
+  annotation_custom(rasterGrob(image_invertebrate_host), xmin = -1, xmax = -0.8, ymin = 2.6, ymax = 3.2) + 
+  annotation_custom(rasterGrob(image_vertebrate_host), xmin = -1, xmax = -0.8, ymin = 3.6, ymax = 4.2)
+
+fig_host_tax_broad
+
+```
