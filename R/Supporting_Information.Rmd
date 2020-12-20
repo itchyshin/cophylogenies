@@ -404,12 +404,12 @@ dat %>% summarise_all(~sum(is.na(.))) %>% # map(~sum(is.na(.)) # this is an alte
 
 ### Calculating effect sizes
 
-We created our effect size (correlation coefficient *r* and its Fisher's z transformation *Zr*) from p values and associated sample sizes [@rosenthal2003requivalent]. We used the smaller sample size of either `host_tips_linked_corrected` or `symbiont_tips_linked` as our sample size (i.e., the number of both host and symbiont species) for each effect size (an indicator of congruence). Also, we created a column with a unique ID for each observation (i.e. an observation level random effect), termed `observation`, which is required for the `rma.mv` function in `metafor` [@viechtbauer2010conducting].
+We created our effect size (correlation coefficient *r* and its Fisher's z transformation *Zr*) from p values and associated sample sizes [@rosenthal2003requivalent]. We used `total_host_symbioint_links` for each effect size (an indicator of congruence). Also, we created a column with a unique ID for each observation (i.e. an observation level random effect), termed `observation`, which is required for the `rma.mv` function in `metafor` [@viechtbauer2010conducting].
 
 ```{r}
 dat %<>% 
   # getting sample size & observation level random effect
-  mutate(., sample_size = if_else(host_tips_linked_corrected >= symbiont_tips_linked, symbiont_tips_linked, host_tips_linked_corrected),
+  mutate(., sample_size = if_else(!is.na(total_host_symbioint_links), total_host_symbioint_links, symbiont_tips_linked),
          observation = factor(1:nrow(.))) #, signficance = if_else(p_value <= 0.05, "y", "n") ) 
 
 # making p = 1 to p = (no_randomization - 1)/no_randomization as p = 1 produces t value = Inf
@@ -424,7 +424,7 @@ dat %<>% p_to_Zr(p_value, sample_size)
 # getting effect sizes for pair data
 pair %<>% 
   # getting sample size & observation level random effect
-  mutate(., sample_size = if_else(host_tips_linked_corrected >= symbiont_tips_linked, symbiont_tips_linked, host_tips_linked_corrected),
+  mutate(., sample_size = if_else(!is.na(total_host_symbioint_links), total_host_symbioint_links, symbiont_tips_linked),
          observation = factor(1:nrow(.)))  
  
 # making p = 1 to p = (no_randomization - 1)/no_randomization as p = 1 produces t value = Inf
@@ -886,7 +886,7 @@ c <- ggplot(data = res_host_tax_broad1, aes(x = tanh(estimate), y = name)) +
 
 **Figure 3c:** An orchard plot showing the group-wise means (the categorical variable `host_tax_broad`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.  
 
-#### The effect of symbiont taxa
+#### The effect of symbiont taxa 1 (broad)
 
 ```{r}
 # reordering
@@ -1030,6 +1030,144 @@ d <- ggplot(data = res_symbiont_tax_broad1, aes(x = tanh(estimate), y = name)) +
 ```
 
 **Figure 2d:** An orchard plot showing the group-wise means (the categorical variable `symbiont_tax_broad`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.  
+
+#### The effect of symbiont taxa 2 (fine)
+
+```{r}
+# reordering
+dat$symbiont_tax_fine <- factor(dat$symbiont_tax_fine, levels = c("Virus", "Bacterium", "Protist", "Fungus", "Plant", "Invert", "Tetrapod"))
+
+#sizes <- factor(sizes, levels = c("small", "medium", "large"))
+#sizes
+#> [1] small  large  large  small  medium
+#> Levels: small medium large
+# meta-regression: mutiple intercepts
+mr_symbiont_tax_fine1 <- rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ symbiont_tax_fine - 1, 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+
+
+# # meta-regression: contrasts x 10
+# getting the level names out
+level_names <- levels(dat$symbiont_tax_fine)
+
+# helper function to run metafor meta-regression
+run_rma <- function(name) {
+  rma.mv(yi = Zr, 
+                       V = VZr, 
+                       mods = ~ relevel(symbiont_tax_fine, ref = name), 
+                       test = "t",
+                       random = ~ 1 | authors, 
+                       data = dat)
+}
+
+# results of meta-regression including all contrast results; taking the last level out ([-length(level_names)])
+mr_symbiont_tax_fine <- map(level_names[-length(level_names)], run_rma)
+
+```
+
+**Supplementary Table XX:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_fine`. 
+```{r}
+# getting marginal R2
+r2_symbiont_tax_fine1 <- R2(mr_symbiont_tax_fine1)
+
+# getting estimates
+res_symbiont_tax_fine1 <- get_est(mr_symbiont_tax_fine1, mod = "symbiont_tax_fine")
+res_symbiont_tax_fine <- map(mr_symbiont_tax_fine, ~ get_est(.x, mod = "symbiont_tax_fine"))
+
+# a list of the numbers to take out unnecessary contrasts
+contra_list <- Map(seq, from=1, to=1:6)
+
+# you need to flatten twice: first to make it a list and make it a vector
+estimates <- map2(res_symbiont_tax_fine, contra_list, ~.x[-(.y),"estimate"]) %>% flatten() %>% flatten_dbl()
+lowerCLs <- map2(res_symbiont_tax_fine, contra_list, ~.x[-(.y),"lowerCL"]) %>% flatten() %>% flatten_dbl()
+upperCLs <- map2(res_symbiont_tax_fine, contra_list, ~.x[-(.y),"upperCL"]) %>% flatten() %>% flatten_dbl()
+
+# creating a table
+tibble(
+  `Fixed effect` = c(as.character(res_symbiont_tax_fine1$name), cont_gen(res_symbiont_tax_fine1$name)),
+  Estimate = c(res_symbiont_tax_fine1$estimate, estimates),
+  `Lower CI [0.025]` = c(res_symbiont_tax_fine1$lowerCL,lowerCLs),
+  `Upper CI  [0.975]` = c(res_symbiont_tax_fine1$upperCL,upperCLs),
+  `V[authors]` = c(mr_symbiont_tax_fine1$sigma2,  rep(NA, (7 + choose(7,2))- 1)),
+  `R2` = c(r2_symbiont_tax_fine1[1], rep(NA, (7 + choose(7, 2))- 1))) %>% kable("html",  digits = 3) %>%
+  kable_styling("striped", position = "left") %>%
+  scroll_box(width = "100%", height = "300px")
+```
+
+```{r, fig.width=7, fig.height= 7}
+# colour list
+colour_ls <- c("#000000", "#E69F00", "#56B4E9", "#009E73",  "#F0E422",  "#0072B2",  "#D55E00", "#CC79A7", "#00008B", "#8B0A50", "#54FF9F", "#999999")
+
+# adding sample size (k) for each category
+k_symbiont_tax_fine <- dat %>% group_by(symbiont_tax_fine) %>% count()
+# getting estimates and predicitons
+pred_symbiont_tax_fine <- get_pred(mr_symbiont_tax_fine1, mod = "symbiont_tax_fine") 
+res_symbiont_tax_fine1 <- left_join(res_symbiont_tax_fine1, k_symbiont_tax_fine, by =  c("name" = "symbiont_tax_fine"))  %>% left_join(pred_symbiont_tax_fine)
+#res_symbiosis1 
+# drawing a funnel plot - fig 2b
+fig_symbiont_tax_fine <- ggplot(data = res_symbiont_tax_fine1, aes(x = tanh(estimate), y = name)) +
+  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, by = 0.2) ) +
+  geom_quasirandom(data = dat %>% filter(!is.na(symbiont_tax_fine)), 
+                   aes(x= tanh(Zr), y = symbiont_tax_fine, size = ((1/VZr) + 3), colour = symbiont_tax_fine), groupOnX = FALSE, alpha=0.4) + 
+  # 95 %precition interval (PI)
+  geom_errorbarh(aes(xmin = tanh(lowerPR), xmax = tanh(upperPR)),  height = 0, show.legend = F, size = 0.5, alpha = 0.6) +
+  # 95 %CI
+  geom_errorbarh(aes(xmin = tanh(lowerCL), xmax = tanh(upperCL)),  height = 0, show.legend = F, size = 1.2) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "black", alpha = 0.3) +
+  # creating dots and different size (bee-swarm and bubbles)
+  geom_point(aes(fill = name), size = 3, shape = 21) + #
+  # setting colours
+  scale_color_manual(values = c("Virus" = "#000000", "Bacterium" = "#E69F00", "Protist" = "#56B4E9", "Fungus" = "#009E73", "Plant" = "#F0E422", "Invert" = "#0072B2", "Tetrapod" = "#D55E00")) +
+  scale_fill_manual(values = c("Virus" = "#000000", "Bacterium" = "#E69F00", "Protist" = "#56B4E9", "Fungus" = "#009E73", "Plant" = "#F0E422", "Invert" = "#0072B2", "Tetrapod" = "#D55E00")) +
+  scale_y_discrete(labels = c("Virus" = "Virus", "Bacterium" = "Bacterium", "Protist" = "Protist", "Fungus" = "Fungus",  "Plant" = "Plant",  "Invert"= "Invertebrate",  "Tetrapod" = "Tetrapod")) +
+  annotate('text', x = 0.93, y = 1:7 + 0.15, label= paste("italic(k)==", res_symbiont_tax_fine1$n), parse=TRUE, hjust = "left", size=3.5) +
+  labs(x = expression(paste(italic(r), " (correlation)")), y = "", size = expression(paste(italic(n), " (# of species pairs)")) ) +
+  guides(fill = "none", colour = "none") +
+  theme_bw() +
+  theme(legend.position= c(0, 1), legend.justification = c(0,1)) +
+  theme(legend.direction="horizontal") +
+  #theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour ="black", hjust = 0.5, angle = 45)) #+
+  # putting pictures in
+  # annotation_custom(rasterGrob(image_microbe_parasite), xmin = -1, xmax = -0.8, ymin = 0.6, ymax = 1.2) + 
+  # annotation_custom(rasterGrob(image_plant_parasite), xmin = -1, xmax = -0.8, ymin = 1.6, ymax = 2.2) +
+  # annotation_custom(rasterGrob(image_invertebrate_parasite), xmin = -1, xmax = -0.8, ymin = 2.6, ymax = 3.2) + 
+  # annotation_custom(rasterGrob(image_vertebrate_parasite), xmin = -1, xmax = -0.8, ymin = 3.6, ymax = 4.2)
+
+fig_symbiont_tax_fine
+
+```
+
+**Figure 2d:** An orchard plot showing the group-wise means (the categorical variable `symbiont_tax_broad`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes. 
+**Supplementary Table 4:**
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+```{r}
+# getting marginal R2
+r2_symbiont_tax_broad1 <- R2(mr_symbiont_tax_broad1)
+
+# getting estimates
+res_symbiont_tax_broad1 <- get_est(mr_symbiont_tax_broad1, mod = "symbiont_tax_broad")
+res_symbiont_tax_broad2 <- get_est(mr_symbiont_tax_broad2, mod = "symbiont_tax_broad")
+res_symbiont_tax_broad3 <- get_est(mr_symbiont_tax_broad3, mod = "symbiont_tax_broad")
+res_symbiont_tax_broad4 <- get_est(mr_symbiont_tax_broad4, mod = "symbiont_tax_broad")
+
+# creating a table
+tibble(
+  `Fixed effect` = c(as.character(res_symbiont_tax_broad1$name), cont_gen(res_symbiont_tax_broad1$name)),
+  Estimate = c(res_symbiont_tax_broad1$estimate, res_symbiont_tax_broad2$estimate[-1],  res_symbiont_tax_broad3$estimate[-(1:2)], res_symbiont_tax_broad4$estimate[-(1:3)]),
+  `Lower CI [0.025]` = c(res_symbiont_tax_broad1$lowerCL, res_symbiont_tax_broad2$lowerCL[-1], res_symbiont_tax_broad3$lowerCL[-(1:2)], res_symbiont_tax_broad4$lowerCL[-(1:3)]),
+  `Upper CI  [0.975]` = c(res_symbiont_tax_broad1$upperCL, res_symbiont_tax_broad2$upperCL[-1], res_symbiont_tax_broad3$upperCL[-(1:2)], res_symbiont_tax_broad4$upperCL[-(1:3)]),
+  `V[authors]` = c(mr_symbiont_tax_broad1$sigma2,  rep(NA, 9)),
+  `R2` = c(r2_symbiont_tax_broad1[1], rep(NA, 9))) %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left") %>%
+  scroll_box(width = "100%", height = "300px")
+```
 
 #### Testing specialization 1: host range
 
@@ -1492,8 +1630,6 @@ tibble(
 ```
 
 ```{r, fig.width=7, fig.height= 5}
-# colour list
-colour_ls <- c("#000000", "#E69F00", "#56B4E9", "#009E73",  "#F0E422",  "#0072B2",  "#D55E00", "#CC79A7", "#00008B", "#8B0A50", "#54FF9F", "#999999")
 
 # adding sample size (k) for each category
 k_symbiosis_transmission <- dat %>% group_by(symbiosis_transmission) %>% count()
@@ -2033,13 +2169,19 @@ mr_averaged_aic2 <- summary(model.avg(candidates,  delta < 2))
 importance <- importance(candidates)
 
 # use REML if not for model comparision
-model1 <- rma.mv(yi = Zr, V = VZr, mods = ~  host_tax_broad + log(host_range_link_ratio) + mode_of_transmission_broad + symbiosis, test = "t",
+model1 <- rma.mv(yi = Zr, V = VZr, mods = ~  host_tax_broad  + 
+                   mode_of_transmission_broad + symbiosis, test = "t",
                  random = ~ 1 | authors, method="REML", data = dat)
-model2 <- rma.mv(yi = Zr, V = VZr, mods = ~  host_tax_broad + log(host_range_link_ratio) + mode_of_transmission_broad, test = "t",
+model2 <- rma.mv(yi = Zr, V = VZr, mods = ~  host_tax_broad + 
+                   mode_of_transmission_broad, test = "t",
                  random = ~ 1 | authors, method="REML", data = dat)
-model3 <- rma.mv(yi = Zr, V = VZr, mods = ~  host_tax_broad + mode_of_transmission_broad + symbiosis, test = "t",
+model3 <- rma.mv(yi = Zr, V = VZr, mods = ~  host_tax_broad + 
+                   log(host_range_link_ratio) +
+                   mode_of_transmission_broad + symbiosis, test = "t",
                  random = ~ 1 | authors, method="REML", data = dat)
-model4 <- rma.mv(yi = Zr, V = VZr, mods = ~  host_tax_broad + mode_of_transmission_broad, test = "t",
+model4 <- rma.mv(yi = Zr, V = VZr, mods = ~  host_tax_broad +
+                    log(host_range_link_ratio) + 
+                   mode_of_transmission_broad, test = "t",
                  random = ~ 1 | authors, method="REML", data = dat)
 ```
 
@@ -2075,8 +2217,9 @@ average_R2 <- weighted.mean(x = c(R2(model1)[1], R2(model2)[1], R2(model3)[1], R
 # creating a table
 tibble(
   `Fixed effect` = c("Intercept (both-Microbe-Mutulist)",
-                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", "host_range",
-                     "both-horizontal", "both-vertical", "Mutulist-Parasite"),
+                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", 
+                     "host_range","both-horizontal", "both-vertical",
+                     "Mutulist-Parasite"),
   Estimate = mr_averaged_aic2$coefmat.full[,1],
   `Lower CI [0.025]` =  mr_averaged_aic2$coefmat.full[,1] - mr_averaged_aic2$coefmat.full[,2]*qnorm(0.975),
   `Upper CI  [0.975]` =  mr_averaged_aic2$coefmat.full[,1] + mr_averaged_aic2$coefmat.full[,2]*qnorm(0.975),
