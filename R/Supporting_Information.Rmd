@@ -2142,9 +2142,9 @@ funnel(res_funnel_plot2, yaxis = "seinv", level=c(90, 95, 99), shade=c("white", 
 
 **Supplementary Figure 6:** A residual funnel plot from the meta-regression model with `sqrt(VZr)`, `mode_of_transmission_broad`, `host_tax_broad`, `log(host_range_link_ratio)`, & `symbiosis`; 'residual value' is on *Zr* and 'inverse standard error' is precision `1/sqrt(VZr)`.
 
-### Egger regression
+### Egger's regression
 
-We applied Egger regression to test whether the funnel asymmetries we observe in our funnel plots are statistical significant or not. 
+We applied Egger's regression to test whether the funnel asymmetries we observe in our funnel plots are statistical significant or not. 
 
 #### Univariate Egger regression
 
