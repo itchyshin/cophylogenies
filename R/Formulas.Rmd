@@ -1,0 +1,40 @@
+---
+title: "Formulas"
+author: "Shinichi Nakagawa"
+date: "10/01/2021"
+output: html_document
+---
+
+## r equivalent
+
+$$
+r = \sqrt{\frac{t^2} {(t^2+(N-2)}}
+$$
+$$
+\text{Var}(r) =\frac{(1-r^2)^2}{N-1},
+$$
+
+
+## Zr
+
+$$
+Zr = \frac{1}{2} \ln \left( \frac{1+r}{1-r} \right),
+$$
+
+$$
+\text{Var}(Zr) =\frac{1}{N-3},
+$$
+
+## Zr to r
+
+$$
+r = \frac{\exp{(2Zr)}-1} {\exp{(2Zr)}+1} ,
+$$
+
+## Effective sample size
+
+$$
+N_{ep} = \frac{2n_{h}n_{s}} {n_{h} + n_{2s}},
+$$
+
+where $n_h$ and $n_s$ are sample size for hosts and symbionts (in our case: `host_tips_linked_corrected` and `symbiont_tips_linked`). When $n_h = n_h = n$, $N_{ep} = n$.
