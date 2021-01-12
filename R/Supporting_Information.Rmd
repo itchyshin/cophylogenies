@@ -1,5 +1,5 @@
 ---
-title: "Broadscale Test of Host-Symbiont Cophylogeny Reveals Key Drivers of Phylogenetic Congruence"
+title: "A Broadscale Test of Host-Symbiont Cophylogeny Reveals Key Drivers of Phylogenetic Congruence"
 author: "Alexander Hayward, Robert Poulin & Shinichi Nakagawa"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
@@ -248,11 +248,11 @@ cont_gen <- function (name) {
 ```
 
 
-## Supplementary Methods
+## Appendix S1: Supplementary Methods
 
 ### Supplementary information for the literature search
 
-**Extended Data Table 1:**
+#### Table S1.1
 Citations for papers describing the main methods of cophylogeny analysis, based on a *Google Scholar* search conducted on 4th July 2019. Although the paper describing Brooks parsimony analysis has more citations than that describing the Parafit method, relatively few citations correspond to actual cophylogenetic analyses employing the approach, *verses* methodological discussion.
 
 ```{r}
@@ -268,7 +268,7 @@ read_csv(here("data/lit_search.csv"), na = "NA") %>%
 
 Below is the dataset used for our meta-analysis, followed by explanations of 24 variables extracted from the papers included (not all variables were used for our analyses; variables which were neither 'directly' nor 'indirectly' used in our analyses are indicated by *).
 
-**Extended Data Table 2:** 
+#### Table S1.2
 The meta-analytic dataset of this study.
 
 ```{r}
@@ -396,7 +396,7 @@ dat %>% summarise_all(~sum(is.na(.))) %>% # map(~sum(is.na(.)) # this is an alte
 #show(missing_data_tbl) 
 ```
 
-## Meta-analysis
+## Appendix S2: Meta-analysis
 
 ### Calculating effect sizes
 
@@ -405,7 +405,7 @@ We created our effect size (correlation coefficient *r* and its Fisher's z trans
 $$
 N_{effective} = \frac{4n_{h}n_{s}} {n_{h} + n_{2s}},
 $$
-where $n_h$ and $n_s$ are sample size for hosts and symbionts (in our case: `host_tips_linked_corrected` and `symbiont_tips_linked`). When $n = n_h = n_s$, $N_{effective}$ simplifies to $2n$. We used $N_{effective}/2$ as our sample size. 
+where $n_h$ and $n_s$ are sample size for hosts and symbionts (in our case: `host_tips_linked_corrected` and `symbiont_tips_linked`). When $n = n_h = n_s$, $N_{effective}$ simplifies to $2n$. We used $N_{effective}/2$, which we called the number of "effective pairs" ($N_{ep}$) as our sample size. 
 
 Also, we created a column with a unique ID for each observation (i.e. an observation level random effect), termed `observation`, which is required for the `rma.mv` function in `metafor` [@viechtbauer2010conducting].
 
@@ -525,7 +525,7 @@ ma_all <- rma.mv(yi = Zr,
                  data = dat)
 ```
 
-**Supplementary Table 1:**
+#### Table S2.1
 Overall effects (meta-analytic means), 95% confidence intervals (CIs), variance components (V) and heterogeneity, *I*^2^ (I2) [@higgins2003measuring] from the `metafor` model using the 3 datasets (`ParaFit`, `TreeMap` and both combined, or `All`). Note that in these models, *I*^2^~[total]~ = *I*^2^~[authors]~ (see [@nakagawa2012methodological;@senior2016heterogeneity]), as we only have one random factor. 
 ```{r}
 # getting I2 for the models
@@ -545,6 +545,8 @@ tibble(
 ```
 
 These models all gave consistent results including heterogeneity. Given these results, we proceeded with only analyzing the whole dataset (`All`) from here on.    
+
+#### Figure 3a
 
 ```{r,  fig.width=7, fig.height=2}
 # https://stackoverflow.com/questions/41919023/ggplot-adding-image-on-top-right-in-two-plots-with-different-scales
@@ -611,7 +613,7 @@ a <- ggplot(data = effect_ma, aes(x = tanh(estimate), y = "Overall mean")) +
 
 **Figure 3a:** An orchard plot  showing the meta-analytic mean (mean effect size) with its 95% confidence interval (thick line) and 95% prediction interval (thin line), with observed effect sizes based on various sample sizes.  
 
-## Meta-regression
+## Appendix S3: Meta-regression
 
 We ran a univariate meta-regression model for each of the following moderators: 1) `symbiosis`, 2) `host_tax_broad`, 3) `symbiont_tax_broad`, 4) `host_range_link_ratio`, 5) `host_range_taxonomic_breadth`, 6) `mode_of_transmission_broad`, and 7) `endo_or_ecto`. The results from these models are presented in the main text. 
 
@@ -636,7 +638,7 @@ dat %<>%
 
 ### Univariate (uni-predictor) analyses
 
-We first conducted a series of meta-regression models with one predictor. 
+We first conducted a series of meta-regression models with each of the moderators introduced above. 
 
 #### The type of symbiosis: parasitism vs. mutualism
 
@@ -657,7 +659,7 @@ mr_symbiosis2 <- rma.mv(yi = Zr,
                        data = dat)
 ```
 
-**Supplementary Table 2:**
+#### Table S3.1
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ [@nakagawa2013general] (R2) from the meta-regression with `symbiosis`. 
 
 ```{r}
@@ -678,7 +680,7 @@ tibble(
   `R2` = c(r2_symbiosis1[1], rep(NA, 2))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 ```
-
+#### Figure 3b 
 
 
 ```{r, fig.width=7, fig.height=2.5}
@@ -787,7 +789,7 @@ mr_host_tax_broad4 <- rma.mv(yi = Zr,
                        data = dat)
 ```
 
-**Supplementary Table 3:**
+#### Table S3.2
 Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
 ```{r}
 # getting marginal R2
@@ -811,7 +813,7 @@ tibble(
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
-
+#### Figure 3c
 ```{r, fig.width=7, fig.height= 4}
 # getting images
 image_invertebrate_host <- readPNG(here("images/invertebrate_host_transparentbg.png"))
@@ -932,7 +934,7 @@ mr_symbiont_tax_broad4 <- rma.mv(yi = Zr,
                        data = dat)
 ```
 
-**Supplementary Table 4:**
+#### Table S3.3
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
 ```{r}
 # getting marginal R2
@@ -955,7 +957,7 @@ tibble(
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
-
+#### Figure 3d
 ```{r, fig.width=7, fig.height= 4}
 # getting images
 image_invertebrate_parasite <- readPNG(here("images/invertebrate_parasite_transparentbg.png"))
@@ -1032,7 +1034,7 @@ d <- ggplot(data = res_symbiont_tax_broad1, aes(x = tanh(estimate), y = name)) +
 
 ```
 
-**Figure 2d:** An orchard plot showing the group-wise means (the categorical variable `symbiont_tax_broad`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.  
+**Figure 3d:** An orchard plot showing the group-wise means (the categorical variable `symbiont_tax_broad`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.  
 
 
 #### Testing specialization 1: host range
@@ -1043,7 +1045,7 @@ mr_host_range_link_ratio <- rma.mv(yi = Zr, V = VZr, mods = ~ log(host_range_lin
 
 ```
 
-**Supplementary Table 5:**
+#### Table S3.4
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `log(host_range_link_ratio)`. 
 ```{r}
 # getting marginal R2
@@ -1101,7 +1103,7 @@ fig_host_range_link_ratio <-  dat %>%
 fig_host_range_link_ratio
 ```
 
-**Supplementary Figure 1:** 
+#### Figure S3.1 
 A bubble plot showing a predicted regression line for the contentious variable `log(host_range_link_ratio)`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
 
 
@@ -1113,7 +1115,7 @@ mr_host_range_taxonomic_breadth <- rma.mv(yi = Zr, V = VZr, mods = ~ log(host_ra
 
 ```
 
-**Supplementary Table 6:**
+#### Table S3.5
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `log(host_range_taxonomic_breadth)`. 
 ```{r}
 # getting marginal R2
@@ -1168,7 +1170,7 @@ fig_host_range_taxonomic_breadth <-  dat %>%
 fig_host_range_taxonomic_breadth
 ```
 
-**Supplementary Figure 2:**
+#### Figure S3.2
 A bubble plot showing a predicted regression line for the contentious variable `log(log(host_range_taxonomic_breadth)`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
 
 
@@ -1204,7 +1206,7 @@ mr_endo_or_ecto3 <- rma.mv(yi = Zr,
 
 ```
 
-**Supplementary Table 7:**
+#### Table S3.6
 Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `endo_or_ecto`. 
 ```{r}
 # getting marginal R2
@@ -1226,6 +1228,7 @@ tibble(
   kable_styling("striped", position = "left") 
 ```
 
+#### Figure 4a
 ```{r, fig.width=7, fig.height= 4}
 # getting images
 image_endoparasite <- readPNG(here("images/endoparasite_transparentbg.png"))
@@ -1300,7 +1303,7 @@ e <- ggplot(data = res_endo_or_ecto1, aes(x = tanh(estimate), y = name)) +
   annotation_custom(rasterGrob(image_endoparasite), xmin = -0.9, xmax = -0.7, ymin = 0.6, ymax = 1.2)
 ```
 
-**Figure 3e:**  An orchard plot showing the group-wise means (the categorical variable `endo_or_ecto`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes. 
+**Figure 4a:**  An orchard plot showing the group-wise means (the categorical variable `endo_or_ecto`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes. 
 
 
 #### The effect of the mode of transmission
@@ -1331,7 +1334,7 @@ mr_mode_of_transmission_broad3 <- rma.mv(yi = Zr,
                        data = dat)
 ```
 
-**Supplementary Table 8:**
+#### Table S3.7
 Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `mode_of_transmission_broad`. 
 ```{r}
 # getting marginal R2
@@ -1353,6 +1356,7 @@ tibble(
   kable_styling("striped", position = "left") 
 ```
 
+#### Figure 4b
 ```{r, fig.width=7, fig.height= 3.5}
 # getting images
 image_horizontal <- readPNG(here("images/horizontal_transparentbg.png"))
@@ -1427,7 +1431,7 @@ f <- ggplot(data = res_mode_of_transmission_broad1, aes(x = tanh(estimate), y = 
 
 ```
 
-**Figure 2f:** An orchard plot showing the group-wise means (the categorical variable `mode_of_transmission_broad`), indicating 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.
+**Figure 4b:** An orchard plot showing the group-wise means (the categorical variable `mode_of_transmission_broad`), indicating 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.
 
 
 #### The combined effect of symbiosis and mode of transmission
@@ -1465,7 +1469,7 @@ mr_symbiosis_transmission <- map(level_names[-length(level_names)], run_rma)
 
 ```
 
-**Supplementary Table 9:**
+#### Table S3.8
 Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiosis_transmission`. 
 ```{r}
 # getting marginal R2
@@ -1494,7 +1498,7 @@ tibble(
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
-
+#### Figure 4c
 ```{r, fig.width=7, fig.height= 5}
 # colour list
 colour_ls <- c("#000000", "#E69F00", "#56B4E9", "#009E73",  "#F0E422",  "#0072B2",  "#D55E00", "#CC79A7", "#00008B", "#8B0A50", "#54FF9F", "#999999")
@@ -1580,7 +1584,7 @@ g <- ggplot(data = res_symbiosis_transmission1, aes(x = tanh(estimate), y = name
 
 ```
 
-**Figure 3g:** An orchard plot showing the group-wise means (the categorical variable `symbiosis_transmission`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.
+**Figure 4c:** An orchard plot showing the group-wise means (the categorical variable `symbiosis_transmission`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.
 
 #### Putting together Figure 3
 
@@ -1595,6 +1599,21 @@ fig3
 #ggsave("../figs/fig3.pdf", width = 14, height = 14)
 ```
 **Figure 3:** putting all 7 panels together: Figure 3a - Figure 3g (see the main text)
+
+#### Putting together Figure 4
+
+```{r, fig.width=14, fig.height= 14}
+# building fig 3 using patchwork
+fig3 <- (a / b / c / d + plot_layout(heights = c(1.6, 2, 3.7, 3.7))) | 
+  (e / f / g + plot_layout(heights = c(2.8, 2.8, 4.4))) #+ plot_annotation(tag_levels = 'a', tag_suffix = ')')
+ 
+fig3
+
+#ggsave("../figs/fig3.png", width = 14, height = 14)
+#ggsave("../figs/fig3.pdf", width = 14, height = 14)
+```
+
+**Figure 4:** putting all 7 panels together: Figure 3a - Figure 3g (see the main text)
 
 ### Additional analyses (uni-predictor)
 
@@ -1634,7 +1653,7 @@ mr_host_tax_symbiosis <- map(level_names[-length(level_names)], run_rma)
 
 ```
 
-**Supplementary Table 10:**
+#### Table S3.9
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_symbiosis`. 
 ```{r}
 # getting marginal R2
@@ -1663,6 +1682,7 @@ tibble(
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
+#### Figure S3.3
 
 ```{r, fig.width=7, fig.height= 8}
 # adding sample size (k) for each category
@@ -1717,7 +1737,7 @@ fig_host_tax_symbiosis <- ggplot(data = res_host_tax_symbiosis1, aes(x = tanh(es
 fig_host_tax_symbiosis
 ```
 
-**Supplementary Figure 3:** An orchard plot showing group-wise means (the categorical variable `host_tax_symbiosis`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.
+**Figure S3.3:** An orchard plot showing group-wise means (the categorical variable `host_tax_symbiosis`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.
 
 Splitting host taxonomy by mode of symbiosis revealed that the observed higher phylogenetic congruence of host-symbiont cophylogenies involving a microbial host is driven primarily by greater congruence between microbial hosts and mutualist symbionts. Congruence is also relatively high for invertebrate hosts that harbour a mutualistic symbiont, while congruence appears to be lowest for plant hosts that harbour a parasitic symbiont. 
 
@@ -1755,7 +1775,7 @@ mr_symbiont_tax_symbiosis <- map(level_names[-length(level_names)], run_rma)
 
 ```
 
-**Supplementary Table 11:**
+#### Table S3.10
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_symbiosis`. 
 ```{r}
 # getting marginal R2
@@ -1784,7 +1804,7 @@ tibble(
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
-
+#### Figure S3.4
 ```{r, fig.width=7, fig.height= 7}
 # adding sample size (k) for each category
 k_symbiont_tax_symbiosis <- dat %>% group_by(symbiont_tax_symbiosis) %>% count()
@@ -1837,7 +1857,7 @@ fig_symbiont_tax_symbiosis <- ggplot(data = res_symbiont_tax_symbiosis1, aes(x =
 fig_symbiont_tax_symbiosis
 ```
 
-**Supplementary Figure 4:** An orchard plot showing group-wise means (the categorical variable `symbiont_tax_symbiosis`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.
+**Figure S3.4:** An orchard plot showing group-wise means (the categorical variable `symbiont_tax_symbiosis`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.
 
 Splitting symbiont taxonomy by mode of symbiosis revealed much less variation, except for higher congruence exhibited by cophylogenies involving a plant symbiont (instances of which are relatively rare), and the finding that cophylogenies involving a microbial mutualist symbiont are slightly more congruent than the remaining categories.
 
@@ -1876,7 +1896,7 @@ mr_host_symbiont_tax <- map(level_names[-length(level_names)], run_rma)
 
 ```
 
-**Supplementary Table 12:**
+#### Table S3.11
 Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_symbiont_tax`. 
 ```{r}
 # getting marginal R2
@@ -1907,6 +1927,7 @@ tibble(
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
+#### Figure S3.5
 
 ```{r, fig.width=7, fig.height= 10}
 # colour list
@@ -1974,7 +1995,7 @@ fig_host_symbiont_tax <- ggplot(data = res_host_symbiont_tax1, aes(x = tanh(esti
 fig_host_symbiont_tax
 ```
 
-**Supplementary Figure 4:** An orchard plot showing the group-wise means (the categorical variable `host_symbiont_tax`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.
+**Figure S3.5:** An orchard plot showing the group-wise means (the categorical variable `host_symbiont_tax`) with their 95% confidence intervals (thick lines) and 95% prediction intervals (thin lines), with observed effect sizes based on various sample sizes.
 
 ### Model selection (multi-predictor model)
 
@@ -2053,7 +2074,7 @@ model4 <- rma.mv(yi = Zr, V = VZr, mods = ~  host_tax_broad +
                  random = ~ 1 | authors, method="REML", data = dat)
 ```
 
-**Supplementary Table 13:**
+#### Table 3.12
 The top 4 models (out of 32 possible models) within the $\Delta$AIC difference of 2, and which 6 variables: `symbiosis`, `host_tax_broad`, `symbiont_tax_broad`, `mode_of_transmission_broad`, `endo_or_ecto`, & `log(host_range_link_ratio)` were included (indicated by $+$); model weights (for the 2 models) and the sum of weights for each of the variables (from the 32 models) are included. 
 
 ```{r}
@@ -2074,7 +2095,7 @@ tibble(
 
 #### Model averaging
 
-**Supplementary Table 14:**
+#### Table 3.13
 The average estimates for regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the 2 best meta-regression models.
 ```{r}
 
@@ -2097,7 +2118,7 @@ tibble(
   kable_styling("striped", position = "left")
 ```
 
-## Publication Bias Analysis
+## Appendix S4: Publication Bias Analysis
 
 Here, we conducted 3 kinds of publication bias analyses: 1) contour-enhanced funnel plots [@peters2008contour] of residuals [@egger1997bias; @nakagawa2012methodological], 2) a type of Egger regression [@egger1997bias; @moreno2009assessment], and 3) a regression-based time-lag bias test [@nakagawa2012methodological]. 
 
@@ -2109,6 +2130,7 @@ A normal funnel plot assumes homogeneity (i.e., *I*^2^ = 0). Therefore, we contr
 
 We do not observe normal skewness in our enhanced-counter funnel plot (**Supplementary Figure 5**). This funnel asymmetry seems different from one cased by publication bias[@peters2008contour]; we do not expect a "hollow" in the region with high precision or i.e. inverse standard error (2.4-4) and relative high effect sizes (*Zr* = 0.5-1.0).  The funnel asymmetry is mainly caused by the boundary created by the number of randomizations (see the "Sensitivity Analysis" section where we deal with this skewness).
 
+#### Figure 5a
 ```{r}
 # 
 res_funnel_plot <- rma.mv(yi = Zr, V = VZr, 
@@ -2120,13 +2142,14 @@ res_funnel_plot <- rma.mv(yi = Zr, V = VZr,
 funnel(res_funnel_plot, yaxis = "seinv", level=c(90, 95, 99), shade=c("white", "gray55", "gray75"), refline=0, legend=TRUE)
 ```
 
-**Supplementary Figure 5:** A residual funnel plot from the meta-regression model with `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`; 'residual value' is on *Zr* and 'inverse standard error' is precision `1/sqrt(VZr)`.
+**Figure 5a:** A residual funnel plot from the meta-regression model with `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`; 'residual value' is on *Zr* and 'inverse standard error' is precision `1/sqrt(VZr)`.
 
 
 #### Residual funnel plot 2
 
 Further, Egger regression analyses (see below) showed that `sqrt(VZr)` (sampling errors [SE] for effect sizes) accounts much heterogeneity, so we added that to our model. The funnel asymmetry we see in **Supplementary Figure 6** (if any) is much less severe than that in **Supplementary Figure 5**. 
 
+#### Figure 5b
 ```{r}
 # 
 res_funnel_plot2 <- rma.mv(yi = Zr, V = VZr, 
@@ -2140,15 +2163,28 @@ res_funnel_plot2 <- rma.mv(yi = Zr, V = VZr,
 funnel(res_funnel_plot2, yaxis = "seinv", level=c(90, 95, 99), shade=c("white", "gray55", "gray75"), refline=0, legend=TRUE)
 ```
 
-**Supplementary Figure 6:** A residual funnel plot from the meta-regression model with `sqrt(VZr)`, `mode_of_transmission_broad`, `host_tax_broad`, `log(host_range_link_ratio)`, & `symbiosis`; 'residual value' is on *Zr* and 'inverse standard error' is precision `1/sqrt(VZr)`.
+**Figure 5b:** A residual funnel plot from the meta-regression model with `sqrt(VZr)`, `mode_of_transmission_broad`, `host_tax_broad`, `log(host_range_link_ratio)`, & `symbiosis`; 'residual value' is on *Zr* and 'inverse standard error' is precision `1/sqrt(VZr)`.
+
+#### Putting together Figure 5
+
+```{r, fig.width=14, fig.height= 14}
+# building fig 3 using patchwork
+fig3 <- (a / b / c / d + plot_layout(heights = c(1.6, 2, 3.7, 3.7))) | 
+  (e / f / g + plot_layout(heights = c(2.8, 2.8, 4.4))) #+ plot_annotation(tag_levels = 'a', tag_suffix = ')')
+ 
+fig3
+
+#ggsave("../figs/fig3.png", width = 14, height = 14)
+#ggsave("../figs/fig3.pdf", width = 14, height = 14)
+```
 
 ### Egger's regression
 
 We applied Egger's regression to test whether the funnel asymmetries we observe in our funnel plots are statistical significant or not. 
 
-#### Univariate Egger regression
+#### Univariate Egger's regression
 
-The test (or `sqrt(VZr)`) is significant. However, as mentioned above, this is due to the boundary created by the number of randomizations; this boundary can be seen in **Supplementary Figure 7**
+The test (or `sqrt(VZr)`) is significant. However, as mentioned above, this is due to the boundary created by the number of randomizations; this boundary can be seen in **Figure S4.1** below.  
 
 ```{r}
 # 
@@ -2156,7 +2192,7 @@ egger_regression_uni <- rma.mv(yi = Zr, V = VZr, mods = ~ sqrt(VZr), random = ~ 
 
 ```
 
-**Supplementary Table 15:**
+#### Table S4.1
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `sqrt(VZr)`. 
 ```{r}
 # getting marginal R2
@@ -2175,7 +2211,7 @@ tibble(
   `R2` = c(r2_egger_regression_uni[1], NA)) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left")
 ```
-
+#### Figure S4.1
 ```{r, fig.width=7, fig.height= 4}
 pred_egger_regression_uni <-predict.rma(egger_regression_uni) 
 
@@ -2210,7 +2246,7 @@ fit_egger_regression_uni <-  dat %>%
 fit_egger_regression_uni
 ```
 
-**Supplementary Figure 7:**
+**Figure S4.1:**
 A bubble plot showing a predicted regression line for the contentious variable `sqrt(VZr)`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines), with observed effect sizes based on various sample sizes. 
 
 
@@ -2230,7 +2266,7 @@ egger_regression_mul <- rma.mv(yi = Zr, V = VZr,
 
 ```
 
-**Supplementary Table 16:**
+#### Table S4.2
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `sqrt(VZr)`. 
 ```{r}
 # getting marginal R2
@@ -2247,7 +2283,7 @@ tibble(
   `R2` = c(r2_egger_regression_mul[1], rep(NA,8))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left")
 ```
-
+#### Figure S4.2
 ```{r, fig.width=7, fig.height= 4}
 pred_egger_regression_mul <-predict.rma(egger_regression_mul) 
 
@@ -2283,13 +2319,12 @@ fit_egger_regression_mul <-  dat %>%
 fit_egger_regression_mul
 ```
 
-**Supplementary Figure 8:**
+**Figure S4.2:**
 A bubble plot showing a predicted loess line for the contentious variable `sqrt(VZr)` (given the values of the other 3 variables in the model), with their 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. Note that the lines are not linear as these are based on multivariate predictions of the data points. 
 
 ### Time-lag bias
 
-We do not find any evidence of a time-lag effect (a decline in the magnitude of the effect over time) in either the univariate or multivariate models (**Supplementary Figure 9** and **Supplementary Figure 10**).
-
+We do not find any evidence of a time-lag effect (a decline in the magnitude of the effect over time) in either the univariate or multivariate models (**Figure S4.X** and **Figure S4.X**).
 
 #### Univariate time-lag bias
 ```{r}
@@ -2298,7 +2333,7 @@ time_lag_effect_uni <- rma.mv(yi = Zr, V = VZr, mods = ~ year, random = ~ 1 | au
 
 ```
 
-**Supplementary Table 17:**
+#### Table S4.3
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `year`. 
 ```{r}
 # getting marginal R2
@@ -2317,7 +2352,7 @@ tibble(
   `R2` = c(r2_time_lag_effect_uni[1], NA)) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left")
 ```
-
+#### Figure S4.3
 ```{r, fig.width=7, fig.height= 4}
 pred_time_lag_effect_uni <-predict.rma(time_lag_effect_uni) 
 
@@ -2353,7 +2388,7 @@ fit_time_lag_effect <-  dat %>%
 fit_time_lag_effect
 ```
 
-**Supplementary Figure 9:** A bubble plot showing a predicted regression line for the contentious variable `year`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines), with observed effect sizes based on various sample sizes. 
+**Figure S4.3:** A bubble plot showing a predicted regression line for the contentious variable `year`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines), with observed effect sizes based on various sample sizes. 
 
 #### Multivariate time-lag bias
 ```{r}
@@ -2368,7 +2403,7 @@ time_lag_effect_mul <- rma.mv(yi = Zr, V = VZr,
 
 ```
 
-**Supplementary Table 18:**
+#### Table S4.4
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `year`. 
 ```{r}
 # getting marginal R2
@@ -2386,6 +2421,7 @@ tibble(
   kable_styling("striped", position = "left")
 ```
 
+#### Figure S4.4
 ```{r, fig.width=7, fig.height= 4}
 pred_time_lag_effect_mul <-predict.rma(time_lag_effect_mul) 
 
@@ -2421,9 +2457,9 @@ fit_time_lag_effect_mul <-  dat %>%
 fit_time_lag_effect_mul
 ```
 
-**Supplementary Figure 10:** A bubble plot showing a predicted loess line for the contentious variable `year` (given the values of the other 3 variables in the model), indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. Note that the lines are not linear as these are based on multivariate predictions of the data points. 
+**Figure S4.4:** A bubble plot showing a predicted loess line for the contentious variable `year` (given the values of the other 3 variables in the model), indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. Note that the lines are not linear as these are based on multivariate predictions of the data points. 
 
-## Sensitivity Analysis
+## Appendix S5: Sensitivity Analysis
 
 The funnel plots above identified the issue of upper bounds for the effect size given a sample size (an upper limit of a *p* value given the number of randomizations). This boundary would influence our estimates of mean effect sizes and contrasts (i.e., comparing two groups), often making our overall conclusions too conservative. To demonstrate this, we conducted two analyses to show: 1)  the number of randomizations (`log(no_randomizations)`) do not differ between categories in the 3 important categorical moderators (`mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`), and, 2) categories with high effect sizes would include "bounded" effect sizes (i.e., from *p* = 0.01, 0.001, or 0.0001; `limit_reached`) in the 3 moderators.
 
@@ -2444,7 +2480,7 @@ sa_random_symbiosis2<-lmer(log(no_randomizations) ~ symbiosis + (1 | authors), d
 
 ```
 
-**Supplementary Table 19:**
+#### Table S5.1
 Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2), from the regression with `symbiosis` on `log(no_randomizations)`. 
 
 ```{r}
@@ -2471,8 +2507,6 @@ tibble(
   `R2` = c(r2_sa_random_symbiosis$R2_marginal, rep(NA, 2))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 ```
-
-
 #### The effect of host taxa
 ```{r}
 # host_tax_broad
@@ -2491,7 +2525,7 @@ sa_random_host_tax_broad4<-lmer(log(no_randomizations) ~ relevel(host_tax_broad,
                                   (1 | authors), data = dat)
 ```
 
-**Supplementary Table 20:**
+#### Table S5.2
 Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `host_tax_broad` on `log(no_randomizations)`. 
 
 ```{r}
@@ -2528,7 +2562,6 @@ tibble(
   kable_styling("striped", position = "left") 
 ```
 
-
 #### The effect of the model of transmission
 
 ```{r}
@@ -2547,7 +2580,7 @@ sa_random_mode_of_transmission_broad3 <- lmer(log(no_randomizations) ~ relevel(m
                                              (1 | authors), data = dat)
 ```
 
-**Supplementary Table 21:**
+#### Table S5.3
 Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `mode_of_transmission_broad` on `log(no_randomizations)`. 
 
 ```{r}
@@ -2580,7 +2613,6 @@ tibble(
   kable_styling("striped", position = "left") 
 ```
 
-
 ### Sensitivity test 2: reaching the limits
 
 Below, we show that categories with higher effect sizes were more likely to have "bounded" effect sizes (`limit_reached`) in all `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`. This indicates that the higher the estimate of mean effect size is, the more underestimated the mean effect size is. This is true for differences between two categories; the larger the difference between two, the more underestimated the difference is. 
@@ -2588,7 +2620,7 @@ Below, we show that categories with higher effect sizes were more likely to have
 
 #### The type of symbiosis: parasitism vs. mutualism
 
-**Supplementary Table 22:**
+#### Table S5.4
 Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `symbiosis` on `limit_reached` (compare the effect estimates in **Supplementary Table 2** with the corresponding values in this table). 
 
 ```{r}
@@ -2619,7 +2651,7 @@ tibble(
 
 #### The effect of host taxa
 
-**Supplementary Table 23:**
+#### Table S5.5
 Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `host_tax_broad` on `limit_reached` (compare the effect estimates in **Supplementary Table 3** with the corresponding values in this table). 
 
 ```{r}
@@ -2651,7 +2683,7 @@ tibble(
 
 #### The effect of the model of transmission
 
-**Supplementary Table 24:**
+#### Table S5.6
 Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `mode_of_transmission_broad` on `limit_reached` (compare the effect estimates in **Supplementary Table 8** with the corresponding values in this table).
 
 ```{r}
