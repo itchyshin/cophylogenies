@@ -679,8 +679,8 @@ tibble(
   `Lower CI [0.025]` = c(res_symbiosis1$lowerCL, tanh(res_symbiosis1$lowerCL), res_symbiosis2$lowerCL[2]),
   `Upper CI  [0.975]` = c(res_symbiosis1$upperCL, tanh(res_symbiosis1$upperCL), res_symbiosis2$upperCL[2]),
   `V[authors]` = c(mr_symbiosis1$sigma2,  rep(NA, 4)),
-  `R2` = c(r2_symbiosis1[1], rep(NA, 4))) %>% 
-  kable("html", digits = 3) %>%
+  `R2` = c(r2_symbiosis1[1], rep(NA, 4))) -> t_symbiosis
+t_symbiosis %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 ```
 #### Figure 3b 
@@ -813,7 +813,9 @@ tibble(
   `Lower CI [0.025]` = c(res_host_tax_broad1$lowerCL, tanh(res_host_tax_broad1$lowerCL), res_host_tax_broad2$lowerCL[-1], res_host_tax_broad3$lowerCL[-(1:2)], res_host_tax_broad4$lowerCL[-(1:3)]),
   `Upper CI  [0.975]` = c(res_host_tax_broad1$upperCL, tanh(res_host_tax_broad1$upperCL), res_host_tax_broad2$upperCL[-1], res_host_tax_broad3$upperCL[-(1:2)], res_host_tax_broad4$upperCL[-(1:3)]),
   `V[authors]` = c(mr_host_tax_broad1$sigma2,  rep(NA, 13)),
-  `R2` = c(r2_host_tax_broad1[1], rep(NA, 13))) %>% kable("html", digits = 3) %>%
+  `R2` = c(r2_host_tax_broad1[1], rep(NA, 13))) -> t_host_tax
+
+t_host_tax %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
@@ -1361,7 +1363,9 @@ tibble(
   `Lower CI [0.025]` = c(res_mode_of_transmission_broad1$lowerCL, tanh(res_mode_of_transmission_broad1$lowerCL), res_mode_of_transmission_broad2$lowerCL[-1], res_mode_of_transmission_broad3$lowerCL[-(1:2)]),
   `Upper CI  [0.975]` = c(res_mode_of_transmission_broad1$upperCL,tanh(res_mode_of_transmission_broad1$upperCL), res_mode_of_transmission_broad2$upperCL[-1], res_mode_of_transmission_broad3$upperCL[-(1:2)]),
   `V[authors]` = c(mr_mode_of_transmission_broad1$sigma2,  rep(NA, 8)),
-  `R2` = c(r2_mode_of_transmission_broad1[1], rep(NA, 8))) %>% kable("html", digits = 3) %>%
+  `R2` = c(r2_mode_of_transmission_broad1[1], rep(NA, 8))) -> t_transmission
+
+t_transmission %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 ```
 
@@ -2151,11 +2155,10 @@ res_funnel_plot <- rma.mv(yi = Zr, V = VZr,
                                  symbiosis, 
                                random = ~ 1 | authors, data = dat)
 
-fun1 <- funnel(res_funnel_plot, yaxis = "seinv", level=c(90, 95, 99), 
+funnel(res_funnel_plot, yaxis = "seinv", level=c(90, 95, 99), 
        xlim  = c(-3, 4), ylim = c(0.9, 5.2), xlab = "Residuals (correlation)", ylab = "Precision (1/SE)",
        shade=c("white", "gray55", "gray75"), 
        refline=0, legend=TRUE)
-fun1
 ```
 
 **Figure 5a:** A residual funnel plot from the meta-regression model with `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`; 'residual value' is on *Zr* and 'inverse standard error' is precision `1/sqrt(VZr)`.
@@ -2176,17 +2179,16 @@ res_funnel_plot2 <- rma.mv(yi = Zr, V = VZr,
                                 symbiosis, 
                                random = ~ 1 | authors, data = dat)
 
-fun2 <- funnel(res_funnel_plot2, yaxis = "seinv", level=c(90, 95, 99),
+funnel(res_funnel_plot2, yaxis = "seinv", level=c(90, 95, 99),
        xlim  = c(-3, 4), ylim = c(0.9, 5.2), xlab = "Residuals (correlation)", ylab = "Precision (1/SE)",
        shade=c("white", "gray55", "gray75"), refline=0, legend=TRUE)
-fun2
 ```
 
 **Figure 5b:** A residual funnel plot from the meta-regression model with `sqrt(VZr)`, `mode_of_transmission_broad`, `host_tax_broad`, `log(host_range_link_ratio)`, & `symbiosis`; 'residual value' is on *Zr* and 'inverse standard error' is precision `1/sqrt(VZr)`.
 
 #### Putting together Figure 5
 
-```{r, fig.width=8, fig.height= 4}
+```{r, fig.width=14, fig.height= 6}
 # building fig 3 using patchwork
 
 par(mfrow = c(1,2))
@@ -2645,7 +2647,7 @@ Below, we show that categories with higher effect sizes were more likely to have
 #### The type of symbiosis: parasitism vs. mutualism
 
 #### Table S5.4
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `symbiosis` on `limit_reached` (compare the effect estimates in **XXXX** with the corresponding values in this table). 
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `symbiosis` on `limit_reached` (compare the effect estimates in **Table S3.1** with the corresponding values in this table below; their ranking in estimation should usually match).
 
 ```{r}
 # symbiosis
@@ -2671,12 +2673,22 @@ tibble(
   `R2` = c(r2_sa_limit_symbiosis$R2_marginal, rep(NA, 1))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 
+#t_symbiosis
+
 ```
+#### Table S3.1* (for comparision)
+In both tables, `mutualist` has higher estimates (i.e, `mutualist` rearched the ceiling more often) 
+
+```{r}
+t_symbiosis %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left") 
+```
+
 
 #### The effect of host taxa
 
 #### Table S5.5
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `host_tax_broad` on `limit_reached` (compare the effect estimates in **XXXX** with the corresponding values in this table). 
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `host_tax_broad` on `limit_reached`  (compare the effect estimates in **Table S3.2** with the corresponding values in this table below; their ranking in estimation should usually match).
 
 ```{r}
 # host_tax_broad
@@ -2702,13 +2714,20 @@ tibble(
   `R2` = c(r2_sa_limit_host_tax_broad$R2_marginal, rep(NA, 3))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 
-```
+# t_host_tax
 
+```
+#### Table S3.2* (for comparision)
+
+```{r}
+t_host_tax %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left") 
+```
 
 #### The effect of the model of transmission
 
 #### Table S5.6
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `mode_of_transmission_broad` on `limit_reached` (compare the effect estimates in **XXXX** with the corresponding values in this table).
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `mode_of_transmission_broad` on `limit_reached`  (compare the effect estimates in **Table S3.7** with the corresponding values in this table below; their ranking in estimation should usually match).
 
 ```{r}
 # mode_of_transmission_broad
@@ -2733,18 +2752,16 @@ tibble(
   `V[authors]` = c(attr(VarCorr(sa_limit_mode_of_transmission_broad1)$author,"stddev")^2,  rep(NA, 2)),
   `R2` = c(r2_sa_limit_mode_of_transmission_broad$R2_marginal, rep(NA, 2))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
+
+# t_transmission
 ```
 
-### Recommendations based on our sensitivity analysis
+#### Table S3.7* (for comparision)
 
-We have 3 recommendations for future (and past) co-divergence work using TreeMap and ParaFit. 
-
-* Researchers need to set the number of randomizations much higher to obtain more accurate *p* values.
-
-* If possible, the reanalysis of earlier trees would be informative; also, analyses using updated trees is desirable.
-
-* New studies should provide all data available online (including phylogenies in tree format), so that future meta-analyses can incorporate all available data.
-
+```{r}
+t_transmission %>% kable("html", digits = 3) %>%
+  kable_styling("striped", position = "left") 
+```
 
 ## Acknowledgements
 
