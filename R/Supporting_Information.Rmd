@@ -526,7 +526,7 @@ ma_all <- rma.mv(yi = Zr,
 ```
 
 #### Table S2.1
-Overall effects (meta-analytic means), 95% confidence intervals (CIs), variance components (V) and heterogeneity, *I*^2^ (I2) [@higgins2003measuring] from the `metafor` model using the 3 datasets (`ParaFit`, `TreeMap` and both combined, or `All`). Note that in these models, *I*^2^~[total]~ = *I*^2^~[authors]~ (see [@nakagawa2012methodological;@senior2016heterogeneity]), as we only have one random factor. 
+Overall effects (meta-analytic means) and 95% confidence intervals (CIs) both in Zr and r,  and variance components (V) and heterogeneity, *I*^2^ (I2) [@higgins2003measuring] from the `metafor` model using the 3 datasets (`ParaFit`, `TreeMap` and both combined, or `All`). Note that in these models, *I*^2^~[total]~ = *I*^2^~[authors]~ (see [@nakagawa2012methodological;@senior2016heterogeneity]), as we only have one random factor. 
 ```{r}
 # getting I2 for the models
 # could use map()
@@ -535,12 +535,13 @@ i2_parafit <- I2(ma_parafit)
 i2_all <- I2(ma_all)
 # creating a table
 tibble(
-  Dataset = c("Parafit", "TreeMap", "All"),
-  `Overall mean (Zr)` = c(ma_parafit$b, ma_treemap$b, ma_all$b),
-  `Lower CI [0.025]` = c(ma_parafit$ci.lb, ma_treemap$ci.lb, ma_all$ci.lb),
-  `Upper C  [0.975]` = c(ma_parafit$ci.ub, ma_treemap$ci.ub, ma_all$ci.ub),
-  `V[authors]` = c(ma_parafit$sigma2, ma_treemap$sigma2, ma_all$sigma2),
-  `I2[total]` = c(i2_parafit[1], i2_treemap[1], i2_all[1]))%>% kable("html",  digits = 3) %>%
+  Dataset = c("Parafit (Zr)", "TreeMap (Zr)", "All (Zr)", "Parafit (r)", "TreeMap (r)", "All (r)"),
+  `Overall mean` = c(ma_parafit$b, ma_treemap$b, ma_all$b, tanh(ma_parafit$b), tanh(ma_treemap$b), tanh(ma_all$b)),
+  `Lower CI [0.025]` = c(ma_parafit$ci.lb, ma_treemap$ci.lb, ma_all$ci.lb, tanh(ma_parafit$ci.lb), tanh(ma_treemap$ci.lb), tanh(ma_all$ci.lb)),
+  `Upper C  [0.975]` = c(ma_parafit$ci.ub, ma_treemap$ci.ub, ma_all$ci.ub,  tanh(ma_parafit$ci.ub), tanh(ma_treemap$ci.ub), tanh(ma_all$ci.ub)),
+  `V[authors]` = c(ma_parafit$sigma2, ma_treemap$sigma2, ma_all$sigma2, rep(NA, 3)),
+  `I2[total]` = c(i2_parafit[1], i2_treemap[1], i2_all[1], rep(NA, 3))) %>% 
+  kable("html",  digits = 3) %>%
   kable_styling("striped", position = "left")
 ```
 
@@ -660,24 +661,26 @@ mr_symbiosis2 <- rma.mv(yi = Zr,
 ```
 
 #### Table S3.1
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ [@nakagawa2013general] (R2) from the meta-regression with `symbiosis`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ [@nakagawa2013general] (R2) from the meta-regression with `symbiosis`. Note that `mu` means the group mean while `beta` represents the contrast between two groups in the Unit column.
 
 ```{r}
 # getting marginal R2
 r2_symbiosis1 <- R2(mr_symbiosis1)
 
-# getting estimates
+# getting estimates``
 res_symbiosis1 <- get_est(mr_symbiosis1, mod = "symbiosis")
 res_symbiosis2 <- get_est(mr_symbiosis2, mod = "symbiosis")
 
 # creating a table
 tibble(
-  `Fixed effect` = c(as.character(res_symbiosis1$name), cont_gen(res_symbiosis1$name)),
-  Estimate = c(res_symbiosis1$estimate, res_symbiosis2$estimate[2]),
-  `Lower CI [0.025]` = c(res_symbiosis1$lowerCL, res_symbiosis2$lowerCL[2]),
-  `Upper CI  [0.975]` = c(res_symbiosis1$upperCL, res_symbiosis2$upperCL[2]),
-  `V[authors]` = c(mr_symbiosis1$sigma2,  rep(NA, 2)),
-  `R2` = c(r2_symbiosis1[1], rep(NA, 2))) %>% kable("html", digits = 3) %>%
+  `Fixed effect` = c(rep(as.character(res_symbiosis1$name),2), cont_gen(res_symbiosis1$name)),
+  `Unit` = c(rep(c("Zr (mu)", "r (mu)"),each = 2), "Zr (beta)"),
+  Estimate = c(res_symbiosis1$estimate, tanh(res_symbiosis1$estimate), res_symbiosis2$estimate[2]),
+  `Lower CI [0.025]` = c(res_symbiosis1$lowerCL, tanh(res_symbiosis1$lowerCL), res_symbiosis2$lowerCL[2]),
+  `Upper CI  [0.975]` = c(res_symbiosis1$upperCL, tanh(res_symbiosis1$upperCL), res_symbiosis2$upperCL[2]),
+  `V[authors]` = c(mr_symbiosis1$sigma2,  rep(NA, 4)),
+  `R2` = c(r2_symbiosis1[1], rep(NA, 4))) %>% 
+  kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 ```
 #### Figure 3b 
@@ -790,7 +793,7 @@ mr_host_tax_broad4 <- rma.mv(yi = Zr,
 ```
 
 #### Table S3.2
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`. 
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_broad`.  Note that `mu` means the group mean while `beta` represents the contrast between two groups in the Unit column.
 ```{r}
 # getting marginal R2
 r2_host_tax_broad1 <- R2(mr_host_tax_broad1)
@@ -804,12 +807,13 @@ res_host_tax_broad4 <- get_est(mr_host_tax_broad4, mod = "host_tax_broad")
 
 # creating a table
 tibble(
-  `Fixed effect` = c(as.character(res_host_tax_broad1$name), cont_gen(res_host_tax_broad1$name)),
-  Estimate = c(res_host_tax_broad1$estimate, res_host_tax_broad2$estimate[-1],  res_host_tax_broad3$estimate[-(1:2)], res_host_tax_broad4$estimate[-(1:3)]),
-  `Lower CI [0.025]` = c(res_host_tax_broad1$lowerCL, res_host_tax_broad2$lowerCL[-1], res_host_tax_broad3$lowerCL[-(1:2)], res_host_tax_broad4$lowerCL[-(1:3)]),
-  `Upper CI  [0.975]` = c(res_host_tax_broad1$upperCL, res_host_tax_broad2$upperCL[-1], res_host_tax_broad3$upperCL[-(1:2)], res_host_tax_broad4$upperCL[-(1:3)]),
-  `V[authors]` = c(mr_host_tax_broad1$sigma2,  rep(NA, 9)),
-  `R2` = c(r2_host_tax_broad1[1], rep(NA, 9))) %>% kable("html", digits = 3) %>%
+  `Fixed effect` = c(rep(as.character(res_host_tax_broad1$name),2), cont_gen(res_host_tax_broad1$name)),
+  `Unit` = c(rep(c("Zr (mu)", "r (mu)"),each = 4), rep("Zr (beta)", 6)),
+  Estimate = c(res_host_tax_broad1$estimate, tanh(res_host_tax_broad1$estimate), res_host_tax_broad2$estimate[-1],  res_host_tax_broad3$estimate[-(1:2)], res_host_tax_broad4$estimate[-(1:3)]),
+  `Lower CI [0.025]` = c(res_host_tax_broad1$lowerCL, tanh(res_host_tax_broad1$lowerCL), res_host_tax_broad2$lowerCL[-1], res_host_tax_broad3$lowerCL[-(1:2)], res_host_tax_broad4$lowerCL[-(1:3)]),
+  `Upper CI  [0.975]` = c(res_host_tax_broad1$upperCL, tanh(res_host_tax_broad1$upperCL), res_host_tax_broad2$upperCL[-1], res_host_tax_broad3$upperCL[-(1:2)], res_host_tax_broad4$upperCL[-(1:3)]),
+  `V[authors]` = c(mr_host_tax_broad1$sigma2,  rep(NA, 13)),
+  `R2` = c(r2_host_tax_broad1[1], rep(NA, 13))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
@@ -935,7 +939,7 @@ mr_symbiont_tax_broad4 <- rma.mv(yi = Zr,
 ```
 
 #### Table S3.3
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_broad`.  Note that `mu` means the group mean while `beta` represents the contrast between two groups in the Unit column.
 ```{r}
 # getting marginal R2
 r2_symbiont_tax_broad1 <- R2(mr_symbiont_tax_broad1)
@@ -948,12 +952,13 @@ res_symbiont_tax_broad4 <- get_est(mr_symbiont_tax_broad4, mod = "symbiont_tax_b
 
 # creating a table
 tibble(
-  `Fixed effect` = c(as.character(res_symbiont_tax_broad1$name), cont_gen(res_symbiont_tax_broad1$name)),
-  Estimate = c(res_symbiont_tax_broad1$estimate, res_symbiont_tax_broad2$estimate[-1],  res_symbiont_tax_broad3$estimate[-(1:2)], res_symbiont_tax_broad4$estimate[-(1:3)]),
-  `Lower CI [0.025]` = c(res_symbiont_tax_broad1$lowerCL, res_symbiont_tax_broad2$lowerCL[-1], res_symbiont_tax_broad3$lowerCL[-(1:2)], res_symbiont_tax_broad4$lowerCL[-(1:3)]),
-  `Upper CI  [0.975]` = c(res_symbiont_tax_broad1$upperCL, res_symbiont_tax_broad2$upperCL[-1], res_symbiont_tax_broad3$upperCL[-(1:2)], res_symbiont_tax_broad4$upperCL[-(1:3)]),
-  `V[authors]` = c(mr_symbiont_tax_broad1$sigma2,  rep(NA, 9)),
-  `R2` = c(r2_symbiont_tax_broad1[1], rep(NA, 9))) %>% kable("html", digits = 3) %>%
+  `Fixed effect` = c(as.character(res_symbiont_tax_broad1$name),as.character(res_symbiont_tax_broad1$name), cont_gen(res_symbiont_tax_broad1$name)),
+  `Unit` = c(rep(c("Zr (mu)", "r (mu)"),each = 4), rep("Zr (beta)", 6)),
+  Estimate = c(res_symbiont_tax_broad1$estimate, tanh(res_symbiont_tax_broad1$estimate), res_symbiont_tax_broad2$estimate[-1],  res_symbiont_tax_broad3$estimate[-(1:2)], res_symbiont_tax_broad4$estimate[-(1:3)]),
+  `Lower CI [0.025]` = c(res_symbiont_tax_broad1$lowerCL, tanh(res_symbiont_tax_broad1$lowerCL), res_symbiont_tax_broad2$lowerCL[-1], res_symbiont_tax_broad3$lowerCL[-(1:2)], res_symbiont_tax_broad4$lowerCL[-(1:3)]),
+  `Upper CI  [0.975]` = c(res_symbiont_tax_broad1$upperCL, tanh(res_symbiont_tax_broad1$upperCL), res_symbiont_tax_broad2$upperCL[-1], res_symbiont_tax_broad3$upperCL[-(1:2)], res_symbiont_tax_broad4$upperCL[-(1:3)]),
+  `V[authors]` = c(mr_symbiont_tax_broad1$sigma2,  rep(NA, 13)),
+  `R2` = c(r2_symbiont_tax_broad1[1], rep(NA, 13))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
@@ -1046,7 +1051,7 @@ mr_host_range_link_ratio <- rma.mv(yi = Zr, V = VZr, mods = ~ log(host_range_lin
 ```
 
 #### Table S3.4
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `log(host_range_link_ratio)`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `log(host_range_link_ratio)`.  Note that `mu` shows the overall while `beta` represents a slope in the Unit column.
 ```{r}
 # getting marginal R2
 r2_host_range_link_ratio <- R2(mr_host_range_link_ratio)
@@ -1056,12 +1061,13 @@ res_host_range_link_ratio <- get_est(mr_host_range_link_ratio, mod = "log(host_r
 
 # creating a table
 tibble(
-  `Fixed effect` = c("Intercept", "log(host_range_link_ratio)"),
-  Estimate = c(res_host_range_link_ratio$estimate),
-  `Lower CI [0.025]` = c(res_host_range_link_ratio$lowerCL),
-  `Upper CI  [0.975]` = c(res_host_range_link_ratio$upperCL),
-  `V[authors]` = c(mr_host_range_link_ratio$sigma2, NA),
-  `R2` = c(r2_host_range_link_ratio[1], NA)) %>% kable("html", digits = 3) %>%
+  `Fixed effect` = c("Intercept", "Intercept", "log(host_range_link_ratio)"),
+  `Unit` = c(rep(c("Zr (mu)", "r (mu)"),1), rep("Zr (beta)", 1)),
+  Estimate = c(res_host_range_link_ratio$estimate[1], tanh(res_host_range_link_ratio$estimate[1]), res_host_range_link_ratio$estimate[2]),
+  `Lower CI [0.025]` = c(res_host_range_link_ratio$lowerCL[1], tanh(res_host_range_link_ratio$lowerCL[1]), res_host_range_link_ratio$lowerCL[2]),
+  `Upper CI  [0.975]` = c(res_host_range_link_ratio$upperCL[1], tanh(res_host_range_link_ratio$upperCL[1]),res_host_range_link_ratio$upperCL[2]),
+  `V[authors]` = c(mr_host_range_link_ratio$sigma2, NA, NA),
+  `R2` = c(r2_host_range_link_ratio[1], NA, NA)) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left")
 ```
 
@@ -1116,7 +1122,7 @@ mr_host_range_taxonomic_breadth <- rma.mv(yi = Zr, V = VZr, mods = ~ log(host_ra
 ```
 
 #### Table S3.5
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `log(host_range_taxonomic_breadth)`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `log(host_range_taxonomic_breadth)`.  Note that `mu` shows the overall while `beta` represents a slope in the Unit column.
 ```{r}
 # getting marginal R2
 r2_host_range_taxonomic_breadth <- R2(mr_host_range_taxonomic_breadth)
@@ -1126,12 +1132,13 @@ res_host_range_taxonomic_breadth <- get_est(mr_host_range_taxonomic_breadth, mod
 
 # creating a table
 tibble(
-  `Fixed effect` = c("Intercept", "log(host_range_taxonomic_breadth)"),
-  Estimate = c(res_host_range_taxonomic_breadth$estimate),
-  `Lower CI [0.025]` = c(res_host_range_taxonomic_breadth$lowerCL),
-  `Upper CI  [0.975]` = c(res_host_range_taxonomic_breadth$upperCL),
-  `V[authors]` = c(mr_host_range_taxonomic_breadth$sigma2, NA),
-  `R2` = c(r2_host_range_taxonomic_breadth[1], NA)) %>% kable("html", digits = 3) %>%
+  `Fixed effect` = c("Intercept","Intercept", "log(host_range_taxonomic_breadth)"),
+  `Unit` = c(rep(c("Zr (mu)", "r (mu)"),1), rep("Zr (beta)", 1)),
+  Estimate = c(res_host_range_taxonomic_breadth$estimate[1],tanh(res_host_range_taxonomic_breadth$estimate[1]) ,res_host_range_taxonomic_breadth$estimate[2]),
+  `Lower CI [0.025]` = c(res_host_range_taxonomic_breadth$lowerCL[1], tanh(res_host_range_taxonomic_breadth$lowerCL[1]),res_host_range_taxonomic_breadth$lowerCL[2]),
+  `Upper CI  [0.975]` = c(res_host_range_taxonomic_breadth$upperCL[1], tanh(res_host_range_taxonomic_breadth$upperCL[1]) ,res_host_range_taxonomic_breadth$upperCL[2]),
+  `V[authors]` = c(mr_host_range_taxonomic_breadth$sigma2, NA, NA),
+  `R2` = c(r2_host_range_taxonomic_breadth[1], NA, NA)) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left")
 ```
 
@@ -1207,7 +1214,7 @@ mr_endo_or_ecto3 <- rma.mv(yi = Zr,
 ```
 
 #### Table S3.6
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `endo_or_ecto`. 
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `endo_or_ecto`.  Note that `mu` means the group mean while `beta` represents the contrast between two groups in the Unit column.
 ```{r}
 # getting marginal R2
 r2_endo_or_ecto1 <- R2(mr_endo_or_ecto1)
@@ -1219,12 +1226,13 @@ res_endo_or_ecto3 <- get_est(mr_endo_or_ecto3, mod = "endo_or_ecto")
 
 # creating a table
 tibble(
-  `Fixed effect` = c(as.character(res_endo_or_ecto1$name), cont_gen(res_endo_or_ecto1$name)),
-  Estimate = c(res_endo_or_ecto1$estimate, res_endo_or_ecto2$estimate[-1],  res_endo_or_ecto3$estimate[-(1:2)]),
-  `Lower CI [0.025]` = c(res_endo_or_ecto1$lowerCL, res_endo_or_ecto2$lowerCL[-1], res_endo_or_ecto3$lowerCL[-(1:2)]),
-  `Upper CI  [0.975]` = c(res_endo_or_ecto1$upperCL, res_endo_or_ecto2$upperCL[-1], res_endo_or_ecto3$upperCL[-(1:2)]),
-  `V[authors]` = c(mr_endo_or_ecto1$sigma2,  rep(NA, 5)),
-  `R2` = c(r2_endo_or_ecto1[1], rep(NA, 5))) %>% kable("html", digits = 3) %>%
+  `Fixed effect` = c(as.character(res_endo_or_ecto1$name),as.character(res_endo_or_ecto1$name), cont_gen(res_endo_or_ecto1$name)),
+   `Unit` = c(rep(c("Zr (mu)", "r (mu)"),each = 3), rep("Zr (beta)", 3)),
+  Estimate = c(res_endo_or_ecto1$estimate, tanh(res_endo_or_ecto1$estimate), res_endo_or_ecto2$estimate[-1],  res_endo_or_ecto3$estimate[-(1:2)]),
+  `Lower CI [0.025]` = c(res_endo_or_ecto1$lowerCL, tanh(res_endo_or_ecto1$lowerCL), res_endo_or_ecto2$lowerCL[-1], res_endo_or_ecto3$lowerCL[-(1:2)]),
+  `Upper CI  [0.975]` = c(res_endo_or_ecto1$upperCL, tanh(res_endo_or_ecto1$upperCL), res_endo_or_ecto2$upperCL[-1], res_endo_or_ecto3$upperCL[-(1:2)]),
+  `V[authors]` = c(mr_endo_or_ecto1$sigma2,  rep(NA, 8)),
+  `R2` = c(r2_endo_or_ecto1[1], rep(NA, 8))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 ```
 
@@ -1335,7 +1343,7 @@ mr_mode_of_transmission_broad3 <- rma.mv(yi = Zr,
 ```
 
 #### Table S3.7
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `mode_of_transmission_broad`. 
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `mode_of_transmission_broad`.  Note that `mu` means the group mean while `beta` represents the contrast between two groups in the Unit column.
 ```{r}
 # getting marginal R2
 r2_mode_of_transmission_broad1 <- R2(mr_mode_of_transmission_broad1)
@@ -1347,12 +1355,13 @@ res_mode_of_transmission_broad3 <- get_est(mr_mode_of_transmission_broad3, mod =
 
 # creating a table
 tibble(
-  `Fixed effect` = c(as.character(res_mode_of_transmission_broad1$name), cont_gen(res_mode_of_transmission_broad1$name)),
-  Estimate = c(res_mode_of_transmission_broad1$estimate, res_mode_of_transmission_broad2$estimate[-1],  res_mode_of_transmission_broad3$estimate[-(1:2)]),
-  `Lower CI [0.025]` = c(res_mode_of_transmission_broad1$lowerCL, res_mode_of_transmission_broad2$lowerCL[-1], res_mode_of_transmission_broad3$lowerCL[-(1:2)]),
-  `Upper CI  [0.975]` = c(res_mode_of_transmission_broad1$upperCL, res_mode_of_transmission_broad2$upperCL[-1], res_mode_of_transmission_broad3$upperCL[-(1:2)]),
-  `V[authors]` = c(mr_mode_of_transmission_broad1$sigma2,  rep(NA, 5)),
-  `R2` = c(r2_mode_of_transmission_broad1[1], rep(NA, 5))) %>% kable("html", digits = 3) %>%
+  `Fixed effect` = c(as.character(res_mode_of_transmission_broad1$name),as.character(res_mode_of_transmission_broad1$name),cont_gen(res_mode_of_transmission_broad1$name)),
+   `Unit` = c(rep(c("Zr (mu)", "r (mu)"),each = 3), rep("Zr (beta)", 3)),
+  Estimate = c(res_mode_of_transmission_broad1$estimate, tanh(res_mode_of_transmission_broad1$estimate), res_mode_of_transmission_broad2$estimate[-1],  res_mode_of_transmission_broad3$estimate[-(1:2)]),
+  `Lower CI [0.025]` = c(res_mode_of_transmission_broad1$lowerCL, tanh(res_mode_of_transmission_broad1$lowerCL), res_mode_of_transmission_broad2$lowerCL[-1], res_mode_of_transmission_broad3$lowerCL[-(1:2)]),
+  `Upper CI  [0.975]` = c(res_mode_of_transmission_broad1$upperCL,tanh(res_mode_of_transmission_broad1$upperCL), res_mode_of_transmission_broad2$upperCL[-1], res_mode_of_transmission_broad3$upperCL[-(1:2)]),
+  `V[authors]` = c(mr_mode_of_transmission_broad1$sigma2,  rep(NA, 8)),
+  `R2` = c(r2_mode_of_transmission_broad1[1], rep(NA, 8))) %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 ```
 
@@ -1470,7 +1479,7 @@ mr_symbiosis_transmission <- map(level_names[-length(level_names)], run_rma)
 ```
 
 #### Table S3.8
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiosis_transmission`. 
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiosis_transmission`.  Note that `mu` means the group mean while `beta` represents the contrast between two groups in the Unit column.
 ```{r}
 # getting marginal R2
 r2_symbiosis_transmission1 <- R2(mr_symbiosis_transmission1)
@@ -1489,12 +1498,13 @@ upperCLs <- map2(res_symbiosis_transmission, contra_list, ~.x[-(.y),"upperCL"]) 
 
 # creating a table
 tibble(
-  `Fixed effect` = c(as.character(res_symbiosis_transmission1$name), cont_gen(res_symbiosis_transmission1$name)),
-  Estimate = c(res_symbiosis_transmission1$estimate, estimates),
-  `Lower CI [0.025]` = c(res_symbiosis_transmission1$lowerCL,lowerCLs),
-  `Upper CI  [0.975]` = c(res_symbiosis_transmission1$upperCL,upperCLs),
-  `V[authors]` = c(mr_symbiosis_transmission1$sigma2,  rep(NA, (5 + choose(5,2))- 1)),
-  `R2` = c(r2_symbiosis_transmission1[1], rep(NA, (5 + choose(5, 2))- 1))) %>% kable("html",  digits = 3) %>%
+  `Fixed effect` = c(as.character(res_symbiosis_transmission1$name),as.character(res_symbiosis_transmission1$name), cont_gen(res_symbiosis_transmission1$name)),
+  `Unit` = c(rep(c("Zr (mu)", "r (mu)"),each = 5), rep("Zr (beta)", 10)),
+  Estimate = c(res_symbiosis_transmission1$estimate, tanh(res_symbiosis_transmission1$estimate), estimates),
+  `Lower CI [0.025]` = c(res_symbiosis_transmission1$lowerCL, tanh(res_symbiosis_transmission1$lowerCL), lowerCLs),
+  `Upper CI  [0.975]` = c(res_symbiosis_transmission1$upperCL,tanh(res_symbiosis_transmission1$upperCL), upperCLs),
+  `V[authors]` = c(mr_symbiosis_transmission1$sigma2,  rep(NA, (5 + 5 + choose(5,2))- 1)),
+  `R2` = c(r2_symbiosis_transmission1[1], rep(NA, (5+5 + choose(5, 2))- 1))) %>% kable("html",  digits = 3) %>%
   kable_styling("striped", position = "left") %>%
   scroll_box(width = "100%", height = "300px")
 ```
@@ -1588,29 +1598,31 @@ g <- ggplot(data = res_symbiosis_transmission1, aes(x = tanh(estimate), y = name
 
 #### Putting together Figure 3
 
-```{r, fig.width=14, fig.height= 14}
+```{r, fig.width=8, fig.height= 14}
 # building fig 3 using patchwork
-fig3 <- (a / b / c / d + plot_layout(heights = c(1.6, 2, 3.7, 3.7))) | 
-  (e / f / g + plot_layout(heights = c(2.8, 2.8, 4.4))) #+ plot_annotation(tag_levels = 'a', tag_suffix = ')')
+fig3 <- (a / b / c / d + plot_layout(heights = c(1.6, 2, 3.7, 3.7)))
+
+
+#fig3 <- (a / b / c / d + plot_layout(heights = c(1.6, 2, 3.7, 3.7))) | 
+ # (e / f / g + plot_layout(heights = c(2.8, 2.8, 4.4))) #+ plot_annotation(tag_levels = 'a', tag_suffix = ')')
  
 fig3
 
-#ggsave("../figs/fig3.png", width = 14, height = 14)
-#ggsave("../figs/fig3.pdf", width = 14, height = 14)
+# ggsave(here("figs/fig3.png"), width = 8, height = 12)
+# ggsave(here("figs/fig3.pdf"), width = 8, height = 12)
 ```
 **Figure 3:** putting all 7 panels together: Figure 3a - Figure 3g (see the main text)
 
 #### Putting together Figure 4
 
-```{r, fig.width=14, fig.height= 14}
+```{r, fig.width=8, fig.height= 14}
 # building fig 3 using patchwork
-fig3 <- (a / b / c / d + plot_layout(heights = c(1.6, 2, 3.7, 3.7))) | 
-  (e / f / g + plot_layout(heights = c(2.8, 2.8, 4.4))) #+ plot_annotation(tag_levels = 'a', tag_suffix = ')')
+fig4 <- (e / f / g + plot_layout(heights = c(2.8, 2.8, 4.4))) + plot_annotation(tag_levels = 'a')
  
-fig3
+fig4
 
-#ggsave("../figs/fig3.png", width = 14, height = 14)
-#ggsave("../figs/fig3.pdf", width = 14, height = 14)
+# ggsave(here("figs/fig4.png"), width = 8, height = 12)
+# ggsave(here("figs/fig4.pdf"), width = 8, height = 12)
 ```
 
 **Figure 4:** putting all 7 panels together: Figure 3a - Figure 3g (see the main text)
@@ -1654,7 +1666,7 @@ mr_host_tax_symbiosis <- map(level_names[-length(level_names)], run_rma)
 ```
 
 #### Table S3.9
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_symbiosis`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_tax_symbiosis`.  Note that `mu` means the group mean while `beta` represents the contrast between two groups in the Unit column.
 ```{r}
 # getting marginal R2
 r2_host_tax_symbiosis1 <- R2(mr_host_tax_symbiosis1)
@@ -1776,7 +1788,7 @@ mr_symbiont_tax_symbiosis <- map(level_names[-length(level_names)], run_rma)
 ```
 
 #### Table S3.10
-Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_symbiosis`. 
+Regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `symbiont_tax_symbiosis`.  Note that `mu` means the group mean while `beta` represents the contrast between two groups in the Unit column.
 ```{r}
 # getting marginal R2
 r2_symbiont_tax_symbiosis1 <- R2(mr_symbiont_tax_symbiosis1)
@@ -1897,7 +1909,7 @@ mr_host_symbiont_tax <- map(level_names[-length(level_names)], run_rma)
 ```
 
 #### Table S3.11
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_symbiont_tax`. 
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the meta-regression with `host_symbiont_tax`.  Note that `mu` means the group mean while `beta` represents the contrast between two groups in the Unit column.
 ```{r}
 # getting marginal R2
 r2_host_symbiont_tax1 <- R2(mr_host_symbiont_tax1)
@@ -2096,7 +2108,7 @@ tibble(
 #### Model averaging
 
 #### Table 3.13
-The average estimates for regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the 2 best meta-regression models.
+The average estimates for regression coefficients (Estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the 2 best meta-regression models. Note that `mu` shows the overall value at the intercept while `beta` represents the contrast (or slope) between two groups in the Unit column.
 ```{r}
 
 # getting averaged R2 and variance components not provided by the MuMIn package
@@ -2139,7 +2151,11 @@ res_funnel_plot <- rma.mv(yi = Zr, V = VZr,
                                  symbiosis, 
                                random = ~ 1 | authors, data = dat)
 
-funnel(res_funnel_plot, yaxis = "seinv", level=c(90, 95, 99), shade=c("white", "gray55", "gray75"), refline=0, legend=TRUE)
+fun1 <- funnel(res_funnel_plot, yaxis = "seinv", level=c(90, 95, 99), 
+       xlim  = c(-3, 4), ylim = c(0.9, 5.2), xlab = "Residuals (correlation)", ylab = "Precision (1/SE)",
+       shade=c("white", "gray55", "gray75"), 
+       refline=0, legend=TRUE)
+fun1
 ```
 
 **Figure 5a:** A residual funnel plot from the meta-regression model with `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`; 'residual value' is on *Zr* and 'inverse standard error' is precision `1/sqrt(VZr)`.
@@ -2160,22 +2176,30 @@ res_funnel_plot2 <- rma.mv(yi = Zr, V = VZr,
                                 symbiosis, 
                                random = ~ 1 | authors, data = dat)
 
-funnel(res_funnel_plot2, yaxis = "seinv", level=c(90, 95, 99), shade=c("white", "gray55", "gray75"), refline=0, legend=TRUE)
+fun2 <- funnel(res_funnel_plot2, yaxis = "seinv", level=c(90, 95, 99),
+       xlim  = c(-3, 4), ylim = c(0.9, 5.2), xlab = "Residuals (correlation)", ylab = "Precision (1/SE)",
+       shade=c("white", "gray55", "gray75"), refline=0, legend=TRUE)
+fun2
 ```
 
 **Figure 5b:** A residual funnel plot from the meta-regression model with `sqrt(VZr)`, `mode_of_transmission_broad`, `host_tax_broad`, `log(host_range_link_ratio)`, & `symbiosis`; 'residual value' is on *Zr* and 'inverse standard error' is precision `1/sqrt(VZr)`.
 
 #### Putting together Figure 5
 
-```{r, fig.width=14, fig.height= 14}
+```{r, fig.width=8, fig.height= 4}
 # building fig 3 using patchwork
-fig3 <- (a / b / c / d + plot_layout(heights = c(1.6, 2, 3.7, 3.7))) | 
-  (e / f / g + plot_layout(heights = c(2.8, 2.8, 4.4))) #+ plot_annotation(tag_levels = 'a', tag_suffix = ')')
- 
-fig3
 
-#ggsave("../figs/fig3.png", width = 14, height = 14)
-#ggsave("../figs/fig3.pdf", width = 14, height = 14)
+par(mfrow = c(1,2))
+funnel(res_funnel_plot, yaxis = "seinv", level=c(90, 95, 99), 
+       xlim  = c(-3, 4), ylim = c(0.9, 5.2), xlab = "Residuals (correlation)", ylab = "Precision (1/SE)",
+       shade=c("white", "gray55", "gray75"), 
+       refline=0, legend=TRUE)
+mtext("a", side = 3, cex = 1.5, line = 1, adj = 0)
+funnel(res_funnel_plot2, yaxis = "seinv", level=c(90, 95, 99),
+       xlim  = c(-3, 4), ylim = c(0.9, 5.2), xlab = "Residuals (correlation)", ylab = "Precision (1/SE)",
+       shade=c("white", "gray55", "gray75"), refline=0, legend=TRUE)
+mtext("b", side = 3, cex = 1.5, line = 1, adj = 0)
+
 ```
 
 ### Egger's regression
@@ -2621,7 +2645,7 @@ Below, we show that categories with higher effect sizes were more likely to have
 #### The type of symbiosis: parasitism vs. mutualism
 
 #### Table S5.4
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `symbiosis` on `limit_reached` (compare the effect estimates in **Supplementary Table 2** with the corresponding values in this table). 
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `symbiosis` on `limit_reached` (compare the effect estimates in **XXXX** with the corresponding values in this table). 
 
 ```{r}
 # symbiosis
@@ -2652,7 +2676,7 @@ tibble(
 #### The effect of host taxa
 
 #### Table S5.5
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `host_tax_broad` on `limit_reached` (compare the effect estimates in **Supplementary Table 3** with the corresponding values in this table). 
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `host_tax_broad` on `limit_reached` (compare the effect estimates in **XXXX** with the corresponding values in this table). 
 
 ```{r}
 # host_tax_broad
@@ -2684,7 +2708,7 @@ tibble(
 #### The effect of the model of transmission
 
 #### Table S5.6
-Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `mode_of_transmission_broad` on `limit_reached` (compare the effect estimates in **Supplementary Table 8** with the corresponding values in this table).
+Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `mode_of_transmission_broad` on `limit_reached` (compare the effect estimates in **XXXX** with the corresponding values in this table).
 
 ```{r}
 # mode_of_transmission_broad
