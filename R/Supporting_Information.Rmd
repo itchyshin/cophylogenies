@@ -69,7 +69,7 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
 
 #### Custom functions
 
-We have 5 custom functions named : `p_to_Zr()`,`I2()`, `R2()`, `get_est()`, `get_pred()`, and `cont_gen()`, all of which are used later (see below for their functionality) and the code are included here. 
+We have 5 custom functions named : `p_to_Zr()`,`I2()`, `R2()`, `get_est()`, `get_pred()`, and `cont_gen()`, all of which are used later (see below for their functionality) and the code is included here. 
 
 ```{r}
 # coustm functions
@@ -253,7 +253,7 @@ cont_gen <- function (name) {
 ### Supplementary information for the literature search
 
 #### Table S1.1
-Citations for papers describing the main methods of cophylogeny analysis, based on a *Google Scholar* search conducted on 4th July 2019. Although the paper describing Brooks parsimony analysis has more citations than that describing the Parafit method, relatively few citations correspond to actual cophylogenetic analyses employing the approach, *verses* methodological discussion.
+Citations for papers describing the main methods of cophylogeny analysis, based on a *Google Scholar* search conducted on 4th July 2019. Although the paper describing Brooks parsimony analysis has more citations than that describing the Parafit method, relatively few citations correspond to actual cophylogenetic analyses employing the approach, *versus* methodological discussion.
 
 ```{r}
 # getting the data and formating some variables (turning chraracter vectors to factors)
@@ -309,15 +309,15 @@ J. __Visiting_symbiont?__*	Whether the symbiont is resident on the host (residen
 
 K. __host_tips_linked__:	The number of individual host taxa included in the cophylogenetic analysis.
 
-L. __host_tips_linked_corrected__	The same measure as for column N, 'host_tips_linked', but reduced to only include one member of each host species. This is included because some authors include multiple individuals of the same host species. Without correction, this artificially increases the apparent number of host species included in the study.
+L. __host_tips_linked_corrected__	The same measure as for column K, 'host_tips_linked', but reduced to only include one member of each host species. This is included because some authors include multiple individuals of the same host species. Without correction, this artificially increases the apparent number of host species included in the study.
 
 M. __host_genera__:	A count of the number of host genera included in the cophylogenetic analysis.
 
-N. __total_host_symbioint_links__	The total number of links between host and symbiont taxa recorded in a study. If all symbionts were strict specialists, this would equal the number of symbionts included in the study. However, because symbionts are often associated with more than one host, this value is often higher than the total number of symbionts included in the study.
+N. __total_host_symbiont_links__	The total number of links between host and symbiont taxa recorded in a study. If all symbionts were strict specialists, this would equal the number of symbionts included in the study. However, because symbionts are often associated with more than one host, this value is often higher than the total number of symbionts included in the study.
 
-O. __host_range_link_ratio__:	An estimation of symbiont host specificity, calculated by dividing the total number of links between hosts and symbionts (i.e. 'total_host_symbiont_links', column Q), by the total number of symbionts included in the study (i.e. 'symbiont_tips_linked', column T).
+O. __host_range_link_ratio__:	An estimation of symbiont host specificity, calculated by dividing the total number of links between hosts and symbionts (i.e. 'total_host_symbiont_links', column N), by the total number of symbionts included in the study (i.e. 'symbiont_tips_linked', column Q).
 
-P. __host_range_taxonomic_breadth__:	An alternative estimation of symbiont host specificity, calculated by first summing the number of host taxonomic ranks linked to each symbiont (i.e. single host species = 1, multiple host species in the same genera = 2, multiple host genera = 3, multiple host families = 4, multiple host orders = 5), and dividing by the total number of symbionts included in the study (i.e. 'symbiont_tips_linked', column T).
+P. __host_range_taxonomic_breadth__:	An alternative estimation of symbiont host specificity, calculated by first summing the number of host taxonomic ranks linked to each symbiont (i.e. single host species = 1, multiple host species in the same genus = 2, multiple host genera = 3, multiple host families = 4, multiple host orders = 5), and dividing by the total number of symbionts included in the study (i.e. 'symbiont_tips_linked', column Q).
 
 Q. __symbiont_tips_linked__	The number of individual symbiont taxa included in the cophylogenetic analysis.
 
@@ -375,7 +375,7 @@ n_table2 %>% as_tibble(rownames = "Number") %>%
   scroll_box(width = "100%", height = "250px")
   #pander(split.cell = 40, split.table = Inf) # not as nice as kable
 ```
-Note that for the numbers of studies and papers does not add up (TreeMap + ParaFit $\neq$ Combined), because `r sum(n_table2[2,]) - length(unique(dat$studies))` analyses and `r sum(n_table2[3,]) - length(unique(dat$authors))`  papers used both the TreeMap and ParaFit methods (the term "papers" here is our variable `authors`)
+Note that the numbers of studies and papers does not add up (TreeMap + ParaFit $\neq$ Combined), because `r sum(n_table2[2,]) - length(unique(dat$studies))` analyses and `r sum(n_table2[3,]) - length(unique(dat$authors))`  papers used both the TreeMap and ParaFit methods (the term "papers" here is our variable `authors`)
 
 ### Missing data patterns
 
@@ -440,9 +440,9 @@ pair %<>% p_to_Zr(p_value_para, sample_size) %>%
 
 ```
 
-### Correlating two methods of the same cophylogenetic data
+### Correlating two methods on the same cophylogenetic data
 
-In 16 studies, authors used both `ParaFit` and `TreeMap` on the same cophylogeny dataset, but some of these studies, they used different numbers of randomization between the two methods. Among these 16, 11 studies used `ParaFit` and `TreeMap` with the same or similar number of randomization (e.g., 999 and 1,000). We here correlated effect sizes (Zr) between these two methods. In the following analyses, we assume the p-value based effect size, Zr~equivalent (or just Zr) is equivalent for both methods. In such a case, we would require a tight correlation between the method.
+In 16 studies, authors used both `ParaFit` and `TreeMap` on the same cophylogeny dataset, but in some of these studies, they used different numbers of randomization between the two methods. Among these 16, 11 studies used `ParaFit` and `TreeMap` with the same or similar number of randomization (e.g., 999 and 1,000). We here correlated effect sizes (Zr) between these two methods. In the following analyses, we assume the p-value based effect size, Zr~equivalent (or just Zr) is equivalent for both methods. In such a case, we would require a tight correlation between the method.
 
 ```{r}
 
@@ -494,9 +494,9 @@ ma_test2 <- rma.mv(yi = Zr,
 aic2 <- AIC(ma_test2)
 ```
 
-The model (`ma_test1`), which included both random factors, had a larger AIC value (`r round(aic1,2)`) than the model with only one random effect (`r round(aic2, 2)`) . This is because `observation` hardly accounted any variance (< 0.0001) compared to `authors` (`r round(ma_test1$sigma2[1], 4)`). Therefore, we only included `authors` as our random factor in subsequent analyses.
+The model (`ma_test1`), which included both random factors, had a larger AIC value (`r round(aic1,2)`) than the model with only one random effect (`r round(aic2, 2)`) . This is because `observation` hardly accounted for any variance (< 0.0001) compared to `authors` (`r round(ma_test1$sigma2[1], 4)`). Therefore, we only included `authors` as our random factor in subsequent analyses.
 
-We ran intercept models (meta-analyses) with 3 different datasets (`ParaFit`, `TreeMap` and both combined; see the explanation of `method` above). Also, we note that we used adjustments for test statistics and confidence intervals (`test = "t"`), which is similar to (but not the same as) those proposed by Kanpp and Hartung [@knapp2003improved]; probably this approach is a more conservative.
+We ran intercept models (meta-analyses) with 3 different datasets (`ParaFit`, `TreeMap` and both combined; see the explanation of `method` above). Also, we note that we used adjustments for test statistics and confidence intervals (`test = "t"`), which is similar to (but not the same as) those proposed by Knapp and Hartung [@knapp2003improved]; probably this approach is more conservative.
 
 #### Running Multilevel Meta-analytic models with 3 datasets
 ```{r, cache=TRUE}
@@ -1112,7 +1112,7 @@ fig_host_range_link_ratio
 ```
 
 #### Figure S3.1 
-A bubble plot showing a predicted regression line for the contentious variable `log(host_range_link_ratio)`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
+A bubble plot showing a predicted regression line for the continuous variable `log(host_range_link_ratio)`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
 
 
 #### Testing specialization 2: taxonomic breadth
@@ -1180,10 +1180,10 @@ fig_host_range_taxonomic_breadth
 ```
 
 #### Figure S3.2
-A bubble plot showing a predicted regression line for the contentious variable `log(log(host_range_taxonomic_breadth)`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
+A bubble plot showing a predicted regression line for the continuous variable `log(log(host_range_taxonomic_breadth)`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. 
 
 
-#### The place of symbiosis: ednosymbiosis vs. ectosymbiosis
+#### Symbiont location on host: endosymbiosis vs. ectosymbiosis
 
 ```{r}
 # reordering
@@ -1615,7 +1615,7 @@ fig3
 # ggsave(here("figs/fig3.png"), width = 8, height = 12)
 # ggsave(here("figs/fig3.pdf"), width = 8, height = 12)
 ```
-**Figure 3:** putting all 7 panels together: Figure 3a - Figure 3g (see the main text)
+**Figure 3:** putting all 4 panels together: Figure 3a - Figure 3d (see the main text)
 
 #### Putting together Figure 4
 
@@ -1629,7 +1629,7 @@ fig4
 # ggsave(here("figs/fig4.pdf"), width = 8, height = 12)
 ```
 
-**Figure 4:** putting all 7 panels together: Figure 3a - Figure 3g (see the main text)
+**Figure 4:** putting all 3 panels together: Figure 4a - Figure 4c (see the main text)
 
 ### Additional analyses (uni-predictor)
 
@@ -2121,10 +2121,10 @@ average_R2 <- weighted.mean(x = c(R2(model1)[1], R2(model2)[1], R2(model3)[1], R
 
 # creating a table
 tibble(
-  `Fixed effect` = c("Intercept (both-Microbe-Mutulist)",
+  `Fixed effect` = c("Intercept (both-Microbe-Mutualist)",
                      "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", 
                      "host_range","both-horizontal", "both-vertical",
-                     "Mutulist-Parasite"),
+                     "Mutualist-Parasite"),
   Estimate = mr_averaged_aic2$coefmat.full[,1],
   `Lower CI [0.025]` =  mr_averaged_aic2$coefmat.full[,1] - mr_averaged_aic2$coefmat.full[,2]*qnorm(0.975),
   `Upper CI  [0.975]` =  mr_averaged_aic2$coefmat.full[,1] + mr_averaged_aic2$coefmat.full[,2]*qnorm(0.975),
@@ -2144,7 +2144,7 @@ A normal funnel plot assumes homogeneity (i.e., *I*^2^ = 0). Therefore, we contr
 
 #### Residual funnel plot 1
 
-We do not observe normal skewness in our enhanced-counter funnel plot (**Supplementary Figure 5**). This funnel asymmetry seems different from one cased by publication bias[@peters2008contour]; we do not expect a "hollow" in the region with high precision or i.e. inverse standard error (2.4-4) and relative high effect sizes (*Zr* = 0.5-1.0).  The funnel asymmetry is mainly caused by the boundary created by the number of randomizations (see the "Sensitivity Analysis" section where we deal with this skewness).
+We do not observe normal skewness in our enhanced-counter funnel plot (**Supplementary Figure 5**). This funnel asymmetry seems different from one caused by publication bias[@peters2008contour]; we do not expect a "hollow" in the region with high precision or i.e. inverse standard error (2.4-4) and relative high effect sizes (*Zr* = 0.5-1.0).  The funnel asymmetry is mainly caused by the boundary created by the number of randomizations (see the "Sensitivity Analysis" section where we deal with this skewness).
 
 #### Figure 5a
 ```{r}
@@ -2166,7 +2166,7 @@ funnel(res_funnel_plot, yaxis = "seinv", level=c(90, 95, 99),
 
 #### Residual funnel plot 2
 
-Further, Egger regression analyses (see below) showed that `sqrt(VZr)` (sampling errors [SE] for effect sizes) accounts much heterogeneity, so we added that to our model. The funnel asymmetry we see in **Supplementary Figure 6** (if any) is much less severe than that in **Supplementary Figure 5**. 
+Further, Egger regression analyses (see below) showed that `sqrt(VZr)` (sampling errors [SE] for effect sizes) accounts for much heterogeneity, so we added that to our model. The funnel asymmetry we see in **Supplementary Figure 6** (if any) is much less severe than that in **Supplementary Figure 5**. 
 
 #### Figure 5b
 ```{r}
@@ -2206,7 +2206,7 @@ mtext("b", side = 3, cex = 1.5, line = 1, adj = 0)
 
 ### Egger's regression
 
-We applied Egger's regression to test whether the funnel asymmetries we observe in our funnel plots are statistical significant or not. 
+We applied Egger's regression to test whether the funnel asymmetries we observe in our funnel plots are statistically significant or not. 
 
 #### Univariate Egger's regression
 
@@ -2273,12 +2273,12 @@ fit_egger_regression_uni
 ```
 
 **Figure S4.1:**
-A bubble plot showing a predicted regression line for the contentious variable `sqrt(VZr)`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines), with observed effect sizes based on various sample sizes. 
+A bubble plot showing a predicted regression line for the continuous variable `sqrt(VZr)`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines), with observed effect sizes based on various sample sizes. 
 
 
 #### Multivariate Egger regression
 
-We also conducted a Egger regression controlling other important moderators (i.e., `mode_of_transmission_broad`, `host_tax_broad`, `log(host_range_link_ratio)`, & `symbiosis`). After controlling for these variables, `sqrt(VZr)` stays significant.
+We also conducted an Egger regression controlling other important moderators (i.e., `mode_of_transmission_broad`, `host_tax_broad`, `log(host_range_link_ratio)`, & `symbiosis`). After controlling for these variables, `sqrt(VZr)` stays significant.
 
 ```{r}
 # 
@@ -2300,8 +2300,8 @@ r2_egger_regression_mul <- R2(egger_regression_mul)
 
 # creating a table
 tibble(
-  `Fixed effect` = c("Intercept (both-Microbe-Mutulist)", "sqrt(VZr)", "both-horizontal", "both-vertical", 
-                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", "host_range", "Mutulist-Parasite"),
+  `Fixed effect` = c("Intercept (both-Microbe-Mutualist)", "sqrt(VZr)", "both-horizontal", "both-vertical", 
+                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", "host_range", "Mutualist-Parasite"),
   Estimate = c(egger_regression_mul$b),
   `Lower CI [0.025]` = c(egger_regression_mul$ci.lb),
   `Upper CI  [0.975]` = c(egger_regression_mul$ci.ub),
@@ -2346,7 +2346,7 @@ fit_egger_regression_mul
 ```
 
 **Figure S4.2:**
-A bubble plot showing a predicted loess line for the contentious variable `sqrt(VZr)` (given the values of the other 3 variables in the model), with their 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. Note that the lines are not linear as these are based on multivariate predictions of the data points. 
+A bubble plot showing a predicted loess line for the continuous variable `sqrt(VZr)` (given the values of the other 3 variables in the model), with their 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. Note that the lines are not linear as these are based on multivariate predictions of the data points. 
 
 ### Time-lag bias
 
@@ -2414,7 +2414,7 @@ fit_time_lag_effect <-  dat %>%
 fit_time_lag_effect
 ```
 
-**Figure S4.3:** A bubble plot showing a predicted regression line for the contentious variable `year`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines), with observed effect sizes based on various sample sizes. 
+**Figure S4.3:** A bubble plot showing a predicted regression line for the contenious variable `year`, indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines), with observed effect sizes based on various sample sizes. 
 
 #### Multivariate time-lag bias
 ```{r}
@@ -2437,8 +2437,8 @@ r2_time_lag_effect_mul <- R2(time_lag_effect_mul)
 
 # creating a table
 tibble(
-  `Fixed effect` = c("Intercept (both-Microbe-Mutulist)", "Year", "both-horizontal", "both-vertical", 
-                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", "host_range", "Mutulist-Parasite"),
+  `Fixed effect` = c("Intercept (both-Microbe-Mutualist)", "Year", "both-horizontal", "both-vertical", 
+                     "Microbe-Plant", "Microbe-Invert", "Microbe-Vert", "host_range", "Mutualist-Parasite"),
   Estimate = c(time_lag_effect_mul$b),
   `Lower CI [0.025]` = c(time_lag_effect_mul$ci.lb),
   `Upper CI  [0.975]` = c(time_lag_effect_mul$ci.ub),
@@ -2483,7 +2483,7 @@ fit_time_lag_effect_mul <-  dat %>%
 fit_time_lag_effect_mul
 ```
 
-**Figure S4.4:** A bubble plot showing a predicted loess line for the contentious variable `year` (given the values of the other 3 variables in the model), indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. Note that the lines are not linear as these are based on multivariate predictions of the data points. 
+**Figure S4.4:** A bubble plot showing a predicted loess line for the continuous variable `year` (given the values of the other 3 variables in the model), indicating 95% confidence regions (orange dotted lines) and 95% prediction regions (blue dotted lines) with observed effect sizes based on various sample sizes. Note that the lines are not linear as these are based on multivariate predictions of the data points. 
 
 ## Appendix S5: Sensitivity Analysis
 
@@ -2491,7 +2491,7 @@ The funnel plots above identified the issue of upper bounds for the effect size 
 
 ### Sensitivity test 1: the number of randomizations
 
-Below, we showed that none of categorizes have significantly different numbers of randomizations in all `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`. 
+Below, we showed that none of the categories have significantly different numbers of randomizations in all `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`. 
  
 #### The type of symbiosis: parasitism vs. mutualism
 
@@ -2588,7 +2588,7 @@ tibble(
   kable_styling("striped", position = "left") 
 ```
 
-#### The effect of the model of transmission
+#### The effect of the mode of transmission
 
 ```{r}
 # mode_of_transmission_broad
@@ -2641,7 +2641,7 @@ tibble(
 
 ### Sensitivity test 2: reaching the limits
 
-Below, we show that categories with higher effect sizes were more likely to have "bounded" effect sizes (`limit_reached`) in all `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`. This indicates that the higher the estimate of mean effect size is, the more underestimated the mean effect size is. This is true for differences between two categories; the larger the difference between two, the more underestimated the difference is. 
+Below, we show that categories with higher effect sizes were more likely to have "bounded" effect sizes (`limit_reached`) in all `mode_of_transmission_broad`, `host_tax_broad`, & `symbiosis`. This indicates that the higher the estimate of mean effect size is, the more underestimated the mean effect size is. This is true for differences between two categories; the larger the difference between the two, the more underestimated the difference is. 
 
 
 #### The type of symbiosis: parasitism vs. mutualism
@@ -2724,7 +2724,7 @@ t_host_tax %>% kable("html", digits = 3) %>%
   kable_styling("striped", position = "left") 
 ```
 
-#### The effect of the model of transmission
+#### The effect of the mode of transmission
 
 #### Table S5.6
 Regression coefficients (estimate), 95% confidence intervals (CIs), variance components (V) and variance explained, *R*^2^~[marginal]~ (R2) from the regression with `mode_of_transmission_broad` on `limit_reached`  (compare the effect estimates in **Table S3.7** with the corresponding values in this table below; their ranking in estimation should usually match).
