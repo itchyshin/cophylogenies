@@ -273,7 +273,7 @@ The meta-analytic dataset of this study.
 
 ```{r}
 # getting the data and formating some variables (turning chraracter vectors to factors)
-full_data <- read_csv(here("data/2020-08-12-source-data-dat.csv"), na = "NA") %>% 
+full_data <- read_csv(here("data/2021-09-01-source-data-dat.csv"), na = "NA") %>% 
    mutate_if(is.character, as.factor)
 
 # dataset to compare the same cophylogenies between the two methods
@@ -403,7 +403,7 @@ dat %>% summarise_all(~sum(is.na(.))) %>% # map(~sum(is.na(.)) # this is an alte
 We created our effect size (correlation coefficient *r* and its Fisher's z transformation *Zr*) from p values and associated sample sizes [@rosenthal2003requivalent]. We used half of the"effective sample size" for each effect size (an indicator of congruence): 
 
 $$
-N_{effective} = \frac{4n_{h}n_{s}} {n_{h} + n_{2s}},
+N_{effective} = \frac{4n_{h}n_{s}} {n_{h} + n_{s}},
 $$
 where $n_h$ and $n_s$ are sample size for hosts and symbionts (in our case: `host_tips_linked_corrected` and `symbiont_tips_linked`). When $n = n_h = n_s$, $N_{effective}$ simplifies to $2n$. We used $N_{effective}/2$, which we called the number of "effective pairs" ($N_{ep}$) as our sample size. 
 
