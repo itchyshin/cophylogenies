@@ -60,7 +60,8 @@ pacman::p_load(tidyverse, # tidy family and related pacakges below
                png,         # reading png files
                grid,        # graphic layout manipulation
                patchwork,   # putting ggplots together - you need to install via devtool
-               here         # making reading files easy
+               here,         # making reading files easy
+               emmeans
                #lmerTest,   # more functions for lme4
                #mi,      # missing data analysis
                #betareg   # dependence of the above
@@ -294,6 +295,11 @@ mr_symbiosis1 <- rma.mv(yi = Zr,
                        test = "t",
                        random = ~ 1 | authors, 
                        data = dat2)
+# some test 
+
+test1 <- qdrg(object = mr_symbiosis1, data = dat2)
+emmeans(test1, specs = "symbiosis")
+
 # meta-regression: contrast
 mr_symbiosis2 <- rma.mv(yi = Zr, 
                        V = VZr, 
@@ -301,6 +307,10 @@ mr_symbiosis2 <- rma.mv(yi = Zr,
                        test = "t",
                        random = ~ 1 | authors, 
                        data = dat2)
+
+test2 <- qdrg(object = mr_symbiosis1, data = dat2)
+emmeans(test2, specs = ~1)
+emmeans(test2, specs = "symbiosis")
 ```
 
 **Supplementary Table X:**
